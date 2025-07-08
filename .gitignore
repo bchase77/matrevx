@@ -1,0 +1,10 @@
+# BGA Studio specific files 
+*.bak 
+*.tmp 
+.DS_Store 
+Thumbs.db 
+# IDE files 
+.vscode/ 
+.idea/ 
+# Local development 
+/misc/local/ 
