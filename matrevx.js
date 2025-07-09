@@ -24,11 +24,8 @@ function (dojo, declare) {
     return declare("bgagame.matrevx", ebg.core.gamegui, {
         constructor: function(){
             console.log('matrevx constructor');
-              
-            // Here, you can init the global variables of your user interface
-            // Example:
-            // this.myGlobalValue = 0;
-
+            // Global variables
+            this.selectedWrestler = null;
         },
         
         /*
@@ -36,107 +33,104 @@ function (dojo, declare) {
             
             This method must set up the game user interface according to current game situation specified
             in parameters.
-            
-            The method is called each time the game interface is displayed to a player, ie:
-            _ when the game starts
-            _ when a player refreshes the game page (F5)
-            
-            "gamedatas" argument contains all datas retrieved by your "getAllDatas" PHP method.
         */
         
         setup: function( gamedatas )
         {
             console.log( "Starting game setup" );
+            console.log( "Game data:", gamedatas );
 
-            // Example to add a div on the game area
+            // Set up main game area
             document.getElementById('game_play_area').insertAdjacentHTML('beforeend', `
-                <div id="player-tables"></div>
+                <div id="wrestler-selection-area" style="display: none;">
+                    <h3>Select Your Wrestler</h3>
+                    <div id="available-wrestlers"></div>
+                </div>
+                <div id="wrestling-mat" style="display: none;">
+                    <div id="player-stats"></div>
+                    <div id="game-info"></div>
+                </div>
             `);
             
-            // Setting up player boards
+            // Setting up player boards with wrestler info
             Object.values(gamedatas.players).forEach(player => {
-                // example of setting up players boards
+                // Add wrestler info to player panel
                 this.getPlayerPanelElement(player.id).insertAdjacentHTML('beforeend', `
-                    <div id="player-counter-${player.id}">A player counter</div>
+                    <div id="player-wrestler-info-${player.id}">
+                        <div id="wrestler-name-${player.id}">
+                            ${player.wrestler ? player.wrestler.name : 'No wrestler selected'}
+                        </div>
+                        <div id="conditioning-${player.id}" class="stat-display">
+                            C: ${player.conditioning || 0}
+                        </div>
+                    </div>
                 `);
 
-                // example of adding a div for each player
-                document.getElementById('player-tables').insertAdjacentHTML('beforeend', `
-                    <div id="player-table-${player.id}">
+                // Add player table in main area
+                document.getElementById('game_play_area').insertAdjacentHTML('beforeend', `
+                    <div id="player-table-${player.id}" style="display: none;">
                         <strong>${player.name}</strong>
-                        <div>Player zone content goes here</div>
+                        <div class="wrestler-stats">
+                            <span>O: ${player.offense || 0}</span>
+                            <span>D: ${player.defense || 0}</span>
+                            <span>T: ${player.top || 0}</span>
+                            <span>B: ${player.bottom || 0}</span>
+                            <span>Tokens: ${player.special_tokens || 0}</span>
+                        </div>
                     </div>
                 `);
             });
+
+            // Store game data
+            this.gamedatas = gamedatas;
             
-            // TODO: Set up your game interface here, according to "gamedatas"
-            
- 
-            // Setup game notifications to handle (see "setupNotifications" method below)
+            // Setup game notifications
             this.setupNotifications();
 
             console.log( "Ending game setup" );
         },
        
-
         ///////////////////////////////////////////////////
         //// Game & client states
         
-        // onEnteringState: this method is called each time we are entering into a new game state.
-        //                  You can use this method to perform some user interface changes at this moment.
-        //
         onEnteringState: function( stateName, args )
         {
             console.log( 'Entering state: '+stateName, args );
             
             switch( stateName )
             {
-            
-            /* Example:
-            
-            case 'myGameState':
-            
-                // Show some HTML block at this game state
-                dojo.style( 'my_html_block_id', 'display', 'block' );
-                
-                break;
-           */
-           
-           
-            case 'dummy':
-                break;
+                case 'wrestlerSelection':
+                    this.enterWrestlerSelection(args);
+                    break;
+                    
+                case 'playerTurn':
+                    this.enterPlayerTurn();
+                    break;
+                    
+                case 'dummy':
+                    break;
             }
         },
 
-        // onLeavingState: this method is called each time we are leaving a game state.
-        //                 You can use this method to perform some user interface changes at this moment.
-        //
         onLeavingState: function( stateName )
         {
             console.log( 'Leaving state: '+stateName );
             
             switch( stateName )
             {
-            
-            /* Example:
-            
-            case 'myGameState':
-            
-                // Hide the HTML block we are displaying only during this game state
-                dojo.style( 'my_html_block_id', 'display', 'none' );
-                
-                break;
-           */
-           
-           
-            case 'dummy':
-                break;
+                case 'wrestlerSelection':
+                    this.leaveWrestlerSelection();
+                    break;
+                    
+                case 'playerTurn':
+                    this.leavePlayerTurn();
+                    break;
+                    
+                case 'dummy':
+                    break;
             }               
         }, 
 
-        // onUpdateActionButtons: in this method you can manage "action buttons" that are displayed in the
-        //                        action status bar (ie: the HTML links in the status bar).
-        //        
         onUpdateActionButtons: function( stateName, args )
         {
             console.log( 'onUpdateActionButtons: '+stateName, args );
@@ -145,16 +139,19 @@ function (dojo, declare) {
             {            
                 switch( stateName )
                 {
-                 case 'playerTurn':    
-                    const playableCardsIds = args.playableCardsIds; // returned by the argPlayerTurn
+                    case 'wrestlerSelection':
+                        // Action buttons will be added by enterWrestlerSelection
+                        break;
+                        
+                    case 'playerTurn':    
+                        const playableCardsIds = args.playableCardsIds;
 
-                    // Add test action buttons in the action status bar, simulating a card click:
-                    playableCardsIds.forEach(
-                        cardId => this.statusBar.addActionButton(_('Play card with id ${card_id}').replace('${card_id}', cardId), () => this.onCardClick(cardId))
-                    ); 
+                        playableCardsIds.forEach(
+                            cardId => this.statusBar.addActionButton(_('Play card ${card_id}').replace('${card_id}', cardId), () => this.onCardClick(cardId))
+                        ); 
 
-                    this.statusBar.addActionButton(_('Pass'), () => this.bgaPerformAction("actPass"), { color: 'secondary' }); 
-                    break;
+                        this.statusBar.addActionButton(_('Pass'), () => this.bgaPerformAction("actPass"), { color: 'secondary' }); 
+                        break;
                 }
             }
         },        
@@ -162,29 +159,115 @@ function (dojo, declare) {
         ///////////////////////////////////////////////////
         //// Utility methods
         
-        /*
+        enterWrestlerSelection: function(args) {
+            console.log('Entering wrestler selection', args);
+            
+            // Show wrestler selection area
+            document.getElementById('wrestler-selection-area').style.display = 'block';
+            document.getElementById('wrestling-mat').style.display = 'none';
+            
+            // Clear previous wrestlers
+            const container = document.getElementById('available-wrestlers');
+            container.innerHTML = '';
+            
+            // Add available wrestlers
+            if (args && args.available_wrestlers) {
+                Object.entries(args.available_wrestlers).forEach(([wrestlerId, wrestler]) => {
+                    const wrestlerDiv = document.createElement('div');
+                    wrestlerDiv.className = 'wrestler-card';
+                    wrestlerDiv.id = `wrestler-${wrestlerId}`;
+                    wrestlerDiv.innerHTML = `
+                        <div class="wrestler-name">${wrestler.name}</div>
+                        <div class="wrestler-stats">
+                            <div>Conditioning: ${wrestler.conditioning}</div>
+                            <div>Offense: ${wrestler.offense}</div>
+                            <div>Defense: ${wrestler.defense}</div>
+                            <div>Top: ${wrestler.top}</div>
+                            <div>Bottom: ${wrestler.bottom}</div>
+                        </div>
+                        <div class="wrestler-trademark">${wrestler.trademark}</div>
+                    `;
+                    wrestlerDiv.style.cssText = `
+                        border: 2px solid #ccc;
+                        margin: 10px;
+                        padding: 15px;
+                        cursor: pointer;
+                        border-radius: 8px;
+                        background: #f9f9f9;
+                    `;
+                    
+                    // Add click handler
+                    wrestlerDiv.addEventListener('click', () => this.onWrestlerClick(wrestlerId));
+                    
+                    container.appendChild(wrestlerDiv);
+                });
+            }
+        },
         
-            Here, you can defines some utility methods that you can use everywhere in your javascript
-            script.
+        leaveWrestlerSelection: function() {
+            // Hide wrestler selection area
+            document.getElementById('wrestler-selection-area').style.display = 'none';
+            document.getElementById('wrestling-mat').style.display = 'block';
+        },
         
-        */
-
+        enterPlayerTurn: function() {
+            // Show game area
+            document.getElementById('wrestling-mat').style.display = 'block';
+            
+            // Show player tables
+            Object.keys(this.gamedatas.players).forEach(playerId => {
+                document.getElementById(`player-table-${playerId}`).style.display = 'block';
+            });
+        },
+        
+        leavePlayerTurn: function() {
+            // Clean up any temporary UI elements
+        },
 
         ///////////////////////////////////////////////////
         //// Player's action
         
-        /*
-        
-            Here, you are defining methods to handle player's action (ex: results of mouse click on 
-            game objects).
+        onWrestlerClick: function(wrestlerId) {
+            console.log('Wrestler clicked:', wrestlerId);
             
-            Most of the time, these methods:
-            _ check the action is possible at this game state.
-            _ make a call to the game server
+            // Highlight selected wrestler
+            document.querySelectorAll('.wrestler-card').forEach(card => {
+                card.style.border = '2px solid #ccc';
+                card.style.background = '#f9f9f9';
+            });
+            
+            const selectedCard = document.getElementById(`wrestler-${wrestlerId}`);
+            selectedCard.style.border = '2px solid #0066cc';
+            selectedCard.style.background = '#e6f3ff';
+            
+            this.selectedWrestler = wrestlerId;
+            
+            // Add confirm button if not already present
+            if (!document.getElementById('confirm-wrestler-btn')) {
+                this.statusBar.addActionButton(
+                    _('Confirm Wrestler Selection'), 
+                    () => this.confirmWrestlerSelection(),
+                    { id: 'confirm-wrestler-btn', color: 'primary' }
+                );
+            }
+        },
         
-        */
-        
-        // Example:
+        confirmWrestlerSelection: function() {
+            if (!this.selectedWrestler) {
+                this.showMessage(_('Please select a wrestler first'), 'error');
+                return;
+            }
+            
+            console.log('Confirming wrestler selection:', this.selectedWrestler);
+            
+            this.bgaPerformAction("actSelectWrestler", { 
+                wrestler_id: parseInt(this.selectedWrestler)
+            }).then(() => {
+                // Success handled by notification
+            }).catch(error => {
+                console.error('Error selecting wrestler:', error);
+            });
+        },
         
         onCardClick: function( card_id )
         {
@@ -192,57 +275,73 @@ function (dojo, declare) {
 
             this.bgaPerformAction("actPlayCard", { 
                 card_id,
-            }).then(() =>  {                
-                // What to do after the server call if it succeeded
-                // (most of the time, nothing, as the game will react to notifs / change of state instead)
+            }).then(() => {                
+                // Success handled by game state change
             });        
         },    
 
-        
         ///////////////////////////////////////////////////
         //// Reaction to cometD notifications
 
-        /*
-            setupNotifications:
-            
-            In this method, you associate each of your game notifications with your local method to handle it.
-            
-            Note: game notification names correspond to "notifyAllPlayers" and "notifyPlayer" calls in
-                  your matrevx.game.php file.
-        
-        */
         setupNotifications: function()
         {
             console.log( 'notifications subscriptions setup' );
             
-            // TODO: here, associate your game notifications with local methods
+            // Subscribe to wrestler selection notification
+            dojo.subscribe('wrestlerSelected', this, "notif_wrestlerSelected");
             
-            // Example 1: standard notification handling
-            // dojo.subscribe( 'cardPlayed', this, "notif_cardPlayed" );
+            // Subscribe to card played notification  
+            dojo.subscribe('cardPlayed', this, "notif_cardPlayed");
             
-            // Example 2: standard notification handling + tell the user interface to wait
-            //            during 3 seconds after calling the method in order to let the players
-            //            see what is happening in the game.
-            // dojo.subscribe( 'cardPlayed', this, "notif_cardPlayed" );
-            // this.notifqueue.setSynchronous( 'cardPlayed', 3000 );
-            // 
-        },  
+            // Subscribe to pass notification
+            dojo.subscribe('pass', this, "notif_pass");
+        },
         
-        // TODO: from this point and below, you can write your game notifications handling methods
-        
-        /*
-        Example:
-        
-        notif_cardPlayed: function( notif )
-        {
-            console.log( 'notif_cardPlayed' );
-            console.log( notif );
+        notif_wrestlerSelected: function(notif) {
+            console.log('notif_wrestlerSelected', notif);
             
-            // Note: notif.args contains the arguments specified during you "notifyAllPlayers" / "notifyPlayer" PHP call
+            const playerId = notif.args.player_id;
+            const wrestlerName = notif.args.wrestler_name;
             
-            // TODO: play the card in the user interface.
-        },    
+            // Update player panel
+            const wrestlerNameElement = document.getElementById(`wrestler-name-${playerId}`);
+            if (wrestlerNameElement) {
+                wrestlerNameElement.textContent = wrestlerName;
+            }
+            
+            // Remove wrestler from available list if visible
+            const wrestlerCard = document.getElementById(`wrestler-${notif.args.wrestler_id}`);
+            if (wrestlerCard) {
+                wrestlerCard.style.opacity = '0.5';
+                wrestlerCard.style.pointerEvents = 'none';
+                wrestlerCard.innerHTML += '<div style="color: red; font-weight: bold;">SELECTED</div>';
+            }
+            
+            // Update conditioning display
+            const conditioningElement = document.getElementById(`conditioning-${playerId}`);
+            if (conditioningElement && this.gamedatas.players[playerId]) {
+                // We'll need to get the updated conditioning from the wrestler data
+                // For now, just show that wrestler was selected
+                conditioningElement.textContent = `${wrestlerName} Selected`;
+            }
+        },
         
-        */
+        notif_cardPlayed: function(notif) {
+            console.log('notif_cardPlayed', notif);
+            
+            // Display card played message
+            const playerId = notif.args.player_id;
+            const cardName = notif.args.card_name;
+            
+            // You could add visual effects here like showing the card played
+            this.showMessage(`${notif.args.player_name} played ${cardName}`, 'info');
+        },
+        
+        notif_pass: function(notif) {
+            console.log('notif_pass', notif);
+            
+            // Display pass message
+            this.showMessage(`${notif.args.player_name} passed`, 'info');
+        }
    });             
 });
