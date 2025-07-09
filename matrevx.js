@@ -170,38 +170,52 @@ function (dojo, declare) {
             const container = document.getElementById('available-wrestlers');
             container.innerHTML = '';
             
-            // Add available wrestlers
-            if (args && args.available_wrestlers) {
-                Object.entries(args.available_wrestlers).forEach(([wrestlerId, wrestler]) => {
-                    const wrestlerDiv = document.createElement('div');
-                    wrestlerDiv.className = 'wrestler-card';
-                    wrestlerDiv.id = `wrestler-${wrestlerId}`;
-                    wrestlerDiv.innerHTML = `
-                        <div class="wrestler-name">${wrestler.name}</div>
-                        <div class="wrestler-stats">
-                            <div>Conditioning: ${wrestler.conditioning}</div>
-                            <div>Offense: ${wrestler.offense}</div>
-                            <div>Defense: ${wrestler.defense}</div>
-                            <div>Top: ${wrestler.top}</div>
-                            <div>Bottom: ${wrestler.bottom}</div>
-                        </div>
-                        <div class="wrestler-trademark">${wrestler.trademark}</div>
-                    `;
-                    wrestlerDiv.style.cssText = `
-                        border: 2px solid #ccc;
-                        margin: 10px;
-                        padding: 15px;
-                        cursor: pointer;
-                        border-radius: 8px;
-                        background: #f9f9f9;
-                    `;
-                    
-                    // Add click handler
-                    wrestlerDiv.addEventListener('click', () => this.onWrestlerClick(wrestlerId));
-                    
-                    container.appendChild(wrestlerDiv);
-                });
+            // Fix: BGA wraps args in args.args
+            const available_wrestlers = args && args.args && args.args.available_wrestlers;
+            
+            if (!available_wrestlers) {
+                container.innerHTML = '<div>No wrestlers available</div>';
+                console.log('Could not find available_wrestlers in:', args);
+                return;
             }
+            
+            console.log('Found available wrestlers:', available_wrestlers);
+            
+            // Add available wrestlers
+            Object.entries(available_wrestlers).forEach(([wrestlerId, wrestler]) => {
+                console.log('Adding wrestler:', wrestlerId, wrestler);
+                
+                const wrestlerDiv = document.createElement('div');
+                wrestlerDiv.className = 'wrestler-card';
+                wrestlerDiv.id = `wrestler-${wrestlerId}`;
+                wrestlerDiv.innerHTML = `
+                    <div class="wrestler-name">${wrestler.name}</div>
+                    <div class="wrestler-stats">
+                        <div>Conditioning: ${wrestler.conditioning_p1}/${wrestler.conditioning_p2}/${wrestler.conditioning_p3}</div>
+                        <div>Offense: ${wrestler.offense}, Defense: ${wrestler.defense}</div>
+                        <div>Top: ${wrestler.top}, Bottom: ${wrestler.bottom}</div>
+                        <div>Special Tokens: ${wrestler.special_tokens}</div>
+                    </div>
+                    <div class="wrestler-trademark"><small>${wrestler.trademark}</small></div>
+                    <div class="wrestler-special-cards"><small>Special Cards: ${wrestler.special_cards ? wrestler.special_cards.join(', ') : 'None'}</small></div>
+                `;
+                wrestlerDiv.style.cssText = `
+                    border: 2px solid #ccc;
+                    margin: 10px;
+                    padding: 15px;
+                    cursor: pointer;
+                    border-radius: 8px;
+                    background: #f9f9f9;
+                    max-width: 300px;
+                `;
+                
+                // Add click handler
+                wrestlerDiv.addEventListener('click', () => this.onWrestlerClick(wrestlerId));
+                
+                container.appendChild(wrestlerDiv);
+            });
+            
+            console.log('Total wrestlers added:', container.children.length);
         },
         
         leaveWrestlerSelection: function() {
