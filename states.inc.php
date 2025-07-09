@@ -2,7 +2,7 @@
 /**
  *------
  * BGA framework: Gregory Isabelli & Emmanuel Colin & BoardGameArena
- * matrevx implementation : © <Your name here> <Your email address here>
+ * matrevx implementation : © Mike McKeever, Jack McKeever, Bryan Chase <bryanchase@yahoo.com>
  *
  * This code has been produced on the BGA studio platform for use on http://boardgamearena.com.
  * See http://en.boardgamearena.com/#!doc/Studio for more information.
@@ -53,7 +53,6 @@
 $machinestates = [
 
     // The initial state. Please do not modify.
-
     1 => array(
         "name" => "gameSetup",
         "description" => "",
@@ -62,29 +61,49 @@ $machinestates = [
         "transitions" => ["" => 2]
     ),
 
-    // Note: ID=2 => your first state
-
+    // NEW: Wrestler selection state
     2 => [
+        "name" => "wrestlerSelection",
+        "description" => clienttranslate('Players must select their wrestlers'),
+        "descriptionmyturn" => clienttranslate('${you} must select a wrestler'),
+        "type" => "multipleactiveplayer",
+        "args" => "argWrestlerSelection",
+        "possibleactions" => [
+            "actSelectWrestler",
+        ],
+        "transitions" => ["allSelected" => 3]
+    ],
+
+    // Start of actual gameplay
+    3 => [
+        "name" => "startMatch",
+        "description" => '',
+        "type" => "game",
+        "action" => "stStartMatch",
+        "transitions" => ["startGame" => 10]
+    ],
+
+    // Main game states (renumbered to make room)
+    10 => [
         "name" => "playerTurn",
         "description" => clienttranslate('${actplayer} must play a card or pass'),
         "descriptionmyturn" => clienttranslate('${you} must play a card or pass'),
         "type" => "activeplayer",
         "args" => "argPlayerTurn",
         "possibleactions" => [
-            // these actions are called from the front with bgaPerformAction, and matched to the function on the game.php file
             "actPlayCard", 
             "actPass",
         ],
-        "transitions" => ["playCard" => 3, "pass" => 3]
+        "transitions" => ["playCard" => 11, "pass" => 11]
     ],
 
-    3 => [
+    11 => [
         "name" => "nextPlayer",
         "description" => '',
         "type" => "game",
         "action" => "stNextPlayer",
         "updateGameProgression" => true,
-        "transitions" => ["endGame" => 99, "nextPlayer" => 2]
+        "transitions" => ["endGame" => 99, "nextPlayer" => 10]
     ],
 
     // Final state.
@@ -98,6 +117,3 @@ $machinestates = [
     ],
 
 ];
-
-
-
