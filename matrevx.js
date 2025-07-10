@@ -191,27 +191,30 @@ function (dojo, declare) {
                 wrestlerDiv.className = 'wrestler-card';
                 wrestlerDiv.id = `wrestler-${wrestlerId}`;
                 
-                // Simple image path
+                // Simple image path - try JPG first since you have both formats
                 const baseName = wrestler.name.toLowerCase().replace(/\s+/g, '_');
-                const imagePath = `img/wrestler_${baseName}.png`;
+                const imagePath = `img/wrestler_${baseName}.jpg`;
                 
                 console.log(`Setting up ${wrestler.name} with image: ${imagePath}`);
                 
                 wrestlerDiv.innerHTML = `
                     <div class="wrestler-card-container">
-                        <img src="${imagePath}" 
-                             alt="${wrestler.name}" 
-                             class="wrestler-card-image"
-                             style="width: 250px; height: auto; border-radius: 8px; display: block;">
-                        <div class="wrestler-fallback" style="display: none;">
-                            <div class="wrestler-name">${wrestler.name}</div>
-                            <div class="wrestler-stats">
-                                <div>Conditioning: ${wrestler.conditioning_p1}/${wrestler.conditioning_p2}/${wrestler.conditioning_p3}</div>
-                                <div>Offense: ${wrestler.offense}, Defense: ${wrestler.defense}</div>
-                                <div>Top: ${wrestler.top}, Bottom: ${wrestler.bottom}</div>
-                                <div>Special Tokens: ${wrestler.special_tokens}</div>
+                        <div class="wrestler-image" style="text-align: center; margin-bottom: 15px;">
+                            <img src="img/wrestler_${baseName}.jpg" 
+                                 alt="${wrestler.name}" 
+                                 style="max-width: 200px; max-height: 280px; border-radius: 8px; border: 1px solid #ddd;"
+                                 onload="console.log('Image loaded: ${wrestler.name}')"
+                                 onerror="this.style.display='none'; console.log('Image failed: ${wrestler.name}')">
+                        </div>
+                        <div class="wrestler-info" style="padding: 15px;">
+                            <div class="wrestler-name" style="font-size: 18px; font-weight: bold; margin-bottom: 10px; color: #333;">${wrestler.name}</div>
+                            <div class="wrestler-stats" style="font-size: 13px; line-height: 1.4;">
+                                <div><strong>Conditioning:</strong> ${wrestler.conditioning_p1}/${wrestler.conditioning_p2}/${wrestler.conditioning_p3}</div>
+                                <div><strong>Offense:</strong> ${wrestler.offense} | <strong>Defense:</strong> ${wrestler.defense}</div>
+                                <div><strong>Top:</strong> ${wrestler.top} | <strong>Bottom:</strong> ${wrestler.bottom}</div>
+                                <div><strong>Special Tokens:</strong> ${wrestler.special_tokens}</div>
                             </div>
-                            <div class="wrestler-trademark"><small>${wrestler.trademark}</small></div>
+                            <div class="wrestler-trademark" style="font-style: italic; margin-top: 10px; padding: 8px; background: #f5f5f5; border-radius: 4px; font-size: 12px;"><strong>Trademark:</strong> ${wrestler.trademark}</div>
                         </div>
                     </div>
                 `;
