@@ -1,7 +1,9 @@
 /**
  *------
  * BGA framework: Gregory Isabelli & Emmanuel Colin & BoardGameArena
- * matrevx implementation : © <Your name here> <Your email address here>
+ * matrevx implementation : © Mike McKeever, Jack McKeever, Bryan Chase <bryanchase@yahoo.com>
+ * 
+ * Version: v1.4 - Wrestler selection with image support (fixed)
  *
  * This code has been produced on the BGA studio platform for use on http://boardgamearena.com.
  * See http://en.boardgamearena.com/#!doc/Studio for more information.
@@ -181,33 +183,66 @@ function (dojo, declare) {
             
             console.log('Found available wrestlers:', available_wrestlers);
             
-            // Add available wrestlers
+            // Add available wrestlers - CLEAN VERSION
             Object.entries(available_wrestlers).forEach(([wrestlerId, wrestler]) => {
                 console.log('Adding wrestler:', wrestlerId, wrestler);
                 
                 const wrestlerDiv = document.createElement('div');
                 wrestlerDiv.className = 'wrestler-card';
                 wrestlerDiv.id = `wrestler-${wrestlerId}`;
+                
+                // Simple image path
+                const baseName = wrestler.name.toLowerCase().replace(/\s+/g, '_');
+                const imagePath = `img/wrestler_${baseName}.png`;
+                
+                console.log(`Setting up ${wrestler.name} with image: ${imagePath}`);
+                
                 wrestlerDiv.innerHTML = `
-                    <div class="wrestler-name">${wrestler.name}</div>
-                    <div class="wrestler-stats">
-                        <div>Conditioning: ${wrestler.conditioning_p1}/${wrestler.conditioning_p2}/${wrestler.conditioning_p3}</div>
-                        <div>Offense: ${wrestler.offense}, Defense: ${wrestler.defense}</div>
-                        <div>Top: ${wrestler.top}, Bottom: ${wrestler.bottom}</div>
-                        <div>Special Tokens: ${wrestler.special_tokens}</div>
+                    <div class="wrestler-card-container">
+                        <img src="${imagePath}" 
+                             alt="${wrestler.name}" 
+                             class="wrestler-card-image"
+                             style="width: 250px; height: auto; border-radius: 8px; display: block;">
+                        <div class="wrestler-fallback" style="display: none;">
+                            <div class="wrestler-name">${wrestler.name}</div>
+                            <div class="wrestler-stats">
+                                <div>Conditioning: ${wrestler.conditioning_p1}/${wrestler.conditioning_p2}/${wrestler.conditioning_p3}</div>
+                                <div>Offense: ${wrestler.offense}, Defense: ${wrestler.defense}</div>
+                                <div>Top: ${wrestler.top}, Bottom: ${wrestler.bottom}</div>
+                                <div>Special Tokens: ${wrestler.special_tokens}</div>
+                            </div>
+                            <div class="wrestler-trademark"><small>${wrestler.trademark}</small></div>
+                        </div>
                     </div>
-                    <div class="wrestler-trademark"><small>${wrestler.trademark}</small></div>
-                    <div class="wrestler-special-cards"><small>Special Cards: ${wrestler.special_cards ? wrestler.special_cards.join(', ') : 'None'}</small></div>
                 `;
+                
                 wrestlerDiv.style.cssText = `
-                    border: 2px solid #ccc;
+                    border: 3px solid #ccc;
                     margin: 10px;
-                    padding: 15px;
+                    padding: 5px;
                     cursor: pointer;
-                    border-radius: 8px;
-                    background: #f9f9f9;
-                    max-width: 300px;
+                    border-radius: 12px;
+                    background: #fff;
+                    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                    transition: all 0.3s ease;
+                    display: inline-block;
+                    vertical-align: top;
                 `;
+                
+                // Add hover effects
+                wrestlerDiv.addEventListener('mouseenter', function() {
+                    if (!this.classList.contains('selected')) {
+                        this.style.transform = 'scale(1.05)';
+                        this.style.boxShadow = '0 6px 12px rgba(0,0,0,0.2)';
+                    }
+                });
+                
+                wrestlerDiv.addEventListener('mouseleave', function() {
+                    if (!this.classList.contains('selected')) {
+                        this.style.transform = 'scale(1)';
+                        this.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
+                    }
+                });
                 
                 // Add click handler
                 wrestlerDiv.addEventListener('click', () => this.onWrestlerClick(wrestlerId));
@@ -244,15 +279,21 @@ function (dojo, declare) {
         onWrestlerClick: function(wrestlerId) {
             console.log('Wrestler clicked:', wrestlerId);
             
-            // Highlight selected wrestler
+            // Remove selection from all wrestlers
             document.querySelectorAll('.wrestler-card').forEach(card => {
-                card.style.border = '2px solid #ccc';
-                card.style.background = '#f9f9f9';
+                card.classList.remove('selected');
+                card.style.border = '3px solid #ccc';
+                card.style.transform = 'scale(1)';
+                card.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
             });
             
+            // Highlight selected wrestler
             const selectedCard = document.getElementById(`wrestler-${wrestlerId}`);
-            selectedCard.style.border = '2px solid #0066cc';
-            selectedCard.style.background = '#e6f3ff';
+            selectedCard.classList.add('selected');
+            selectedCard.style.border = '3px solid #0066cc';
+            selectedCard.style.transform = 'scale(1.05)';
+            selectedCard.style.boxShadow = '0 8px 16px rgba(0,102,204,0.3)';
+            selectedCard.style.background = '#f0f8ff';
             
             this.selectedWrestler = wrestlerId;
             
