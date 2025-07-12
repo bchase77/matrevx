@@ -24,6 +24,36 @@ return [
             'trademark' => 'Star Cards 0',
         ],
     ],
+    
+    'wrestlers' => [
+        1 => [
+            "name" => "Po Cret",
+            "conditioning_p1" => 42,
+            "conditioning_p2" => 11,
+            "conditioning_p3" => 10,
+            "offense" => 8,
+            "defense" => 8,
+            "top" => 7,
+            "bottom" => 9,
+            "special_tokens" => 0,
+            "trademark" => "Double Leg - costs only 3 Conditioning and 1 Special Token",
+            "special_cards" => ["Double Leg (O)", "Splits (D)", "Tilt (T)", "Switch (B)", "Hip Heist (B)"]
+        ],
+        2 => [
+            "name" => "Darnell Hogler", 
+            "conditioning_p1" => 45,
+            "conditioning_p2" => 17,
+            "conditioning_p3" => 3,
+            "offense" => 6,
+            "defense" => 6,
+            "top" => 10,
+            "bottom" => 5,
+            "special_tokens" => 2,
+            "trademark" => "When you draw a Scramble Card, pick from the top 3 and put the other two on the bottom of the deck",
+            "special_cards" => ["Super Duck (O)", "Splits (D)", "Cranky Roll (B)", "Neckbridge (B)"]
+        ]
+    ],
+    
     'cardTypes' => [
         // Offense cards
         1 => [

@@ -28,53 +28,24 @@ class Game extends \Table
     /**
      * Your global variables labels:
      */
-    public function __construct()
-    {
-        parent::__construct();
+	public function __construct()
+	{
+		parent::__construct();
 
-$this->initGameStateLabels([
-    "current_period" => 10,
-    "current_round" => 11,
-    "position_offense" => 12,
-    "position_defense" => 13,
-    "my_first_game_variant" => 100,
-    "my_second_game_variant" => 101,
-]);
-        // Define available wrestlers
-        self::$WRESTLERS = [
-            1 => [
-                "name" => "Po Cret",
-                "conditioning_p1" => 42,
-                "conditioning_p2" => 11,
-                "conditioning_p3" => 10,
-                "offense" => 8,
-                "defense" => 8,
-                "top" => 7,
-                "bottom" => 9,
-                "special_tokens" => 0,
-                "trademark" => "Double Leg - costs only 3 Conditioning and 1 Special Token",
-                "special_cards" => ["Double Leg (O)", "Splits (D)", "Tilt (T)", "Switch (B)", "Hip Heist (B)"]
-            ],
-            2 => [
-                "name" => "Darnell Hogler", 
-                "conditioning_p1" => 45,
-                "conditioning_p2" => 17,
-                "conditioning_p3" => 3,
-                "offense" => 6,
-                "defense" => 6,
-                "top" => 10,
-                "bottom" => 5,
-                "special_tokens" => 2,
-                "trademark" => "When you draw a Scramble Card, pick from the top 3 and put the other two on the bottom of the deck",
-                "special_cards" => ["Super Duck (O)", "Splits (D)", "Cranky Roll (B)", "Neckbridge (B)"]
-            ]
-        ];
-		// Load card types from material
-//		$material = require_once(APP_GAMEMODULE_PATH . 'material.inc.php');
+		$this->initGameStateLabels([
+			"current_period" => 10,
+			"current_round" => 11,
+			"position_offense" => 12,
+			"position_defense" => 13,
+			"my_first_game_variant" => 100,
+			"my_second_game_variant" => 101,
+		]);
+		
+		// Load material from material.inc.php
 		$material = require(__DIR__ . '/material.inc.php');
 		self::$CARD_TYPES = $material['cardTypes'];
-    }
-
+		self::$WRESTLERS = $material['wrestlers'];
+	}
     /**
      * FINAL: Wrestler selection with correct BGA methods only
      */
@@ -121,10 +92,10 @@ $this->initGameStateLabels([
         $this->trace("actSelectWrestler: Verification - player $player_id now has wrestler_id: $verification");
 
         // Get player name from database for notification
-$player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $player_id");
-if (!$player_name) {
-    $player_name = "Player $player_id"; // Fallback if name not found
-}
+		$player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $player_id");
+		if (!$player_name) {
+			$player_name = "Player $player_id"; // Fallback if name not found
+		}
         
         // Notify all players
         $this->notifyAllPlayers("wrestlerSelected", clienttranslate('${player_name} selected ${wrestler_name}'), [
@@ -139,7 +110,7 @@ if (!$player_name) {
         $this->trace("actSelectWrestler: Set player $player_id as non-multiactive");
         
         // Better query to count players with wrestlers
-$players_with_wrestlers = $this->getUniqueValueFromDB("SELECT COUNT(*) FROM player WHERE wrestler_id >= 1");		
+		$players_with_wrestlers = $this->getUniqueValueFromDB("SELECT COUNT(*) FROM player WHERE wrestler_id >= 1");		
 		
 		
 		
@@ -224,10 +195,10 @@ $players_with_wrestlers = $this->getUniqueValueFromDB("SELECT COUNT(*) FROM play
         }
 
         $card_name = self::$CARD_TYPES[$card_id]['card_name'];
-$player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $player_id");
-if (!$player_name) {
-    $player_name = "Player $player_id"; // Fallback if name not found
-}
+		$player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $player_id");
+		if (!$player_name) {
+			$player_name = "Player $player_id"; // Fallback if name not found
+		}
 
         $this->notifyAllPlayers("cardPlayed", clienttranslate('${player_name} plays ${card_name}'), [
             "player_id" => $player_id,
@@ -243,10 +214,10 @@ if (!$player_name) {
     public function actPass(): void
     {
         $player_id = (int)$this->getActivePlayerId();
-$player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $player_id");
-if (!$player_name) {
-    $player_name = "Player $player_id"; // Fallback if name not found
-}
+		$player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $player_id");
+		if (!$player_name) {
+			$player_name = "Player $player_id"; // Fallback if name not found
+		}
 
         $this->notifyAllPlayers("pass", clienttranslate('${player_name} passes'), [
             "player_id" => $player_id,
@@ -368,48 +339,47 @@ if (!$player_name) {
     /**
      * Get all game data
      */
-    protected function getAllDatas(): array
-    {
-        $result = [];
-        $current_player_id = (int) $this->getCurrentPlayerId();
+	protected function getAllDatas(): array
+	{
+		$result = [];
+		$current_player_id = (int) $this->getCurrentPlayerId();
 
-        // Get player information including wrestler data
-        $result["players"] = $this->getCollectionFromDb(
-            "SELECT 
-                player_id id, 
-                player_score score, 
-                wrestler_id,
-                conditioning,
-                offense,
-                defense,
-                top,
-                bottom,
-                special_tokens,
-                stall_count 
-            FROM player"
-        );
+		// Get player information including wrestler data
+		$result["players"] = $this->getCollectionFromDb(
+			"SELECT 
+				player_id id, 
+				player_score score, 
+				wrestler_id,
+				conditioning,
+				offense,
+				defense,
+				top,
+				bottom,
+				special_tokens,
+				stall_count 
+			FROM player"
+		);
 
-        // Add wrestler details
-        foreach ($result["players"] as &$player) {
-            if ($player['wrestler_id']) {
-                $player['wrestler'] = self::$WRESTLERS[$player['wrestler_id']];
-            }
-        }
+		// Add wrestler details
+		foreach ($result["players"] as &$player) {
+			if ($player['wrestler_id']) {
+				$player['wrestler'] = self::$WRESTLERS[$player['wrestler_id']];
+			}
+		}
 
-        // Get available wrestlers for selection
-        $result["wrestlers"] = self::$WRESTLERS;
-        
-        // Get game state info
-        $result["game_state"] = [
-            "current_period" => $this->getGameStateValue("current_period"),
-            "current_round" => $this->getGameStateValue("current_round")
-        ];
+		// Get available wrestlers for selection
+		$result["wrestlers"] = self::$WRESTLERS;
+		
+		// Get game state info
+		$result["game_state"] = [
+			"current_period" => $this->getGameStateValue("current_period"),
+			"current_round" => $this->getGameStateValue("current_round")
+		];
 
 		$result["cardTypes"] = self::$CARD_TYPES;
 
-        return $result;
-    }
-
+		return $result;
+	}
     /**
      * Setup new game
      */
@@ -487,10 +457,11 @@ if (!$player_name) {
                     $this->DbQuery("UPDATE player SET bottom = {$wrestler['bottom']} WHERE player_id = $active_player");
                     $this->DbQuery("UPDATE player SET special_tokens = {$wrestler['special_tokens']} WHERE player_id = $active_player");
                     
-$player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $player_id");
-if (!$player_name) {
-    $player_name = "Player $player_id"; // Fallback if name not found
-}                    
+					$player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $player_id");
+					if (!$player_name) {
+						$player_name = "Player $player_id"; // Fallback if name not found
+					}                    
+					
                     $this->notifyAllPlayers("wrestlerSelected", clienttranslate('${player_name} selected ${wrestler_name}'), [
                         "player_id" => $active_player,
                         "player_name" => $player_name,
