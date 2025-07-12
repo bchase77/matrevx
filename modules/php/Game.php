@@ -2,7 +2,7 @@
 /**
  *------
  * BGA framework: Gregory Isabelli & Emmanuel Colin & BoardGameArena
- * matrevx implementation : © <Your name here> <Your email address here>
+ * matrevx implementation : © Mike McKeever, Jack McKeever, Bryan Chase <bryanchase@yahoo.com>
  *
  * This code has been produced on the BGA studio platform for use on http://boardgamearena.com.
  * See http://en.boardgamearena.com/#!doc/Studio for more information.
@@ -143,52 +143,147 @@ class Game extends \Table
     }
 
     /**
-     * NEW: Wrestler selection action
+     * FINAL: Wrestler selection with correct BGA methods only
      */
     public function actSelectWrestler(int $wrestler_id): void
     {
-        $player_id = (int)$this->getActivePlayerId();
+        //$player_id = (int)$this->getActivePlayerId();
+        $player_id = (int)$this->getCurrentPlayerId();
+		
+        $this->trace("actSelectWrestler: START - Player $player_id selecting wrestler $wrestler_id");
         
         // Validate wrestler exists
         if (!isset(self::$WRESTLERS[$wrestler_id])) {
             throw new \BgaUserException('Invalid wrestler selection');
         }
 
-        // Check if wrestler already taken
-        $sql = "SELECT player_id FROM player WHERE wrestler_id = $wrestler_id";
-        $existing = $this->getUniqueValueFromDB($sql);
-        if ($existing) {
-            throw new \BgaUserException('Wrestler already selected');
+        // Check if player already has a wrestler
+        $current_wrestler = $this->getUniqueValueFromDB("SELECT wrestler_id FROM player WHERE player_id = $player_id");
+        if ($current_wrestler !== null && intval($current_wrestler) > 0) {
+            throw new \BgaUserException('You have already selected a wrestler');
+        }
+
+        // Check if wrestler already taken by another player
+        $existing_player = $this->getUniqueValueFromDB("SELECT player_id FROM player WHERE wrestler_id = $wrestler_id AND player_id != $player_id");
+        if ($existing_player) {
+            throw new \BgaUserException('Wrestler already selected by another player');
         }
 
         // Assign wrestler to player
         $wrestler = self::$WRESTLERS[$wrestler_id];
-        $sql = "UPDATE player SET 
-                wrestler_id = $wrestler_id,
-                conditioning = {$wrestler['conditioning_p1']},
-                offense = {$wrestler['offense']}, 
-                defense = {$wrestler['defense']},
-                top = {$wrestler['top']},
-                bottom = {$wrestler['bottom']},
-                special_tokens = {$wrestler['special_tokens']}
-                WHERE player_id = $player_id";
-        $this->DbQuery($sql);
+        
+        $this->trace("actSelectWrestler: Updating player $player_id with wrestler data");
+        $this->DbQuery("UPDATE player SET wrestler_id = $wrestler_id WHERE player_id = $player_id");
+        $this->DbQuery("UPDATE player SET conditioning = {$wrestler['conditioning_p1']} WHERE player_id = $player_id");
+        $this->DbQuery("UPDATE player SET offense = {$wrestler['offense']} WHERE player_id = $player_id");
+        $this->DbQuery("UPDATE player SET defense = {$wrestler['defense']} WHERE player_id = $player_id");
+        $this->DbQuery("UPDATE player SET top = {$wrestler['top']} WHERE player_id = $player_id");
+        $this->DbQuery("UPDATE player SET bottom = {$wrestler['bottom']} WHERE player_id = $player_id");
+        $this->DbQuery("UPDATE player SET special_tokens = {$wrestler['special_tokens']} WHERE player_id = $player_id");
 
+        $this->trace("actSelectWrestler: Successfully updated player $player_id with wrestler $wrestler_id");
+
+        // Verification of the update
+        $verification = $this->getUniqueValueFromDB("SELECT wrestler_id FROM player WHERE player_id = $player_id");
+        $this->trace("actSelectWrestler: Verification - player $player_id now has wrestler_id: $verification");
+
+        // Get player name from database for notification
+$player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $player_id");
+if (!$player_name) {
+    $player_name = "Player $player_id"; // Fallback if name not found
+}
+        
         // Notify all players
-        $this->notify->all("wrestlerSelected", clienttranslate('${player_name} selected ${wrestler_name}'), [
+        $this->notifyAllPlayers("wrestlerSelected", clienttranslate('${player_name} selected ${wrestler_name}'), [
             "player_id" => $player_id,
-            "player_name" => $this->getActivePlayerName(),
+            "player_name" => $player_name,
             "wrestler_id" => $wrestler_id,
             "wrestler_name" => $wrestler['name'],
         ]);
 
-        // Make player inactive
-        $this->gamestate->setPlayerNonMultiactive($player_id, 'allSelected');
+        // Make player inactive in multiactive state
+        $this->gamestate->setPlayerNonMultiactive($player_id, '');
+        $this->trace("actSelectWrestler: Set player $player_id as non-multiactive");
+        
+        // Better query to count players with wrestlers
+$players_with_wrestlers = $this->getUniqueValueFromDB("SELECT COUNT(*) FROM player WHERE wrestler_id >= 1");		
+		
+		
+		
+        $total_players = $this->getUniqueValueFromDB("SELECT COUNT(*) FROM player");
+        
+        $this->trace("actSelectWrestler: Progress - $players_with_wrestlers / $total_players players have selected");
+
+        // Log which players have wrestlers for debugging
+        $wrestlers_assigned = $this->getObjectListFromDB("SELECT player_id, wrestler_id FROM player WHERE wrestler_id IS NOT NULL AND wrestler_id != 0");
+        foreach ($wrestlers_assigned as $assignment) {
+            $this->trace("actSelectWrestler: Player {$assignment['player_id']} has wrestler {$assignment['wrestler_id']}");
+        }
+
+        // If all players have selected, transition to next state
+	if ($players_with_wrestlers >= $total_players) {
+		$this->trace("actSelectWrestler: All players selected - checking if transition needed");
+		$current_state = $this->gamestate->state_id();
+		if ($current_state == 2) { // Only transition if still in wrestler selection state
+			$this->trace("actSelectWrestler: Transitioning to next state");
+			$this->gamestate->nextState('allSelected');
+		} else {
+			$this->trace("actSelectWrestler: Already transitioned to state $current_state, no action needed");
+		}
+	} else {
+            $this->trace("actSelectWrestler: Still waiting - need " . ($total_players - $players_with_wrestlers) . " more selections");
+        }
     }
 
     /**
-     * Existing card play action (simplified for now)
+     * Position selection action
      */
+    public function actSelectPosition(string $position): void
+    {
+        $player_id = (int)$this->getActivePlayerId();
+        
+        // Validate position
+        if (!in_array($position, ['offense', 'defense'])) {
+            throw new \BgaUserException('Invalid position selection');
+        }
+
+        // Get both players
+        $players = $this->getCollectionFromDB("SELECT player_id, player_name FROM player");
+        $other_player_id = null;
+        foreach ($players as $pid => $player) {
+            if ($pid != $player_id) {
+                $other_player_id = $pid;
+                break;
+            }
+        }
+
+        // Get current player name
+$player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $player_id");
+if (!$player_name) {
+    $player_name = "Player $player_id"; // Fallback if name not found
+}
+
+        // Set positions
+        $this->setGameStateInitialValue("position_offense", $position === 'offense' ? $player_id : $other_player_id);
+        $this->setGameStateInitialValue("position_defense", $position === 'defense' ? $player_id : $other_player_id);
+
+        // Notify all players about position selection
+        $this->notifyAllPlayers("positionSelected", clienttranslate('${player_name} chooses ${position}. Match begins!'), [
+            "player_id" => $player_id,
+            "player_name" => $player_name,
+            "position" => ucfirst($position),
+            "offense_player_id" => $position === 'offense' ? $player_id : $other_player_id,
+            "defense_player_id" => $position === 'defense' ? $player_id : $other_player_id,
+            "period" => 1,
+            "round" => 1
+        ]);
+
+        // Set the offense player as active for first turn
+        $this->gamestate->changeActivePlayer($position === 'offense' ? $player_id : $other_player_id);
+        
+        $this->gamestate->nextState("positionSelected");
+    }
+
     public function actPlayCard(int $card_id): void
     {
         $player_id = (int)$this->getActivePlayerId();
@@ -200,10 +295,14 @@ class Game extends \Table
         }
 
         $card_name = self::$CARD_TYPES[$card_id]['card_name'];
+$player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $player_id");
+if (!$player_name) {
+    $player_name = "Player $player_id"; // Fallback if name not found
+}
 
-        $this->notify->all("cardPlayed", clienttranslate('${player_name} plays ${card_name}'), [
+        $this->notifyAllPlayers("cardPlayed", clienttranslate('${player_name} plays ${card_name}'), [
             "player_id" => $player_id,
-            "player_name" => $this->getActivePlayerName(),
+            "player_name" => $player_name,
             "card_name" => $card_name,
             "card_id" => $card_id,
             "i18n" => ['card_name'],
@@ -215,26 +314,33 @@ class Game extends \Table
     public function actPass(): void
     {
         $player_id = (int)$this->getActivePlayerId();
+$player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $player_id");
+if (!$player_name) {
+    $player_name = "Player $player_id"; // Fallback if name not found
+}
 
-        $this->notify->all("pass", clienttranslate('${player_name} passes'), [
+        $this->notifyAllPlayers("pass", clienttranslate('${player_name} passes'), [
             "player_id" => $player_id,
-            "player_name" => $this->getActivePlayerName(),
+            "player_name" => $player_name,
         ]);
 
         $this->gamestate->nextState("pass");
     }
 
     /**
-     * NEW: Arguments for wrestler selection
+     * Arguments for wrestler selection
      */
     public function argWrestlerSelection(): array
     {
+        $this->trace("argWrestlerSelection: START");
+        
         $available_wrestlers = [];
         
-        // Get already selected wrestlers
-        $sql = "SELECT wrestler_id FROM player WHERE wrestler_id IS NOT NULL";
-        $selected = $this->getObjectListFromDB($sql);
-        $selected_ids = array_column($selected, 'wrestler_id');
+        // Better query for selected wrestlers
+        $selected_wrestlers = $this->getObjectListFromDB("SELECT wrestler_id FROM player WHERE wrestler_id IS NOT NULL AND wrestler_id != 0");
+        $selected_ids = array_column($selected_wrestlers, 'wrestler_id');
+        
+        $this->trace("argWrestlerSelection: Selected wrestler IDs: " . implode(', ', $selected_ids));
 
         // Return only available wrestlers
         foreach (self::$WRESTLERS as $id => $wrestler) {
@@ -243,13 +349,15 @@ class Game extends \Table
             }
         }
 
+        $this->trace("argWrestlerSelection: Available wrestlers: " . implode(', ', array_keys($available_wrestlers)));
+
         return [
             "available_wrestlers" => $available_wrestlers
         ];
     }
 
     /**
-     * Existing player turn arguments
+     * Player turn arguments
      */
     public function argPlayerTurn(): array
     {
@@ -260,32 +368,45 @@ class Game extends \Table
     }
 
     /**
-     * NEW: Start match after wrestler selection
+     * Start match after wrestler selection
      */
     public function stStartMatch(): void
     {
-        // Initialize game state - we don't need game_state table for now, just use global variables
-        // $game_id = (int)$this->getGameId();  // This method doesn't exist
-        // $sql = "INSERT INTO game_state (game_id, current_period, current_round) 
-        //         VALUES ($game_id, 1, 1)";
-        // $this->DbQuery($sql);
-
+        $this->trace("stStartMatch: START");
+        
         // Set initial game state values
         $this->setGameStateInitialValue("current_period", 1);
         $this->setGameStateInitialValue("current_round", 1);
 
         // Determine who starts based on conditioning
         $players = $this->getCollectionFromDB(
-            "SELECT player_id, conditioning FROM player ORDER BY conditioning DESC, player_id ASC"
+            "SELECT player_id, player_name, conditioning FROM player ORDER BY conditioning DESC, player_id ASC"
         );
-        $first_player = array_key_first($players);
-        $this->gamestate->changeActivePlayer($first_player);
+        
+        if (empty($players)) {
+            throw new \BgaSystemException("No players found in stStartMatch");
+        }
+        
+        $first_player_id = array_key_first($players);
+        $this->trace("stStartMatch: First player (highest conditioning): $first_player_id");
+        
+        // Set the active player
+        $this->gamestate->changeActivePlayer($first_player_id);
+        
+        // Notify about who gets to choose starting position
+        $first_player = $players[$first_player_id];
+        $this->notifyAllPlayers("startingPositionChoice", 
+            clienttranslate('${player_name} has higher conditioning (${conditioning}) and chooses starting position'), [
+            "player_name" => $first_player['player_name'],
+            "conditioning" => $first_player['conditioning']
+        ]);
 
+        $this->trace("stStartMatch: COMPLETE - transitioning to position selection");
         $this->gamestate->nextState("startGame");
     }
 
     /**
-     * Existing next player logic
+     * Next player logic
      */
     public function stNextPlayer(): void {
         $player_id = (int)$this->getActivePlayerId();
@@ -349,7 +470,7 @@ class Game extends \Table
         // Get available wrestlers for selection
         $result["wrestlers"] = self::$WRESTLERS;
         
-        // Get game state info - use global variables instead of game_state table for now
+        // Get game state info
         $result["game_state"] = [
             "current_period" => $this->getGameStateValue("current_period"),
             "current_round" => $this->getGameStateValue("current_round")
@@ -363,9 +484,12 @@ class Game extends \Table
      */
     protected function setupNewGame($players, $options = [])
     {
+        $this->trace("setupNewGame: START with " . count($players) . " players");
+        
         $gameinfos = $this->getGameinfos();
         $default_colors = $gameinfos['player_colors'];
 
+        $query_values = [];
         foreach ($players as $player_id => $player) {
             $query_values[] = vsprintf("('%s', '%s', '%s', '%s', '%s')", [
                 $player_id,
@@ -376,18 +500,23 @@ class Game extends \Table
             ]);
         }
 
-        static::DbQuery(
-            sprintf(
-                "INSERT INTO player (player_id, player_color, player_canal, player_name, player_avatar) VALUES %s",
-                implode(",", $query_values)
-            )
-        );
+        $this->DbQuery(sprintf(
+            "INSERT INTO player (player_id, player_color, player_canal, player_name, player_avatar) VALUES %s",
+            implode(",", $query_values)
+        ));
 
         $this->reattributeColorsBasedOnPreferences($players, $gameinfos["player_colors"]);
         $this->reloadPlayersBasicInfos();
 
         // Set all players as active for wrestler selection
         $this->gamestate->setAllPlayersMultiactive();
+        $this->trace("setupNewGame: Set all players multiactive for wrestler selection");
+        
+        // Initialize game state values
+        $this->setGameStateInitialValue("current_period", 1);
+        $this->setGameStateInitialValue("current_round", 1);
+        
+        $this->trace("setupNewGame: COMPLETE");
     }
 
     /**
@@ -396,9 +525,13 @@ class Game extends \Table
     protected function zombieTurn(array $state, int $active_player): void
     {
         $state_name = $state["name"];
+        $this->trace("zombieTurn: Handling zombie for player $active_player in state $state_name");
 
         if ($state["type"] === "activeplayer") {
             switch ($state_name) {
+                case "selectStartingPosition":
+                    $this->actSelectPosition("offense");
+                    return;
                 default:
                     $this->gamestate->nextState("zombiePass");
                     break;
@@ -407,24 +540,32 @@ class Game extends \Table
         }
 
         if ($state["type"] === "multipleactiveplayer") {
-            // For wrestler selection, auto-select first available wrestler
             if ($state_name === "wrestlerSelection") {
                 $args = $this->argWrestlerSelection();
                 $available = $args['available_wrestlers'];
                 if (!empty($available)) {
-                    $first_wrestler = array_key_first($available);
-                    // Simulate wrestler selection for zombie
-                    $wrestler = $available[$first_wrestler];
-                    $sql = "UPDATE player SET 
-                            wrestler_id = $first_wrestler,
-                            conditioning = {$wrestler['conditioning_p1']},
-                            offense = {$wrestler['offense']}, 
-                            defense = {$wrestler['defense']},
-                            top = {$wrestler['top']},
-                            bottom = {$wrestler['bottom']},
-                            special_tokens = {$wrestler['special_tokens']}
-                            WHERE player_id = $active_player";
-                    $this->DbQuery($sql);
+                    $first_wrestler_id = array_key_first($available);
+                    $this->trace("zombieTurn: Auto-selecting wrestler $first_wrestler_id for zombie player $active_player");
+                    
+                    $wrestler = $available[$first_wrestler_id];
+                    $this->DbQuery("UPDATE player SET wrestler_id = $first_wrestler_id WHERE player_id = $active_player");
+                    $this->DbQuery("UPDATE player SET conditioning = {$wrestler['conditioning_p1']} WHERE player_id = $active_player");
+                    $this->DbQuery("UPDATE player SET offense = {$wrestler['offense']} WHERE player_id = $active_player");
+                    $this->DbQuery("UPDATE player SET defense = {$wrestler['defense']} WHERE player_id = $active_player");
+                    $this->DbQuery("UPDATE player SET top = {$wrestler['top']} WHERE player_id = $active_player");
+                    $this->DbQuery("UPDATE player SET bottom = {$wrestler['bottom']} WHERE player_id = $active_player");
+                    $this->DbQuery("UPDATE player SET special_tokens = {$wrestler['special_tokens']} WHERE player_id = $active_player");
+                    
+$player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $player_id");
+if (!$player_name) {
+    $player_name = "Player $player_id"; // Fallback if name not found
+}                    
+                    $this->notifyAllPlayers("wrestlerSelected", clienttranslate('${player_name} selected ${wrestler_name}'), [
+                        "player_id" => $active_player,
+                        "player_name" => $player_name,
+                        "wrestler_id" => $first_wrestler_id,
+                        "wrestler_name" => $wrestler['name'],
+                    ]);
                 }
             }
             $this->gamestate->setPlayerNonMultiactive($active_player, '');
@@ -450,3 +591,4 @@ class Game extends \Table
         return "matrevx";
     }
 }
+?>

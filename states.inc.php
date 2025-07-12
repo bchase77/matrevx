@@ -49,8 +49,7 @@
 
 //    !! It is not a good idea to modify this file when a game is running !!
 
-
-$machinestates = [
+$machinestates = array(
 
     // The initial state. Please do not modify.
     1 => array(
@@ -58,62 +57,74 @@ $machinestates = [
         "description" => "",
         "type" => "manager",
         "action" => "stGameSetup",
-        "transitions" => ["" => 2]
+        "transitions" => array("" => 2)
     ),
 
-    // NEW: Wrestler selection state
-    2 => [
+    // Wrestler selection state - NO ACTION DEFINED
+    2 => array(
         "name" => "wrestlerSelection",
         "description" => clienttranslate('Players must select their wrestlers'),
         "descriptionmyturn" => clienttranslate('${you} must select a wrestler'),
         "type" => "multipleactiveplayer",
         "args" => "argWrestlerSelection",
-        "possibleactions" => [
-            "actSelectWrestler",
-        ],
-        "transitions" => ["allSelected" => 3]
-    ],
+        "possibleactions" => array(
+            "actSelectWrestler"
+        ),
+        "transitions" => array("allSelected" => 3)
+    ),
 
     // Start of actual gameplay
-    3 => [
+    3 => array(
         "name" => "startMatch",
         "description" => '',
         "type" => "game",
         "action" => "stStartMatch",
-        "transitions" => ["startGame" => 10]
-    ],
+        "transitions" => array("startGame" => 4)
+    ),
 
-    // Main game states (renumbered to make room)
-    10 => [
+    // Position selection state
+    4 => array(
+        "name" => "selectStartingPosition",
+        "description" => clienttranslate('${actplayer} must choose starting position (Offense or Defense)'),
+        "descriptionmyturn" => clienttranslate('${you} must choose starting position (Offense or Defense)'),
+        "type" => "activeplayer",
+        "possibleactions" => array(
+            "actSelectPosition"
+        ),
+        "transitions" => array("positionSelected" => 10)
+    ),
+
+    // Main game states
+    10 => array(
         "name" => "playerTurn",
         "description" => clienttranslate('${actplayer} must play a card or pass'),
         "descriptionmyturn" => clienttranslate('${you} must play a card or pass'),
         "type" => "activeplayer",
         "args" => "argPlayerTurn",
-        "possibleactions" => [
+        "possibleactions" => array(
             "actPlayCard", 
-            "actPass",
-        ],
-        "transitions" => ["playCard" => 11, "pass" => 11]
-    ],
+            "actPass"
+        ),
+        "transitions" => array("playCard" => 11, "pass" => 11)
+    ),
 
-    11 => [
+    11 => array(
         "name" => "nextPlayer",
         "description" => '',
         "type" => "game",
         "action" => "stNextPlayer",
         "updateGameProgression" => true,
-        "transitions" => ["endGame" => 99, "nextPlayer" => 10]
-    ],
+        "transitions" => array("endGame" => 99, "nextPlayer" => 10)
+    ),
 
     // Final state.
-    // Please do not modify (and do not overload action/args methods).
-    99 => [
+    99 => array(
         "name" => "gameEnd",
         "description" => clienttranslate("End of game"),
         "type" => "manager",
         "action" => "stGameEnd",
         "args" => "argGameEnd"
-    ],
+    )
 
-];
+);
+?>
