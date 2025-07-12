@@ -35,63 +35,58 @@ function (dojo, declare) {
             in parameters.
         */
         
-        setup: function( gamedatas )
-        {
-            console.log( "Starting game setup" );
-            console.log( "Game data:", gamedatas );
+setup: function( gamedatas )
+{
+    console.log( "Starting game setup" );
+    console.log( "Game data:", gamedatas );
 
-            // Set up main game area
-            document.getElementById('game_play_area').insertAdjacentHTML('beforeend', `
-                <div id="wrestler-selection-area" style="display: none;">
-                    <h3>Select Your Wrestler</h3>
-                    <div id="available-wrestlers"></div>
-                </div>
-                <div id="wrestling-mat" style="display: none;">
-                    <div id="player-stats"></div>
-                    <div id="game-info"></div>
-                </div>
-            `);
-            
-            // Setting up player boards with wrestler info
-            Object.values(gamedatas.players).forEach(player => {
-                // Add wrestler info to player panel
-this.getPlayerPanelElement(player.id).insertAdjacentHTML('beforeend', `
-    <div id="player-wrestler-info-${player.id}">
-        <div id="wrestler-name-${player.id}">
-            ${player.wrestler ? player.wrestler.name : 'No wrestler selected'}
-        </div>
-        <div id="conditioning-${player.id}" class="stat-display">
-            Conditioning: ${player.conditioning || 0}
-        </div>
-        <div class="wrestler-stats-compact">
-            O:${player.offense || 0} D:${player.defense || 0} T:${player.top || 0} B:${player.bottom || 0}
-        </div>
-    </div>
-`);
-                // Add player table in main area
-                document.getElementById('game_play_area').insertAdjacentHTML('beforeend', `
-                    <div id="player-table-${player.id}" style="display: none;">
-                        <strong>${player.name}</strong>
-                        <div class="wrestler-stats">
-                            <span>O: ${player.offense || 0}</span>
-                            <span>D: ${player.defense || 0}</span>
-                            <span>T: ${player.top || 0}</span>
-                            <span>B: ${player.bottom || 0}</span>
-                            <span>Tokens: ${player.special_tokens || 0}</span>
-                        </div>
-                    </div>
-                `);
-            });
+    // Set up main game area
+    var gameAreaHTML = '';
+    gameAreaHTML += '<div id="wrestler-selection-area" style="display: none;">';
+    gameAreaHTML += '<h3>Select Your Wrestler</h3>';
+    gameAreaHTML += '<div id="available-wrestlers"></div>';
+    gameAreaHTML += '</div>';
+    gameAreaHTML += '<div id="wrestling-mat" style="display: none;">';
+    gameAreaHTML += '<div id="player-stats"></div>';
+    gameAreaHTML += '<div id="game-info"></div>';
+    gameAreaHTML += '</div>';
+    gameAreaHTML += '<div id="player-hand-area" style="display: none; margin-top: 20px; padding: 15px; background: #f9f9f9; border-radius: 8px;">';
+    gameAreaHTML += '<h3>Your Hand</h3>';
+    gameAreaHTML += '<div id="player-hand" style="display: flex; gap: 10px; flex-wrap: wrap;"></div>';
+    gameAreaHTML += '</div>';
+    
+    document.getElementById('game_play_area').insertAdjacentHTML('beforeend', gameAreaHTML);
+    
+    // Setting up player boards with wrestler info
+    var players = Object.values ? Object.values(gamedatas.players) : Object.keys(gamedatas.players).map(function(k) { return gamedatas.players[k]; });
+    
+    for (var i = 0; i < players.length; i++) {
+        var player = players[i];
+        var wrestlerName = player.wrestler ? player.wrestler.name : 'No wrestler selected';
+        var conditioning = player.conditioning || 0;
+        var offense = player.offense || 0;
+        var defense = player.defense || 0;
+        var top = player.top || 0;
+        var bottom = player.bottom || 0;
+        
+        var playerInfoHTML = '';
+        playerInfoHTML += '<div id="player-wrestler-info-' + player.id + '">';
+        playerInfoHTML += '<div id="wrestler-name-' + player.id + '">' + wrestlerName + '</div>';
+        playerInfoHTML += '<div id="conditioning-' + player.id + '" class="stat-display">Conditioning: ' + conditioning + '</div>';
+        playerInfoHTML += '<div class="wrestler-stats-compact">O:' + offense + ' D:' + defense + ' T:' + top + ' B:' + bottom + '</div>';
+        playerInfoHTML += '</div>';
+        
+        this.getPlayerPanelElement(player.id).insertAdjacentHTML('beforeend', playerInfoHTML);
+    }
 
-            // Store game data
-            this.gamedatas = gamedatas;
-            
-            // Setup game notifications
-            this.setupNotifications();
+    // Store game data
+    this.gamedatas = gamedatas;
+    
+    // Setup game notifications
+    this.setupNotifications();
 
-            console.log( "Ending game setup" );
-        },
-       
+    console.log( "Ending game setup" );
+},       
         ///////////////////////////////////////////////////
         //// Game & client states
         
@@ -154,15 +149,11 @@ this.getPlayerPanelElement(player.id).insertAdjacentHTML('beforeend', `
                         this.addActionButton('btn-defense', _('Choose Defense'), () => this.onPositionClick('defense'), null, null, 'gray');
                         break;
                         
-                    case 'playerTurn':    
-                        const playableCardsIds = args.playableCardsIds;
-
-                        playableCardsIds.forEach(
-                            cardId => this.addActionButton('btn-card-' + cardId, _('Play card ${card_id}').replace('${card_id}', cardId), () => this.onCardClick(cardId))
-                        ); 
-
-                        this.addActionButton('btn-pass', _('Pass'), () => this.bgaPerformAction("actPass"), null, null, 'gray'); 
-                        break;
+					case 'playerTurn':
+						// Cards will be shown in hand area, just add pass button
+						this.addActionButton('btn-pass', _('Pass'), () => this.bgaPerformAction("actPass"), null, null, 'gray'); 
+						break;
+	
                 }
             }
         },        
@@ -292,15 +283,117 @@ this.getPlayerPanelElement(player.id).insertAdjacentHTML('beforeend', `
             `;
         },
         
-        enterPlayerTurn: function() {
-            // Show game area
-            document.getElementById('wrestling-mat').style.display = 'block';
-            
-            // Show player tables
-            Object.keys(this.gamedatas.players).forEach(playerId => {
-                document.getElementById(`player-table-${playerId}`).style.display = 'block';
-            });
-        },
+enterPlayerTurn: function() {
+    // Show game area
+    document.getElementById('wrestling-mat').style.display = 'block';
+    
+    // If it's our turn, show our hand
+    if (this.isCurrentPlayerActive()) {
+        // Get the playable cards from the last argPlayerTurn call
+        // This is a bit of a hack, but works for now
+        this.displayPlayerHand([1, 2, 3, 4]);
+    }
+},
+
+
+// Add this new method after enterPlayerTurn
+// Add this new method after enterPlayerTurn
+displayPlayerHand: function(playableCardsIds) {
+    console.log('displayPlayerHand called with:', playableCardsIds);
+    
+    const handContainer = document.getElementById('player-hand');
+    const handArea = document.getElementById('player-hand-area');
+    
+    if (!handContainer || !handArea) {
+        console.error('Hand containers not found');
+        return;
+    }
+    
+    // Clear previous cards
+    handContainer.innerHTML = '';
+    
+    // Show hand area
+    handArea.style.display = 'block';
+    
+    // Use card types from game data - add safety check
+    const cardTypes = this.gamedatas && this.gamedatas.cardTypes;
+    if (!cardTypes) {
+        console.error('No cardTypes found in gamedatas!');
+        handContainer.innerHTML = '<div>Error: Card data not available</div>';
+        return;
+    }
+    
+    console.log('Available cardTypes:', cardTypes);
+    
+    // Create card elements
+    for (let i = 0; i < playableCardsIds.length; i++) {
+        const cardId = playableCardsIds[i];
+        console.log('Processing card ID:', cardId);
+        
+        const card = cardTypes[cardId];
+        console.log('Card data:', card);
+        
+        if (!card) {
+            console.warn('No card found for ID:', cardId);
+            continue;
+        }
+
+        // CREATE THE CARD ELEMENT
+        const cardElement = document.createElement('div');
+        cardElement.className = 'card';
+        cardElement.id = 'card-' + cardId;
+
+        // Build the inner HTML safely
+        let cardHTML = '<div class="card-header">' + card.card_name + '</div>';
+        cardHTML += '<div class="card-position">' + card.position.charAt(0).toUpperCase() + card.position.slice(1) + '</div>';
+        cardHTML += '<div class="card-stats">';
+        cardHTML += '<div>Cost: ' + card.conditioning_cost + ' Conditioning</div>';
+        cardHTML += '<div>Tokens: ' + card.special_tokens + '</div>';
+        if (card.scoring) {
+            cardHTML += '<div class="scoring-indicator">⭐ Scoring</div>';
+        }
+        cardHTML += '</div>';
+        
+        cardElement.innerHTML = cardHTML;
+        
+        // Set styles
+        cardElement.style.border = '2px solid #333';
+        cardElement.style.borderRadius = '8px';
+        cardElement.style.padding = '10px';
+        cardElement.style.background = 'white';
+        cardElement.style.cursor = 'pointer';
+        cardElement.style.minWidth = '140px';
+        cardElement.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+        cardElement.style.transition = 'all 0.2s ease';
+        
+        // Add hover effects
+        cardElement.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-5px)';
+            this.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
+            this.style.borderColor = '#0066cc';
+        });
+        
+        cardElement.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+            this.style.borderColor = '#333';
+        });
+        
+        // Add click handler
+        const self = this;
+        cardElement.addEventListener('click', function() {
+            self.onCardClick(cardId);
+        });
+        
+        handContainer.appendChild(cardElement);
+    }
+    
+    console.log('Added', handContainer.children.length, 'cards to hand');
+},
+
+
+
+
         
         leavePlayerTurn: function() {
             // Clean up any temporary UI elements

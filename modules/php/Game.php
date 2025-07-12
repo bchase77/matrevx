@@ -69,78 +69,10 @@ $this->initGameStateLabels([
                 "special_cards" => ["Super Duck (O)", "Splits (D)", "Cranky Roll (B)", "Neckbridge (B)"]
             ]
         ];
-
-        // Basic card types - just 2 of each position for now
-        self::$CARD_TYPES = [
-            // Offense cards
-            1 => [
-                "card_name" => clienttranslate('Single Leg'),
-                "position" => "offense",
-                "conditioning_cost" => 2,
-                "special_tokens" => 0,
-                "action" => "roll_speed",
-                "scoring" => true
-            ],
-            2 => [
-                "card_name" => clienttranslate('Hand Fight'),
-                "position" => "offense", 
-                "conditioning_cost" => 1,
-                "special_tokens" => 1,
-                "action" => "roll_speed",
-                "scoring" => false
-            ],
-            // Defense cards
-            3 => [
-                "card_name" => clienttranslate('Down Block'),
-                "position" => "defense",
-                "conditioning_cost" => 2,
-                "special_tokens" => 1,
-                "action" => "roll_speed",
-                "scoring" => false
-            ],
-            4 => [
-                "card_name" => clienttranslate('Sprawl'),
-                "position" => "defense",
-                "conditioning_cost" => 1,
-                "special_tokens" => 0,
-                "action" => "roll_speed", 
-                "scoring" => false
-            ],
-            // Top cards
-            5 => [
-                "card_name" => clienttranslate('Half Nelson'),
-                "position" => "top",
-                "conditioning_cost" => 3,
-                "special_tokens" => 0,
-                "action" => "roll_strength",
-                "scoring" => true
-            ],
-            6 => [
-                "card_name" => clienttranslate('Break Down'),
-                "position" => "top",
-                "conditioning_cost" => 2,
-                "special_tokens" => 1,
-                "action" => "roll_strength",
-                "scoring" => false
-            ],
-            // Bottom cards
-            7 => [
-                "card_name" => clienttranslate('Stand Up'),
-                "position" => "bottom",
-                "conditioning_cost" => 2,
-                "special_tokens" => 0,
-                "action" => "roll_speed",
-                "scoring" => true
-            ],
-            8 => [
-                "card_name" => clienttranslate('Sit Out'),
-                "position" => "bottom",
-                "conditioning_cost" => 1,
-                "special_tokens" => 0,
-                "action" => "roll_speed",
-                "scoring" => true
-            ],
-        ];
+		// Load card types from material
+//		$material = require_once(APP_GAMEMODULE_PATH . 'material.inc.php');
+		$material = require(__DIR__ . '/material.inc.php');
+		self::$CARD_TYPES = $material['cardTypes'];
     }
 
     /**
@@ -472,6 +404,8 @@ if (!$player_name) {
             "current_period" => $this->getGameStateValue("current_period"),
             "current_round" => $this->getGameStateValue("current_round")
         ];
+
+		$result["cardTypes"] = self::$CARD_TYPES;
 
         return $result;
     }
