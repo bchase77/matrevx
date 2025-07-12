@@ -32,13 +32,14 @@ class Game extends \Table
     {
         parent::__construct();
 
-        $this->initGameStateLabels([
-            "current_period" => 10,
-            "current_round" => 11,
-            "my_first_game_variant" => 100,
-            "my_second_game_variant" => 101,
-        ]);        
-
+$this->initGameStateLabels([
+    "current_period" => 10,
+    "current_round" => 11,
+    "position_offense" => 12,
+    "position_defense" => 13,
+    "my_first_game_variant" => 100,
+    "my_second_game_variant" => 101,
+]);
         // Define available wrestlers
         self::$WRESTLERS = [
             1 => [
@@ -238,52 +239,48 @@ $players_with_wrestlers = $this->getUniqueValueFromDB("SELECT COUNT(*) FROM play
     /**
      * Position selection action
      */
-    public function actSelectPosition(string $position): void
-    {
-        $player_id = (int)$this->getActivePlayerId();
-        
-        // Validate position
-        if (!in_array($position, ['offense', 'defense'])) {
-            throw new \BgaUserException('Invalid position selection');
-        }
+	public function actSelectPosition(string $position): void
+	{
+		$player_id = (int)$this->getCurrentPlayerId();
+		
+		// Validate position
+		if (!in_array($position, ['offense', 'defense'])) {
+			throw new \BgaUserException('Invalid position selection');
+		}
 
-        // Get both players
-        $players = $this->getCollectionFromDB("SELECT player_id, player_name FROM player");
-        $other_player_id = null;
-        foreach ($players as $pid => $player) {
-            if ($pid != $player_id) {
-                $other_player_id = $pid;
-                break;
-            }
-        }
+		// Get both players
+		$players = $this->getCollectionFromDB("SELECT player_id, player_name FROM player");
+		$other_player_id = null;
+		foreach ($players as $pid => $player) {
+			if ($pid != $player_id) {
+				$other_player_id = $pid;
+				break;
+			}
+		}
 
-        // Get current player name
-$player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $player_id");
-if (!$player_name) {
-    $player_name = "Player $player_id"; // Fallback if name not found
-}
+		// Get current player name
+		$player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $player_id");
 
-        // Set positions
-        $this->setGameStateInitialValue("position_offense", $position === 'offense' ? $player_id : $other_player_id);
-        $this->setGameStateInitialValue("position_defense", $position === 'defense' ? $player_id : $other_player_id);
+		// Set positions
+		$this->setGameStateValue("position_offense", $position === 'offense' ? $player_id : $other_player_id);
+		$this->setGameStateValue("position_defense", $position === 'defense' ? $player_id : $other_player_id);
 
-        // Notify all players about position selection
-        $this->notifyAllPlayers("positionSelected", clienttranslate('${player_name} chooses ${position}. Match begins!'), [
-            "player_id" => $player_id,
-            "player_name" => $player_name,
-            "position" => ucfirst($position),
-            "offense_player_id" => $position === 'offense' ? $player_id : $other_player_id,
-            "defense_player_id" => $position === 'defense' ? $player_id : $other_player_id,
-            "period" => 1,
-            "round" => 1
-        ]);
+		// Notify all players about position selection
+		$this->notifyAllPlayers("positionSelected", clienttranslate('${player_name} chooses ${position}. Match begins!'), [
+			"player_id" => $player_id,
+			"player_name" => $player_name,
+			"position" => ucfirst($position),
+			"offense_player_id" => $position === 'offense' ? $player_id : $other_player_id,
+			"defense_player_id" => $position === 'defense' ? $player_id : $other_player_id,
+			"period" => 1,
+			"round" => 1
+		]);
 
-        // Set the offense player as active for first turn
-        $this->gamestate->changeActivePlayer($position === 'offense' ? $player_id : $other_player_id);
-        
-        $this->gamestate->nextState("positionSelected");
-    }
-
+		// REMOVED: Don't change active player here, let the next state handle it
+		// REMOVED: $this->gamestate->changeActivePlayer($position === 'offense' ? $player_id : $other_player_id);
+		
+		$this->gamestate->nextState("positionSelected");
+	}
     public function actPlayCard(int $card_id): void
     {
         $player_id = (int)$this->getActivePlayerId();
