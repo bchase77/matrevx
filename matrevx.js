@@ -55,17 +55,19 @@ function (dojo, declare) {
             // Setting up player boards with wrestler info
             Object.values(gamedatas.players).forEach(player => {
                 // Add wrestler info to player panel
-                this.getPlayerPanelElement(player.id).insertAdjacentHTML('beforeend', `
-                    <div id="player-wrestler-info-${player.id}">
-                        <div id="wrestler-name-${player.id}">
-                            ${player.wrestler ? player.wrestler.name : 'No wrestler selected'}
-                        </div>
-                        <div id="conditioning-${player.id}" class="stat-display">
-                            C: ${player.conditioning || 0}
-                        </div>
-                    </div>
-                `);
-
+this.getPlayerPanelElement(player.id).insertAdjacentHTML('beforeend', `
+    <div id="player-wrestler-info-${player.id}">
+        <div id="wrestler-name-${player.id}">
+            ${player.wrestler ? player.wrestler.name : 'No wrestler selected'}
+        </div>
+        <div id="conditioning-${player.id}" class="stat-display">
+            Conditioning: ${player.conditioning || 0}
+        </div>
+        <div class="wrestler-stats-compact">
+            O:${player.offense || 0} D:${player.defense || 0} T:${player.top || 0} B:${player.bottom || 0}
+        </div>
+    </div>
+`);
                 // Add player table in main area
                 document.getElementById('game_play_area').insertAdjacentHTML('beforeend', `
                     <div id="player-table-${player.id}" style="display: none;">
@@ -433,52 +435,73 @@ function (dojo, declare) {
             dojo.subscribe('pass', this, "notif_pass");
         },
         
-        notif_wrestlerSelected: function(notif) {
-            console.log('notif_wrestlerSelected', notif);
-            
-            const playerId = notif.args.player_id;
-            const wrestlerName = notif.args.wrestler_name;
-            const wrestlerId = notif.args.wrestler_id;
-            
-            // Update player panel
-            const wrestlerNameElement = document.getElementById(`wrestler-name-${playerId}`);
-            if (wrestlerNameElement) {
-                wrestlerNameElement.textContent = wrestlerName;
-            }
-            
-            // Update conditioning display
-            const conditioningElement = document.getElementById(`conditioning-${playerId}`);
-            if (conditioningElement) {
-                conditioningElement.textContent = `${wrestlerName} Selected`;
-            }
-            
-            // Remove wrestler from available list if visible
-            const wrestlerCard = document.getElementById(`wrestler-${wrestlerId}`);
-            if (wrestlerCard) {
-                wrestlerCard.style.opacity = '0.3';
-                wrestlerCard.style.pointerEvents = 'none';
-                wrestlerCard.innerHTML += '<div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: red; font-weight: bold; font-size: 18px; background: rgba(255,255,255,0.9); padding: 5px 10px; border-radius: 5px;">SELECTED</div>';
-                wrestlerCard.style.position = 'relative';
-            }
-            
-            // Check if this was our selection
-            if (playerId == this.player_id) {
-                // Remove confirm button
-                const confirmBtn = document.getElementById('confirm-wrestler-btn');
-                if (confirmBtn) {
-                    confirmBtn.remove();
-                }
-                
-                // Show message
-                this.showMessage('Wrestler selected! Waiting for other players...', 'info');
-                
-                // Disable all remaining cards for this player
-                document.querySelectorAll('.wrestler-card').forEach(card => {
-                    card.style.pointerEvents = 'none';
-                });
-            }
-        },
+notif_wrestlerSelected: function(notif) {
+    console.log('notif_wrestlerSelected', notif);
+    
+    const playerId = notif.args.player_id;
+    const wrestlerName = notif.args.wrestler_name;
+    const wrestlerId = notif.args.wrestler_id;
+    
+    // Update local player data with wrestler stats
+    if (this.gamedatas.players[playerId]) {
+        const wrestler = this.gamedatas.wrestlers[wrestlerId];
+        if (wrestler) {
+            this.gamedatas.players[playerId].wrestler_id = wrestlerId;
+            this.gamedatas.players[playerId].conditioning = wrestler.conditioning_p1;
+            this.gamedatas.players[playerId].offense = wrestler.offense;
+            this.gamedatas.players[playerId].defense = wrestler.defense;
+            this.gamedatas.players[playerId].top = wrestler.top;
+            this.gamedatas.players[playerId].bottom = wrestler.bottom;
+            this.gamedatas.players[playerId].special_tokens = wrestler.special_tokens;
+            this.gamedatas.players[playerId].wrestler = wrestler;
+        }
+    }
+    
+    // Update player panel
+    const wrestlerNameElement = document.getElementById(`wrestler-name-${playerId}`);
+    if (wrestlerNameElement) {
+        wrestlerNameElement.textContent = wrestlerName;
+    }
+    
+    // Update conditioning display
+    const conditioningElement = document.getElementById(`conditioning-${playerId}`);
+    if (conditioningElement && this.gamedatas.players[playerId]) {
+        conditioningElement.textContent = `Conditioning: ${this.gamedatas.players[playerId].conditioning || 0}`;
+    }
+    
+    // Update stats display
+    const statsElement = document.querySelector(`#player-wrestler-info-${playerId} .wrestler-stats-compact`);
+    if (statsElement && this.gamedatas.players[playerId]) {
+        const player = this.gamedatas.players[playerId];
+        statsElement.textContent = `O:${player.offense || 0} D:${player.defense || 0} T:${player.top || 0} B:${player.bottom || 0}`;
+    }
+    
+    // Remove wrestler from available list if visible
+    const wrestlerCard = document.getElementById(`wrestler-${wrestlerId}`);
+    if (wrestlerCard) {
+        wrestlerCard.style.opacity = '0.3';
+        wrestlerCard.style.pointerEvents = 'none';
+        wrestlerCard.innerHTML += '<div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: red; font-weight: bold; font-size: 18px; background: rgba(255,255,255,0.9); padding: 5px 10px; border-radius: 5px;">SELECTED</div>';
+        wrestlerCard.style.position = 'relative';
+    }
+    
+    // Check if this was our selection
+    if (playerId == this.player_id) {
+        // Remove confirm button
+        const confirmBtn = document.getElementById('confirm-wrestler-btn');
+        if (confirmBtn) {
+            confirmBtn.remove();
+        }
         
+        // Show message
+        this.showMessage('Wrestler selected! Waiting for other players...', 'info');
+        
+        // Disable all remaining cards for this player
+        document.querySelectorAll('.wrestler-card').forEach(card => {
+            card.style.pointerEvents = 'none';
+        });
+    }
+},        
         notif_startingPositionChoice: function(notif) {
             console.log('notif_startingPositionChoice', notif);
             
