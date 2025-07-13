@@ -117,16 +117,45 @@ $machinestates = array(
         "description" => '',
         "type" => "game",
         "action" => "stAdjustConditioning",
-        "transitions" => array("rollDice" => 14)
+        "transitions" => array("rollDice" => 22)
     ),
 
-    // Step 2: Roll dice for stat changes/star card outcomes
-    14 => array(
-        "name" => "rollDice",
+    // FIXED: Set first player for dice rolling
+    22 => array(
+        "name" => "setFirstPlayerForDice",
         "description" => '',
         "type" => "game",
-        "action" => "stRollDice",
-        "transitions" => array("applyEffects" => 15)
+        "action" => "stSetFirstPlayerForDice",
+        "transitions" => array("firstPlayerDice" => 14)  // FIXED: Added proper transition
+    ),
+
+    // UPDATED: First player rolls red die
+    14 => array(
+        "name" => "firstPlayerRollDice",
+        "description" => clienttranslate('${actplayer} must roll the red die'),
+        "descriptionmyturn" => clienttranslate('${you} must roll the red die'),
+        "type" => "activeplayer",
+        "possibleactions" => array("actRollDice"),
+        "transitions" => array("diceRolled" => 21)
+    ),
+
+    // NEW STATE: Switch to second player for dice
+    21 => array(
+        "name" => "switchToSecondPlayerForDice",
+        "description" => '',
+        "type" => "game",
+        "action" => "stSwitchToSecondPlayerForDice",
+        "transitions" => array("secondPlayerDice" => 23)  // FIXED: Added proper transition
+    ),
+
+    // NEW STATE: Second player rolls blue die
+    23 => array(
+        "name" => "secondPlayerRollDice", 
+        "description" => clienttranslate('${actplayer} must roll the blue die'),
+        "descriptionmyturn" => clienttranslate('${you} must roll the blue die'),
+        "type" => "activeplayer",
+        "possibleactions" => array("actRollDice"),
+        "transitions" => array("diceRolled" => 15)
     ),
 
     // Step 3: Apply card effects and trademark moves
