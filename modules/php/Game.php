@@ -346,6 +346,36 @@ class Game extends \Table
         }
     }
 
+	/**
+     * Populate wrestlers table from material.inc.php data
+     */
+    private function populateWrestlersTable(): void
+    {
+        $this->trace("populateWrestlersTable: START");
+        
+        // Clear existing data
+        $this->DbQuery("DELETE FROM wrestlers");
+        
+        // Insert wrestlers from material data
+        foreach (self::$WRESTLERS as $wrestler_id => $wrestler) {
+            $name = addslashes($wrestler['name']);
+            $trademark = addslashes($wrestler['trademark']);
+            $special_cards = addslashes(implode(',', $wrestler['special_cards']));
+            
+            $sql = "INSERT INTO wrestlers 
+                    (wrestler_id, wrestler_name, conditioning_p1, conditioning_p2, conditioning_p3, 
+                     offense, defense, top, bottom, special_tokens, trademark, special_cards) 
+                    VALUES 
+                    ($wrestler_id, '$name', {$wrestler['conditioning_p1']}, {$wrestler['conditioning_p2']}, {$wrestler['conditioning_p3']}, 
+                     {$wrestler['offense']}, {$wrestler['defense']}, {$wrestler['top']}, {$wrestler['bottom']}, 
+                     {$wrestler['special_tokens']}, '$trademark', '$special_cards')";
+            
+            $this->DbQuery($sql);
+            $this->trace("populateWrestlersTable: Inserted wrestler $wrestler_id - {$wrestler['name']}");
+        }
+        
+        $this->trace("populateWrestlersTable: COMPLETE - Inserted " . count(self::$WRESTLERS) . " wrestlers");
+    }
 
     /**
      * Updated stRevealCards with direct data access
@@ -941,7 +971,7 @@ class Game extends \Table
 	}
 	
     /**
-     * Setup new game
+     * Updated setupNewGame to populate wrestlers
      */
     protected function setupNewGame($players, $options = [])
     {
@@ -969,6 +999,9 @@ class Game extends \Table
         $this->reattributeColorsBasedOnPreferences($players, $gameinfos["player_colors"]);
         $this->reloadPlayersBasicInfos();
 
+        // Populate wrestlers table from material data
+        $this->populateWrestlersTable();
+
         // Set all players as active for wrestler selection
         $this->gamestate->setAllPlayersMultiactive();
         $this->trace("setupNewGame: Set all players multiactive for wrestler selection");
@@ -979,7 +1012,7 @@ class Game extends \Table
         
         $this->trace("setupNewGame: COMPLETE");
     }
-
+	
     /**
      * Zombie turn handling
      */

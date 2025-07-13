@@ -27,7 +27,7 @@ ALTER TABLE `player` ADD `bottom` INT DEFAULT 0;
 ALTER TABLE `player` ADD `special_tokens` INT DEFAULT 0;
 ALTER TABLE `player` ADD `stall_count` INT DEFAULT 0;
 
--- Step 2: Create wrestlers table
+-- Step 2: Create wrestlers table structure (data populated from material.inc.php)
 CREATE TABLE IF NOT EXISTS `wrestlers` (
   `wrestler_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `wrestler_name` varchar(255) NOT NULL,
@@ -43,10 +43,3 @@ CREATE TABLE IF NOT EXISTS `wrestlers` (
   `special_cards` TEXT DEFAULT NULL,
   PRIMARY KEY (`wrestler_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
--- Insert 2 wrestlers based on actual cards
-INSERT INTO `wrestlers` (`wrestler_name`, `conditioning_p1`, `conditioning_p2`, `conditioning_p3`, `offense`, `defense`, `top`, `bottom`, `special_tokens`, `trademark`, `special_cards`) VALUES
-('Po Cret', 42, 11, 10, 8, 8, 7, 9, 0, 'Double Leg - costs only 3 Conditioning and 1 Special Token', 'Double Leg (O),Splits (D),Tilt (T),Switch (B),Hip Heist (B)'),
-('Darnell Hogler', 45, 17, 3, 6, 6, 10, 5, 2, 'When you draw a Scramble Card, pick from the top 3 and put the other two on the bottom of the deck', 'Super Duck (O),Splits (D),Cranky Roll (B),Neckbridge (B)');
-
--- Note: Removed game_state table for now - using BGA global variables instead
