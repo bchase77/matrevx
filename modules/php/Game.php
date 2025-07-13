@@ -28,12 +28,9 @@ class Game extends \Table
     /**
      * Your global variables labels:
      */
-	/**
-     * Updated constructor - don't add new game state labels yet
-     */
-	public function __construct()
-	{
-		parent::__construct();
+    public function __construct()
+    {
+        parent::__construct();
 
         $this->initGameStateLabels([
             "current_period" => 10,
@@ -42,11 +39,16 @@ class Game extends \Table
             "position_defense" => 13,
             "red_die" => 14,
             "blue_die" => 15,
-            // NEW: Round state tracking
+            // Round state tracking
             "first_player_id" => 16,
             "second_player_id" => 17,
             "first_player_card" => 18,
             "second_player_card" => 19,
+            // NEW: Track which die each player chose and their values
+            "first_player_die_choice" => 20,  // 'red' or 'blue'
+            "second_player_die_choice" => 21, // 'red' or 'blue'
+            "first_player_die_value" => 22,   // actual rolled value
+            "second_player_die_value" => 23,  // actual rolled value
             // Existing variants
             "my_first_game_variant" => 100,
             "my_second_game_variant" => 101,
@@ -59,7 +61,7 @@ class Game extends \Table
     }
 
     /**
-     * Get current position for a player - IMPROVED with debugging
+     * Get current position for a player - IMPROVED with debugging and error handling
      */
     private function getPlayerPosition(int $player_id): string
     {
@@ -68,8 +70,13 @@ class Game extends \Table
         
         $this->trace("getPlayerPosition: Player $player_id, offense_player=$offense_player, defense_player=$defense_player");
         
+        // ADD: Check if positions are set
+        if ($offense_player == 0 || $defense_player == 0) {
+            $this->trace("getPlayerPosition: WARNING - Positions not set yet, defaulting to offense");
+            return "offense";
+        }
+        
         // For now, we only have offense/defense positions
-        // You'll need to add logic for when players go to top/bottom
         if ($player_id == $offense_player) {
             $this->trace("getPlayerPosition: Player $player_id is OFFENSE");
             return "offense";
@@ -101,10 +108,16 @@ class Game extends \Table
     }
 
     /**
-     * Check if player can afford to play a card
+     * Check if player can afford to play a card - IMPROVED with safety checks
      */
     private function canAffordCard(int $player_id, int $card_id): bool
     {
+        // ADD: Check if card exists
+        if (!isset(self::$CARD_TYPES[$card_id])) {
+            $this->trace("canAffordCard: Card $card_id does not exist");
+            return false;
+        }
+        
         $card = self::$CARD_TYPES[$card_id];
         
         // Get player's current resources
@@ -113,12 +126,19 @@ class Game extends \Table
         );
         
         if (!$player_data) {
+            $this->trace("canAffordCard: Could not find player data for $player_id");
             return false;
         }
         
+        // Ensure we have valid values
+        $conditioning = intval($player_data['conditioning']);
+        $tokens = intval($player_data['special_tokens']);
+        $card_conditioning_cost = intval($card['conditioning_cost']);
+        $card_token_cost = intval($card['special_tokens']);
+        
         // Check if player has enough conditioning and special tokens
-        return ($player_data['conditioning'] >= $card['conditioning_cost']) && 
-               ($player_data['special_tokens'] >= $card['special_tokens']);
+        return ($conditioning >= $card_conditioning_cost) && 
+               ($tokens >= $card_token_cost);
     }
 
     /**
@@ -127,7 +147,7 @@ class Game extends \Table
     public function actSelectWrestler(int $wrestler_id): void
     {
         $player_id = (int)$this->getCurrentPlayerId();
-		
+        
         $this->trace("actSelectWrestler: START - Player $player_id selecting wrestler $wrestler_id");
         
         // Validate wrestler exists
@@ -161,15 +181,11 @@ class Game extends \Table
 
         $this->trace("actSelectWrestler: Successfully updated player $player_id with wrestler $wrestler_id");
 
-        // Verification of the update
-        $verification = $this->getUniqueValueFromDB("SELECT wrestler_id FROM player WHERE player_id = $player_id");
-        $this->trace("actSelectWrestler: Verification - player $player_id now has wrestler_id: $verification");
-
         // Get player name from database for notification
-		$player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $player_id");
-		if (!$player_name) {
-			$player_name = "Player $player_id"; // Fallback if name not found
-		}
+        $player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $player_id");
+        if (!$player_name) {
+            $player_name = "Player $player_id"; // Fallback if name not found
+        }
         
         // Notify all players
         $this->notifyAllPlayers("wrestlerSelected", clienttranslate('${player_name} selected ${wrestler_name}'), [
@@ -184,28 +200,22 @@ class Game extends \Table
         $this->trace("actSelectWrestler: Set player $player_id as non-multiactive");
         
         // Better query to count players with wrestlers
-		$players_with_wrestlers = $this->getUniqueValueFromDB("SELECT COUNT(*) FROM player WHERE wrestler_id >= 1");		
+        $players_with_wrestlers = $this->getUniqueValueFromDB("SELECT COUNT(*) FROM player WHERE wrestler_id >= 1");     
         $total_players = $this->getUniqueValueFromDB("SELECT COUNT(*) FROM player");
         
         $this->trace("actSelectWrestler: Progress - $players_with_wrestlers / $total_players players have selected");
 
-        // Log which players have wrestlers for debugging
-        $wrestlers_assigned = $this->getObjectListFromDB("SELECT player_id, wrestler_id FROM player WHERE wrestler_id IS NOT NULL AND wrestler_id != 0");
-        foreach ($wrestlers_assigned as $assignment) {
-            $this->trace("actSelectWrestler: Player {$assignment['player_id']} has wrestler {$assignment['wrestler_id']}");
-        }
-
         // If all players have selected, transition to next state
-		if ($players_with_wrestlers >= $total_players) {
-			$this->trace("actSelectWrestler: All players selected - checking if transition needed");
-			$current_state = $this->gamestate->state_id();
-			if ($current_state == 2) { // Only transition if still in wrestler selection state
-				$this->trace("actSelectWrestler: Transitioning to next state");
-				$this->gamestate->nextState('allSelected');
-			} else {
-				$this->trace("actSelectWrestler: Already transitioned to state $current_state, no action needed");
-			}
-		} else {
+        if ($players_with_wrestlers >= $total_players) {
+            $this->trace("actSelectWrestler: All players selected - checking if transition needed");
+            $current_state = $this->gamestate->state_id();
+            if ($current_state == 2) { // Only transition if still in wrestler selection state
+                $this->trace("actSelectWrestler: Transitioning to next state");
+                $this->gamestate->nextState('allSelected');
+            } else {
+                $this->trace("actSelectWrestler: Already transitioned to state $current_state, no action needed");
+            }
+        } else {
             $this->trace("actSelectWrestler: Still waiting - need " . ($total_players - $players_with_wrestlers) . " more selections");
         }
     }
@@ -213,51 +223,287 @@ class Game extends \Table
     /**
      * Position selection action
      */
-	public function actSelectPosition(string $position): void
-	{
-		$player_id = (int)$this->getCurrentPlayerId();
-		
-		// Validate position
-		if (!in_array($position, ['offense', 'defense'])) {
-			throw new \BgaUserException('Invalid position selection');
-		}
+    public function actSelectPosition(string $position): void
+    {
+        $player_id = (int)$this->getCurrentPlayerId();
+        
+        // Validate position
+        if (!in_array($position, ['offense', 'defense'])) {
+            throw new \BgaUserException('Invalid position selection');
+        }
 
-		// Get both players
-		$players = $this->getCollectionFromDB("SELECT player_id, player_name FROM player");
-		$other_player_id = null;
-		foreach ($players as $pid => $player) {
-			if ($pid != $player_id) {
-				$other_player_id = $pid;
-				break;
-			}
-		}
+        // Get both players
+        $players = $this->getCollectionFromDB("SELECT player_id, player_name FROM player");
+        $other_player_id = null;
+        foreach ($players as $pid => $player) {
+            if ($pid != $player_id) {
+                $other_player_id = $pid;
+                break;
+            }
+        }
 
-		// Get current player name
-		$player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $player_id");
+        // Get current player name
+        $player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $player_id");
 
-		// Set positions
-		$offense_player_id = $position === 'offense' ? $player_id : $other_player_id;
-		$defense_player_id = $position === 'defense' ? $player_id : $other_player_id;
-		
-		$this->setGameStateValue("position_offense", $offense_player_id);
-		$this->setGameStateValue("position_defense", $defense_player_id);
+        // Set positions
+        $offense_player_id = $position === 'offense' ? $player_id : $other_player_id;
+        $defense_player_id = $position === 'defense' ? $player_id : $other_player_id;
+        
+        $this->setGameStateValue("position_offense", $offense_player_id);
+        $this->setGameStateValue("position_defense", $defense_player_id);
 
-		// Notify all players about position selection
-		$this->notifyAllPlayers("positionSelected", clienttranslate('${player_name} chooses ${position}. Match begins!'), [
-			"player_id" => $player_id,
-			"player_name" => $player_name,
-			"position" => ucfirst($position),
-			"offense_player_id" => $offense_player_id,
-			"defense_player_id" => $defense_player_id,
-			"period" => 1,
-			"round" => 1
-		]);
+        // Notify all players about position selection
+        $this->notifyAllPlayers("positionSelected", clienttranslate('${player_name} chooses ${position}. Match begins!'), [
+            "player_id" => $player_id,
+            "player_name" => $player_name,
+            "position" => ucfirst($position),
+            "offense_player_id" => $offense_player_id,
+            "defense_player_id" => $defense_player_id,
+            "period" => 1,
+            "round" => 1
+        ]);
 
-		// Don't change active player here - let the next state handle it
-		$this->gamestate->nextState("positionSelected");
-	}
-	
-/**
+        $this->gamestate->nextState("positionSelected");
+    }
+    
+    /**
+     * NEW: Player chooses which die to roll (red or blue)
+     */
+    public function actChooseDie(string $die_choice): void
+    {
+        $player_id = (int)$this->getCurrentPlayerId();
+        $state_name = $this->gamestate->state()['name'];
+        
+        $this->trace("actChooseDie: Player $player_id choosing $die_choice in state $state_name");
+
+        // Validate die choice
+        if (!in_array($die_choice, ['red', 'blue'])) {
+            throw new \BgaUserException('Invalid die choice - must be red or blue');
+        }
+
+        // Get player name
+        $player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = " . (int)$player_id);
+        if (!$player_name) {
+            $player_name = "Player $player_id";
+        }
+
+        $die_label = $die_choice === 'red' ? 'Red (STRENGTH)' : 'Blue (SPEED)';
+        $this->trace("actChooseDie: Player $player_id chose $die_label");
+
+        // Store the player's die choice
+        if ($state_name === 'firstPlayerChooseDie') {
+            $this->setGameStateValue("first_player_die_choice", $die_choice === 'red' ? 1 : 2); // 1=red, 2=blue
+        } else if ($state_name === 'secondPlayerChooseDie') {
+            $this->setGameStateValue("second_player_die_choice", $die_choice === 'red' ? 1 : 2);
+        }
+
+        // Roll the chosen die
+        if ($die_choice === 'red') {
+            $die_value = $this->rollRedDie();
+            $die_face = $this->getGameStateValue("red_die");
+            
+            // Apply dice costs and rewards
+            $this->applyDiceCosts($player_id, 'red');
+            
+        } else { // blue
+            $die_value = $this->rollBlueDie();
+            $die_face = $this->getGameStateValue("blue_die");
+            
+            // Apply dice costs and rewards
+            $this->applyDiceCosts($player_id, 'blue');
+        }
+
+        // Store the player's die value
+        if ($state_name === 'firstPlayerChooseDie') {
+            $this->setGameStateValue("first_player_die_value", $die_value);
+        } else if ($state_name === 'secondPlayerChooseDie') {
+            $this->setGameStateValue("second_player_die_value", $die_value);
+        }
+
+        // Notify all players about the die choice and roll
+        $this->notifyAllPlayers("playerChoseDie", clienttranslate('${player_name} chose ${die_label} and rolled: ${die_value}'), [
+            "player_id" => $player_id,
+            "player_name" => $player_name,
+            "die_choice" => $die_choice,
+            "die_label" => $die_label,
+            "die_face" => $die_face,
+            "die_value" => $die_value,
+        ]);
+
+        $this->gamestate->nextState("diceChosen");
+    }
+
+    /**
+     * First player reroll state - reroll their chosen die
+     */
+    public function stFirstPlayerReroll(): void
+    {
+        $player_id = (int)$this->getActivePlayerId();
+        
+        $this->trace("stFirstPlayerReroll: Player $player_id rerolling their chosen die");
+        
+        // Get which die they originally chose
+        $die_choice_value = $this->getGameStateValue("first_player_die_choice");
+        $die_type = $die_choice_value == 1 ? 'red' : 'blue';
+        
+        // Reroll the same die they chose
+        if ($die_type === 'red') {
+            $die_value = $this->rollRedDie();
+            $die_face = $this->getGameStateValue("red_die");
+        } else {
+            $die_value = $this->rollBlueDie();
+            $die_face = $this->getGameStateValue("blue_die");
+        }
+        
+        // Update their stored die value
+        $this->setGameStateValue("first_player_die_value", $die_value);
+        
+        // Get player name
+        $player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = " . (int)$player_id);
+        if (!$player_name) {
+            $player_name = "Player $player_id";
+        }
+        
+        $die_label = $die_type === 'red' ? 'Red (STRENGTH)' : 'Blue (SPEED)';
+        
+        // Notify about the reroll result
+        $this->notifyAllPlayers("diceRerolled", clienttranslate('${player_name} rerolled ${die_label}: ${die_value}'), [
+            "player_id" => $player_id,
+            "player_name" => $player_name,
+            "die_choice" => $die_type,
+            "die_label" => $die_label,
+            "die_face" => $die_face,
+            "die_value" => $die_value,
+        ]);
+        
+        $this->gamestate->nextState("rerolled");
+    }
+
+    /**
+     * Second player reroll state - reroll their chosen die
+     */
+    public function stSecondPlayerReroll(): void
+    {
+        $player_id = (int)$this->getActivePlayerId();
+        
+        $this->trace("stSecondPlayerReroll: Player $player_id rerolling their chosen die");
+        
+        // Get which die they originally chose
+        $die_choice_value = $this->getGameStateValue("second_player_die_choice");
+        $die_type = $die_choice_value == 1 ? 'red' : 'blue';
+        
+        // Reroll the same die they chose
+        if ($die_type === 'red') {
+            $die_value = $this->rollRedDie();
+            $die_face = $this->getGameStateValue("red_die");
+        } else {
+            $die_value = $this->rollBlueDie();
+            $die_face = $this->getGameStateValue("blue_die");
+        }
+        
+        // Update their stored die value
+        $this->setGameStateValue("second_player_die_value", $die_value);
+        
+        // Get player name
+        $player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = " . (int)$player_id);
+        if (!$player_name) {
+            $player_name = "Player $player_id";
+        }
+        
+        $die_label = $die_type === 'red' ? 'Red (STRENGTH)' : 'Blue (SPEED)';
+        
+        // Notify about the reroll result
+        $this->notifyAllPlayers("diceRerolled", clienttranslate('${player_name} rerolled ${die_label}: ${die_value}'), [
+            "player_id" => $player_id,
+            "player_name" => $player_name,
+            "die_choice" => $die_type,
+            "die_label" => $die_label,
+            "die_face" => $die_face,
+            "die_value" => $die_value,
+        ]);
+        
+        $this->gamestate->nextState("rerolled");
+    }
+    
+    /**
+     * Updated reroll methods to use player's chosen die
+     */
+    public function actRerollDice(): void
+    {
+        $player_id = (int)$this->getCurrentPlayerId();
+        $state_name = $this->gamestate->state()['name'];
+        
+        $this->trace("actRerollDice: Player $player_id wants to reroll in state $state_name");
+
+        // Check if player can afford reroll
+        if (!$this->canPlayerReroll($player_id)) {
+            throw new \BgaUserException("You need at least 1 token to reroll");
+        }
+
+        // Deduct 1 token for reroll
+        $this->DbQuery("UPDATE player SET special_tokens = special_tokens - 1 WHERE player_id = $player_id");
+
+        // Get player name
+        $player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = " . (int)$player_id);
+        if (!$player_name) {
+            $player_name = "Player $player_id";
+        }
+
+        $this->notifyAllPlayers("playerReroll", clienttranslate('${player_name} spends 1 token to reroll'), [
+            "player_id" => $player_id,
+            "player_name" => $player_name,
+        ]);
+
+        $this->gamestate->nextState("reroll");
+    }
+
+    /**
+     * Updated reroll argument method - IMPROVED with error handling
+     */
+    public function argRerollOption(): array
+    {
+        $player_id = (int)$this->getActivePlayerId();
+        $can_reroll = $this->canPlayerReroll($player_id);
+        
+        $state_name = $this->gamestate->state()['name'];
+        
+        // Determine which player and get their die choice and value
+        $die_choice_value = 0;
+        $die_value = 0;
+        
+        if (str_contains($state_name, 'first')) {
+            $die_choice_value = $this->getGameStateValue("first_player_die_choice");
+            $die_value = $this->getGameStateValue("first_player_die_value");
+        } else {
+            $die_choice_value = $this->getGameStateValue("second_player_die_choice");
+            $die_value = $this->getGameStateValue("second_player_die_value");
+        }
+        
+        // ADD: Safety check for die choice value
+        if ($die_choice_value == 0) {
+            $this->trace("argRerollOption: WARNING - No die choice recorded, defaulting to red");
+            $die_choice_value = 1; // Default to red
+        }
+        
+        $die_type = $die_choice_value == 1 ? 'red' : 'blue';
+        
+        // GET: Current tokens safely
+        $current_tokens = $this->getUniqueValueFromDB("SELECT special_tokens FROM player WHERE player_id = $player_id");
+        if ($current_tokens === null) {
+            $current_tokens = 0;
+        }
+        
+        $this->trace("argRerollOption: Player $player_id, die_type=$die_type, value=$die_value, can_reroll=" . ($can_reroll ? 'YES' : 'NO'));
+        
+        return [
+            "can_reroll" => $can_reroll,
+            "die_type" => $die_type,
+            "die_value" => $die_value,
+            "current_tokens" => $current_tokens
+        ];
+    }
+    
+    /**
      * Fixed actPlayCard - consistent use of global variables
      */
     public function actPlayCard(int $card_id): void
@@ -328,14 +574,38 @@ class Game extends \Table
                 "player_name" => $player_name,
             ]);
 
-            // REMOVED: No longer need to set the static array
             $this->gamestate->nextState("cardPlayed");
         } else {
             $this->trace("actPlayCard: ERROR - Unexpected state $state_name");
             throw new \BgaUserException("Cannot play card in current game state");
         }
     }
-	/**
+
+    /**
+     * NEW: Player chooses to keep their die result
+     */
+    public function actKeepDice(): void
+    {
+        $player_id = (int)$this->getCurrentPlayerId();
+        $state_name = $this->gamestate->state()['name'];
+        
+        $this->trace("actKeepDice: Player $player_id keeps dice in state $state_name");
+
+        // Get player name
+        $player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = " . (int)$player_id);
+        if (!$player_name) {
+            $player_name = "Player $player_id";
+        }
+
+        $this->notifyAllPlayers("playerKeepDice", clienttranslate('${player_name} keeps their dice result'), [
+            "player_id" => $player_id,
+            "player_name" => $player_name,
+        ]);
+
+        $this->gamestate->nextState("keep");
+    }
+
+    /**
      * Populate wrestlers table from material.inc.php data
      */
     private function populateWrestlersTable(): void
@@ -369,253 +639,255 @@ class Game extends \Table
     /**
      * Updated stRevealCards with direct data access
      */
-    public function stRevealCards(): void
-    {
-        // Get the data from global variables
-        $first_player_id = $this->getGameStateValue("first_player_id");
-        $second_player_id = $this->getGameStateValue("second_player_id");
-        $first_card = $this->getGameStateValue("first_player_card");
-        $second_card = $this->getGameStateValue("second_player_card");
+	public function stRevealCards(): void
+	{
+		// Get the data from global variables and cast to int
+		$first_player_id = (int)$this->getGameStateValue("first_player_id");  // CAST TO INT
+		$second_player_id = (int)$this->getGameStateValue("second_player_id"); // CAST TO INT
+		$first_card = $this->getGameStateValue("first_player_card");
+		$second_card = $this->getGameStateValue("second_player_card");
 
-        $this->trace("stRevealCards: first_player=$first_player_id, first_card=$first_card, second_player=$second_player_id, second_card=$second_card");
+		$this->trace("stRevealCards: first_player=$first_player_id, first_card=$first_card, second_player=$second_player_id, second_card=$second_card");
 
-        // Validate that we have the data
-        if (!$first_card || !$second_card || !$first_player_id || !$second_player_id) {
-            $this->trace("stRevealCards: ERROR - Missing card data");
-            throw new \BgaSystemException("Missing card data in stRevealCards");
-        }
+		// Validate that we have the data
+		if (!$first_card || !$second_card || !$first_player_id || !$second_player_id) {
+			$this->trace("stRevealCards: ERROR - Missing card data");
+			throw new \BgaSystemException("Missing card data in stRevealCards");
+		}
 
-        // Get player names with proper casting
-        $first_player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = " . (int)$first_player_id);
-        $second_player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = " . (int)$second_player_id);
-        
-        // Fallback names if queries fail
-        if (!$first_player_name) {
-            $first_player_name = "Player $first_player_id";
-        }
-        if (!$second_player_name) {
-            $second_player_name = "Player $second_player_id";
-        }
-        
-        $first_card_name = self::$CARD_TYPES[$first_card]['card_name'];
-        $second_card_name = self::$CARD_TYPES[$second_card]['card_name'];
+		// Get player names with proper casting
+		$first_player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = " . (int)$first_player_id);
+		$second_player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = " . (int)$second_player_id);
+		
+		// Fallback names if queries fail
+		if (!$first_player_name) {
+			$first_player_name = "Player $first_player_id";
+		}
+		if (!$second_player_name) {
+			$second_player_name = "Player $second_player_id";
+		}
+		
+		$first_card_name = self::$CARD_TYPES[$first_card]['card_name'];
+		$second_card_name = self::$CARD_TYPES[$second_card]['card_name'];
 
-        $this->trace("stRevealCards: Revealing cards - $first_player_name played $first_card_name, $second_player_name played $second_card_name");
+		$this->trace("stRevealCards: Revealing cards - $first_player_name played $first_card_name, $second_player_name played $second_card_name");
 
-        // Reveal both cards
-        $this->notifyAllPlayers("cardsRevealed", clienttranslate('Cards revealed: ${first_player_name} played ${first_card_name}, ${second_player_name} played ${second_card_name}'), [
-            "first_player_id" => $first_player_id,
-            "first_player_name" => $first_player_name,
-            "first_card_id" => $first_card,
-            "first_card_name" => $first_card_name,
-            "second_player_id" => $second_player_id,
-            "second_player_name" => $second_player_name,
-            "second_card_id" => $second_card,
-            "second_card_name" => $second_card_name,
-        ]);
+		// Reveal both cards
+		$this->notifyAllPlayers("cardsRevealed", clienttranslate('Cards revealed: ${first_player_name} played ${first_card_name}, ${second_player_name} played ${second_card_name}'), [
+			"first_player_id" => $first_player_id,
+			"first_player_name" => $first_player_name,
+			"first_card_id" => $first_card,
+			"first_card_name" => $first_card_name,
+			"second_player_id" => $second_player_id,
+			"second_player_name" => $second_player_name,
+			"second_card_id" => $second_card,
+			"second_card_name" => $second_card_name,
+		]);
 
-        // Clean up - reset the temporary score storage
-        $this->DbQuery("UPDATE player SET player_score = 0 WHERE player_id = " . (int)$first_player_id);
+		// Clean up - reset the temporary score storage
+		$this->DbQuery("UPDATE player SET player_score = 0 WHERE player_id = " . (int)$first_player_id);
 
-        $this->gamestate->nextState("resolve");
-    }
-	
+		$this->gamestate->nextState("resolve");
+	}
+    
     /**
-     * Step 1: Adjust conditioning based on cards played
-     */
-/**
      * Step 1: Adjust conditioning based on cards played - FIXED
      */
-    public function stAdjustConditioning(): void
-    {
-        // FIXED: Use global variables instead of static array
-        $first_card_id = $this->getGameStateValue("first_player_card");
-        $second_card_id = $this->getGameStateValue("second_player_card");
-        $first_player_id = $this->getGameStateValue("first_player_id");
-        $second_player_id = $this->getGameStateValue("second_player_id");
+	// 3. FIX: stAdjustConditioning method - cast player IDs to int
+	public function stAdjustConditioning(): void
+	{
+		// FIXED: Use global variables and cast to int
+		$first_card_id = $this->getGameStateValue("first_player_card");
+		$second_card_id = $this->getGameStateValue("second_player_card");
+		$first_player_id = (int)$this->getGameStateValue("first_player_id");  // CAST TO INT
+		$second_player_id = (int)$this->getGameStateValue("second_player_id"); // CAST TO INT
 
-        $this->trace("stAdjustConditioning: first_card=$first_card_id, second_card=$second_card_id, first_player=$first_player_id, second_player=$second_player_id");
+		$this->trace("stAdjustConditioning: first_card=$first_card_id, second_card=$second_card_id, first_player=$first_player_id, second_player=$second_player_id");
 
-        // Validate we have the data
-        if (!$first_card_id || !$second_card_id || !$first_player_id || !$second_player_id) {
-            $this->trace("stAdjustConditioning: ERROR - Missing round state data");
-            throw new \BgaSystemException("Missing round state data in stAdjustConditioning");
-        }
+		// Validate we have the data
+		if (!$first_card_id || !$second_card_id || !$first_player_id || !$second_player_id) {
+			$this->trace("stAdjustConditioning: ERROR - Missing round state data");
+			throw new \BgaSystemException("Missing round state data in stAdjustConditioning");
+		}
 
-        $first_card = self::$CARD_TYPES[$first_card_id];
-        $second_card = self::$CARD_TYPES[$second_card_id];
+		$first_card = self::$CARD_TYPES[$first_card_id];
+		$second_card = self::$CARD_TYPES[$second_card_id];
 
-        // Deduct conditioning costs
-        $first_cost = $first_card['conditioning_cost'];
-        $second_cost = $second_card['conditioning_cost'];
+		// Deduct conditioning costs
+		$first_cost = $first_card['conditioning_cost'];
+		$second_cost = $second_card['conditioning_cost'];
 
-        $this->trace("stAdjustConditioning: Deducting conditioning - Player $first_player_id: $first_cost, Player $second_player_id: $second_cost");
+		$this->trace("stAdjustConditioning: Deducting conditioning - Player $first_player_id: $first_cost, Player $second_player_id: $second_cost");
 
-        $this->DbQuery("UPDATE player SET conditioning = conditioning - $first_cost WHERE player_id = $first_player_id");
-        $this->DbQuery("UPDATE player SET conditioning = conditioning - $second_cost WHERE player_id = $second_player_id");
+		$this->DbQuery("UPDATE player SET conditioning = conditioning - $first_cost WHERE player_id = $first_player_id");
+		$this->DbQuery("UPDATE player SET conditioning = conditioning - $second_cost WHERE player_id = $second_player_id");
 
-        // Get updated conditioning values
-        $first_conditioning = $this->getUniqueValueFromDB("SELECT conditioning FROM player WHERE player_id = $first_player_id");
-        $second_conditioning = $this->getUniqueValueFromDB("SELECT conditioning FROM player WHERE player_id = $second_player_id");
+		// Get updated conditioning values
+		$first_conditioning = $this->getUniqueValueFromDB("SELECT conditioning FROM player WHERE player_id = $first_player_id");
+		$second_conditioning = $this->getUniqueValueFromDB("SELECT conditioning FROM player WHERE player_id = $second_player_id");
 
-        $this->notifyAllPlayers("conditioningAdjusted", clienttranslate('Conditioning adjusted'), [
-            "updates" => [
-                $first_player_id => ["conditioning" => $first_conditioning, "cost" => $first_cost],
-                $second_player_id => ["conditioning" => $second_conditioning, "cost" => $second_cost]
-            ]
-        ]);
+		$this->notifyAllPlayers("conditioningAdjusted", clienttranslate('Conditioning adjusted'), [
+			"updates" => [
+				$first_player_id => ["conditioning" => $first_conditioning, "cost" => $first_cost],
+				$second_player_id => ["conditioning" => $second_conditioning, "cost" => $second_cost]
+			]
+		]);
 
-        $this->gamestate->nextState("rollDice");
-    }
-	
+		$this->gamestate->nextState("rollDice");
+	}
+
     /**
-     * Step 2: Roll dice for stat changes and star card outcomes
+     * CORRECTED stApplyEffects - Apply each player's chosen die result to their offense
      */
-    // public function stRollDice(): void
-    // {
-        // Roll red and blue dice (1-6)
-        // $red_die = bga_rand(1, 6);
-        // $blue_die = bga_rand(1, 6);
+	// 1. FIX: stApplyEffects method - cast player IDs to int
+	public function stApplyEffects(): void
+	{
+		// Get the data from global variables
+		$first_card_id = $this->getGameStateValue("first_player_card");
+		$second_card_id = $this->getGameStateValue("second_player_card");
+		$first_player_id = (int)$this->getGameStateValue("first_player_id");  // CAST TO INT
+		$second_player_id = (int)$this->getGameStateValue("second_player_id"); // CAST TO INT
 
-        // $this->notifyAllPlayers("diceRolled", clienttranslate('Dice rolled: Red ${red_die}, Blue ${blue_die}'), [
-            // "red_die" => $red_die,
-            // "blue_die" => $blue_die
-        // ]);
+		// Validate that we have the data
+		if (!$first_card_id || !$second_card_id || !$first_player_id || !$second_player_id) {
+			$this->trace("stApplyEffects: ERROR - Missing round state data");
+			throw new \BgaSystemException("Missing round state data in stApplyEffects");
+		}
 
-        // Store dice results for use in next steps
-        // $this->setGameStateValue("red_die", $red_die);
-        // $this->setGameStateValue("blue_die", $blue_die);
+		// Get die choices and values for each player
+		$first_die_choice = $this->getGameStateValue("first_player_die_choice"); // 1=red, 2=blue
+		$second_die_choice = $this->getGameStateValue("second_player_die_choice");
+		$first_die_value = $this->getGameStateValue("first_player_die_value");
+		$second_die_value = $this->getGameStateValue("second_player_die_value");
 
-        // $this->gamestate->nextState("applyEffects");
-    // }
+		$first_die_type = $first_die_choice == 1 ? 'red' : 'blue';
+		$second_die_type = $second_die_choice == 1 ? 'red' : 'blue';
 
-	/**
-     * Step 3: Apply card effects and trademark moves - FIXED
-     */
-    public function stApplyEffects(): void
-    {
-        // Get the data from global variables instead of static array
-        $first_card_id = $this->getGameStateValue("first_player_card");
-        $second_card_id = $this->getGameStateValue("second_player_card");
-        $first_player_id = $this->getGameStateValue("first_player_id");
-        $second_player_id = $this->getGameStateValue("second_player_id");
+		$this->trace("stApplyEffects: Player $first_player_id chose $first_die_type = $first_die_value, Player $second_player_id chose $second_die_type = $second_die_value");
 
-        // Validate that we have the data
-        if (!$first_card_id || !$second_card_id || !$first_player_id || !$second_player_id) {
-            $this->trace("stApplyEffects: ERROR - Missing round state data");
-            $this->trace("stApplyEffects: first_card=$first_card_id, second_card=$second_card_id, first_player=$first_player_id, second_player=$second_player_id");
-            throw new \BgaSystemException("Missing round state data in stApplyEffects");
-        }
+		$first_card = self::$CARD_TYPES[$first_card_id];
+		$second_card = self::$CARD_TYPES[$second_card_id];
 
-        $first_card = self::$CARD_TYPES[$first_card_id];
-        $second_card = self::$CARD_TYPES[$second_card_id];
+		// Get wrestler data - CAST TO INT
+		$first_wrestler_id = (int)$this->getUniqueValueFromDB("SELECT wrestler_id FROM player WHERE player_id = " . (int)$first_player_id);
+		$second_wrestler_id = (int)$this->getUniqueValueFromDB("SELECT wrestler_id FROM player WHERE player_id = " . (int)$second_player_id);
+		
+		if (!$first_wrestler_id || !$second_wrestler_id) {
+			throw new \BgaSystemException("Could not find wrestler IDs");
+		}
+		
+		$first_wrestler = self::$WRESTLERS[$first_wrestler_id];
+		$second_wrestler = self::$WRESTLERS[$second_wrestler_id];
 
-        // Get wrestler data for trademark effects - FIXED with proper casting
-        $first_wrestler_id = $this->getUniqueValueFromDB("SELECT wrestler_id FROM player WHERE player_id = " . (int)$first_player_id);
-        $second_wrestler_id = $this->getUniqueValueFromDB("SELECT wrestler_id FROM player WHERE player_id = " . (int)$second_player_id);
-        
-        $this->trace("stApplyEffects: first_wrestler_id=$first_wrestler_id, second_wrestler_id=$second_wrestler_id");
-        
-        // Validate wrestler IDs
-        if (!$first_wrestler_id || !$second_wrestler_id) {
-            $this->trace("stApplyEffects: ERROR - Could not find wrestler IDs");
-            throw new \BgaSystemException("Could not find wrestler IDs");
-        }
-        
-        $first_wrestler = self::$WRESTLERS[$first_wrestler_id];
-        $second_wrestler = self::$WRESTLERS[$second_wrestler_id];
+		// APPLY DICE RESULTS TO OFFENSE STATS - ENSURE INT PARAMETERS
+		$this->applyDiceToOffense($first_player_id, (int)$first_die_value);
+		$this->applyDiceToOffense($second_player_id, (int)$second_die_value);
 
-        // Get dice results
-        $red_die = $this->getGameStateValue("red_die");
-        $blue_die = $this->getGameStateValue("blue_die");
-        
-        $this->trace("stApplyEffects: Dice results - Red: $red_die, Blue: $blue_die");
+		// Get updated offense values for notification
+		$first_new_offense = $this->getUniqueValueFromDB("SELECT offense FROM player WHERE player_id = $first_player_id");
+		$second_new_offense = $this->getUniqueValueFromDB("SELECT offense FROM player WHERE player_id = $second_player_id");
 
-        // Apply card effects (placeholder for now - you'll expand this)
-        $effects_applied = [];
-        
-        // Basic card resolution logic
-        if ($first_card['scoring']) {
-            $effects_applied[] = "{$first_wrestler['name']}'s {$first_card['card_name']} has scoring potential";
-        }
-        
-        if ($second_card['scoring']) {
-            $effects_applied[] = "{$second_wrestler['name']}'s {$second_card['card_name']} has scoring potential";
-        }
+		// Build effects description
+		$effects_applied = [];
+		
+		// Dice effects
+		$first_die_label = $first_die_type === 'red' ? 'Red (STRENGTH)' : 'Blue (SPEED)';
+		$second_die_label = $second_die_type === 'red' ? 'Red (STRENGTH)' : 'Blue (SPEED)';
+		
+		if ($first_die_value != 0) {
+			$effects_applied[] = "{$first_wrestler['name']} gained $first_die_value offense from $first_die_label die (new total: $first_new_offense)";
+		} else {
+			$effects_applied[] = "{$first_wrestler['name']}'s offense unchanged from $first_die_label die (total: $first_new_offense)";
+		}
+		
+		if ($second_die_value != 0) {
+			$effects_applied[] = "{$second_wrestler['name']} gained $second_die_value offense from $second_die_label die (new total: $second_new_offense)";
+		} else {
+			$effects_applied[] = "{$second_wrestler['name']}'s offense unchanged from $second_die_label die (total: $second_new_offense)";
+		}
+		
+		// Basic card resolution logic
+		if ($first_card['scoring']) {
+			$effects_applied[] = "{$first_wrestler['name']}'s {$first_card['card_name']} has scoring potential";
+		}
+		
+		if ($second_card['scoring']) {
+			$effects_applied[] = "{$second_wrestler['name']}'s {$second_card['card_name']} has scoring potential";
+		}
 
-        // Apply trademark effects (placeholder)
-        $effects_applied[] = "{$first_wrestler['name']} trademark: " . $first_wrestler['trademark'];
-        $effects_applied[] = "{$second_wrestler['name']} trademark: " . $second_wrestler['trademark'];
-        
-        // Add dice results to effects
-        $effects_applied[] = "Red die: $red_die, Blue die: $blue_die";
+		// Apply trademark effects (placeholder)
+		$effects_applied[] = "{$first_wrestler['name']} trademark: " . $first_wrestler['trademark'];
+		$effects_applied[] = "{$second_wrestler['name']} trademark: " . $second_wrestler['trademark'];
 
-        $this->trace("stApplyEffects: Effects applied: " . implode(', ', $effects_applied));
+		$this->trace("stApplyEffects: Effects applied: " . implode(', ', $effects_applied));
 
-        $this->notifyAllPlayers("effectsApplied", clienttranslate('Card and trademark effects applied'), [
-            "effects" => $effects_applied,
-            "red_die" => $red_die,
-            "blue_die" => $blue_die,
-            "first_card" => $first_card['card_name'],
-            "second_card" => $second_card['card_name']
-        ]);
+		$this->notifyAllPlayers("effectsApplied", clienttranslate('Card and dice effects applied'), [
+			"effects" => $effects_applied,
+			"first_die_choice" => $first_die_type,
+			"second_die_choice" => $second_die_type,
+			"first_die_value" => $first_die_value,
+			"second_die_value" => $second_die_value,
+			"first_card" => $first_card['card_name'],
+			"second_card" => $second_card['card_name'],
+			"offense_updates" => [
+				$first_player_id => $first_new_offense,
+				$second_player_id => $second_new_offense
+			]
+		]);
 
-        $this->gamestate->nextState("handleTokens");
-    }
-	
-    /**
-     * Step 4: Handle special token collection/payment
-     */
-/**
-     * Step 4: Handle special token collection/payment - FIXED
-     */
-    public function stHandleTokens(): void
-    {
-        // FIXED: Use global variables instead of static array
-        $first_card_id = $this->getGameStateValue("first_player_card");
-        $second_card_id = $this->getGameStateValue("second_player_card");
-        $first_player_id = $this->getGameStateValue("first_player_id");
-        $second_player_id = $this->getGameStateValue("second_player_id");
+		$this->gamestate->nextState("handleTokens");
+	}
 
-        $this->trace("stHandleTokens: first_card=$first_card_id, second_card=$second_card_id, first_player=$first_player_id, second_player=$second_player_id");
 
-        // Validate we have the data
-        if (!$first_card_id || !$second_card_id || !$first_player_id || !$second_player_id) {
-            $this->trace("stHandleTokens: ERROR - Missing round state data");
-            throw new \BgaSystemException("Missing round state data in stHandleTokens");
-        }
+	// 2. FIX: stHandleTokens method - cast player IDs to int
+	public function stHandleTokens(): void
+	{
+		// FIXED: Use global variables and cast to int
+		$first_card_id = $this->getGameStateValue("first_player_card");
+		$second_card_id = $this->getGameStateValue("second_player_card");
+		$first_player_id = (int)$this->getGameStateValue("first_player_id");  // CAST TO INT
+		$second_player_id = (int)$this->getGameStateValue("second_player_id"); // CAST TO INT
 
-        $first_card = self::$CARD_TYPES[$first_card_id];
-        $second_card = self::$CARD_TYPES[$second_card_id];
+		$this->trace("stHandleTokens: first_card=$first_card_id, second_card=$second_card_id, first_player=$first_player_id, second_player=$second_player_id");
 
-        // Deduct special tokens for cards that require them
-        $first_token_cost = $first_card['special_tokens'];
-        $second_token_cost = $second_card['special_tokens'];
+		// Validate we have the data
+		if (!$first_card_id || !$second_card_id || !$first_player_id || !$second_player_id) {
+			$this->trace("stHandleTokens: ERROR - Missing round state data");
+			throw new \BgaSystemException("Missing round state data in stHandleTokens");
+		}
 
-        $this->trace("stHandleTokens: Token costs - Player $first_player_id: $first_token_cost, Player $second_player_id: $second_token_cost");
+		$first_card = self::$CARD_TYPES[$first_card_id];
+		$second_card = self::$CARD_TYPES[$second_card_id];
 
-        if ($first_token_cost > 0) {
-            $this->DbQuery("UPDATE player SET special_tokens = special_tokens - $first_token_cost WHERE player_id = $first_player_id");
-        }
+		// Deduct special tokens for cards that require them
+		$first_token_cost = $first_card['special_tokens'];
+		$second_token_cost = $second_card['special_tokens'];
 
-        if ($second_token_cost > 0) {
-            $this->DbQuery("UPDATE player SET special_tokens = special_tokens - $second_token_cost WHERE player_id = $second_player_id");
-        }
+		$this->trace("stHandleTokens: Token costs - Player $first_player_id: $first_token_cost, Player $second_player_id: $second_token_cost");
 
-        // Get updated token values
-        $first_tokens = $this->getUniqueValueFromDB("SELECT special_tokens FROM player WHERE player_id = $first_player_id");
-        $second_tokens = $this->getUniqueValueFromDB("SELECT special_tokens FROM player WHERE player_id = $second_player_id");
+		if ($first_token_cost > 0) {
+			$this->DbQuery("UPDATE player SET special_tokens = special_tokens - $first_token_cost WHERE player_id = $first_player_id");
+		}
 
-        $this->notifyAllPlayers("tokensHandled", clienttranslate('Special tokens updated'), [
-            "updates" => [
-                $first_player_id => ["special_tokens" => $first_tokens, "cost" => $first_token_cost],
-                $second_player_id => ["special_tokens" => $second_tokens, "cost" => $second_token_cost]
-            ]
-        ]);
+		if ($second_token_cost > 0) {
+			$this->DbQuery("UPDATE player SET special_tokens = special_tokens - $second_token_cost WHERE player_id = $second_player_id");
+		}
 
-        $this->gamestate->nextState("drawScramble");
-    }
-	
+		// Get updated token values
+		$first_tokens = $this->getUniqueValueFromDB("SELECT special_tokens FROM player WHERE player_id = $first_player_id");
+		$second_tokens = $this->getUniqueValueFromDB("SELECT special_tokens FROM player WHERE player_id = $second_player_id");
+
+		$this->notifyAllPlayers("tokensHandled", clienttranslate('Special tokens updated'), [
+			"updates" => [
+				$first_player_id => ["special_tokens" => $first_tokens, "cost" => $first_token_cost],
+				$second_player_id => ["special_tokens" => $second_tokens, "cost" => $second_token_cost]
+			]
+		]);
+
+		$this->gamestate->nextState("drawScramble");
+	}
+
+    
     /**
      * Step 5: Draw scramble card if applicable
      */
@@ -632,18 +904,102 @@ class Game extends \Table
     }
 
     /**
-     * Determine next round/period
+     * Roll the 8-sided red die (STRENGTH)
+     * Values: -2, -2, 0, 0, 1, 2, 3, 3
      */
-/**
-     * Determine next round/period - FIXED
+    private function rollRedDie(): int
+    {
+        $red_die_values = [-2, -2, 0, 0, 1, 2, 3, 3];
+        $die_face = bga_rand(1, 8);
+        $die_value = $red_die_values[$die_face - 1];
+        
+        $this->trace("rollRedDie: Face $die_face = Value $die_value");
+        
+        // Store both the face and the value
+        $this->setGameStateValue("red_die", $die_face);
+        
+        return $die_value;
+    }
+
+    /**
+     * Roll the 8-sided blue die (SPEED) 
+     * Values: -1, -1, 0, 0, 1, 1, 2, 2
+     */
+    private function rollBlueDie(): int
+    {
+        $blue_die_values = [-1, -1, 0, 0, 1, 1, 2, 2];
+        $die_face = bga_rand(1, 8);
+        $die_value = $blue_die_values[$die_face - 1];
+        
+        $this->trace("rollBlueDie: Face $die_face = Value $die_value");
+        
+        // Store both the face and the value
+        $this->setGameStateValue("blue_die", $die_face);
+        
+        return $die_value;
+    }
+
+    /**
+     * Apply dice costs and token rewards to player
+     */
+	// 5. FIX: applyDiceCosts method - ensure proper typing  
+	private function applyDiceCosts(int $player_id, string $die_type): void
+	{
+		if ($die_type === 'red') {
+			// Red die: costs 3 conditioning, gain 1 token
+			$this->DbQuery("UPDATE player SET conditioning = conditioning - 3, special_tokens = special_tokens + 1 WHERE player_id = $player_id");
+			$this->trace("applyDiceCosts: Player $player_id - Red die cost 3 conditioning, gained 1 token");
+		} else if ($die_type === 'blue') {
+			// Blue die: costs 2 conditioning, gain 2 tokens
+			$this->DbQuery("UPDATE player SET conditioning = conditioning - 2, special_tokens = special_tokens + 2 WHERE player_id = $player_id");
+			$this->trace("applyDiceCosts: Player $player_id - Blue die cost 2 conditioning, gained 2 tokens");
+		}
+	}
+
+    /**
+     * Apply dice result to player's offense stat
+     */
+	// 4. FIX: applyDiceToOffense method - ensure proper typing
+	private function applyDiceToOffense(int $player_id, int $dice_total): void
+	{
+		$this->trace("applyDiceToOffense: Player $player_id getting $dice_total offense adjustment");
+		
+		if ($dice_total != 0) {
+			$this->DbQuery("UPDATE player SET offense = offense + $dice_total WHERE player_id = $player_id");
+			
+			// Get updated offense value
+			$new_offense = $this->getUniqueValueFromDB("SELECT offense FROM player WHERE player_id = $player_id");
+			$this->trace("applyDiceToOffense: Player $player_id new offense: $new_offense");
+		}
+	}
+
+
+    /**
+     * Check if player can afford to reroll (needs 1+ tokens)
+     */
+	// 6. FIX: canPlayerReroll method - ensure proper typing
+	private function canPlayerReroll(int $player_id): bool
+	{
+		$tokens = (int)$this->getUniqueValueFromDB("SELECT special_tokens FROM player WHERE player_id = $player_id");
+		return $tokens >= 1;
+	}
+
+    /**
+     * Determine next round/period
      */
     public function stNextRound(): void
     {
-        // FIXED: Clear round state using global variables, not static array
+        // Clear ALL round state using global variables
         $this->setGameStateValue("first_player_card", 0);
         $this->setGameStateValue("second_player_card", 0);
         $this->setGameStateValue("first_player_id", 0);
         $this->setGameStateValue("second_player_id", 0);
+        
+        // Clear die choice state
+        $this->setGameStateValue("first_player_die_choice", 0);
+        $this->setGameStateValue("second_player_die_choice", 0);
+        $this->setGameStateValue("first_player_die_value", 0);
+        $this->setGameStateValue("second_player_die_value", 0);
 
         // Increment round
         $current_round = $this->getGameStateValue("current_round");
@@ -674,7 +1030,7 @@ class Game extends \Table
 
         $this->gamestate->nextState("setNextPlayer");
     }
-	
+
     /**
      * Set the first player for the round - IMPROVED with debugging
      */
@@ -700,7 +1056,7 @@ class Game extends \Table
         $this->gamestate->nextState("startRound");
     }
 
-	/**
+    /**
      * Switch from first player to second player
      */
     public function stSwitchToSecondPlayer(): void
@@ -775,29 +1131,28 @@ class Game extends \Table
         // FIXED: Use the correct transition name
         $this->gamestate->nextState('secondPlayerDice');
     }
-	
-	/**
-	 * Set first player for dice rolling - FIXED
-	 */
-	public function stSetFirstPlayerForDice(): void
-	{
-		$this->trace("stSetFirstPlayerForDice: START");
-		
-		// Get the first player (offense player goes first for dice rolling too)
-		$first_player_id = $this->getGameStateValue("position_offense");
-		
-		$this->trace("stSetFirstPlayerForDice: Setting first player $first_player_id as active for dice rolling");
-		
-		// Set the active player
-		$this->gamestate->changeActivePlayer($first_player_id);
-		
-		$this->trace("stSetFirstPlayerForDice: COMPLETE");
-		
-		// FIXED: Use the correct transition name
-		$this->gamestate->nextState('firstPlayerDice');
-	}
+    
+    /**
+     * Set first player for dice rolling - FIXED
+     */
+    public function stSetFirstPlayerForDice(): void
+    {
+        $this->trace("stSetFirstPlayerForDice: START");
+        
+        // Get the first player (offense player goes first for dice rolling too)
+        $first_player_id = $this->getGameStateValue("position_offense");
+        
+        $this->trace("stSetFirstPlayerForDice: Setting first player $first_player_id as active for dice rolling");
+        
+        // Set the active player
+        $this->gamestate->changeActivePlayer($first_player_id);
+        
+        $this->trace("stSetFirstPlayerForDice: COMPLETE");
+        
+        // FIXED: Use the correct transition name
+        $this->gamestate->nextState('firstPlayerDice');
+    }
 
-	
     /**
      * Set the next player for the round - IMPROVED
      */
@@ -837,10 +1192,10 @@ class Game extends \Table
     public function actPass(): void
     {
         $player_id = (int)$this->getActivePlayerId();
-		$player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $player_id");
-		if (!$player_name) {
-			$player_name = "Player $player_id"; // Fallback if name not found
-		}
+        $player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $player_id");
+        if (!$player_name) {
+            $player_name = "Player $player_id"; // Fallback if name not found
+        }
 
         $this->notifyAllPlayers("pass", clienttranslate('${player_name} passes'), [
             "player_id" => $player_id,
@@ -848,75 +1203,6 @@ class Game extends \Table
         ]);
 
         $this->gamestate->nextState("pass");
-    }
-
-    /**
-     * Player action to roll dice
-     */
-    public function actRollDice(): void
-    {
-        $player_id = (int)$this->getCurrentPlayerId();
-        $state_name = $this->gamestate->state()['name'];
-        
-        $this->trace("actRollDice: Player $player_id rolling dice in state $state_name");
-
-        // Get player name
-        $player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = " . (int)$player_id);
-        if (!$player_name) {
-            $player_name = "Player $player_id";
-        }
-
-        if ($state_name === 'firstPlayerRollDice') {
-            // First player rolls red die
-            $red_die = bga_rand(1, 6);
-            
-            $this->trace("actRollDice: First player rolled red die: $red_die");
-            
-            // Store the red die result
-            $this->setGameStateValue("red_die", $red_die);
-            
-            // Notify all players about the red die roll
-            $this->notifyAllPlayers("redDiceRolled", clienttranslate('${player_name} rolled the red die: ${die_result}'), [
-                "player_id" => $player_id,
-                "player_name" => $player_name,
-                "die_result" => $red_die,
-                "die_color" => "red"
-            ]);
-
-            $this->gamestate->nextState("diceRolled");
-            
-        } else if ($state_name === 'secondPlayerRollDice') {
-            // Second player rolls blue die
-            $blue_die = bga_rand(1, 6);
-            
-            $this->trace("actRollDice: Second player rolled blue die: $blue_die");
-            
-            // Store the blue die result
-            $this->setGameStateValue("blue_die", $blue_die);
-            
-            // Get the red die result that was already rolled
-            $red_die = $this->getGameStateValue("red_die");
-            
-            // Notify all players about the blue die roll
-            $this->notifyAllPlayers("blueDiceRolled", clienttranslate('${player_name} rolled the blue die: ${die_result}'), [
-                "player_id" => $player_id,
-                "player_name" => $player_name,
-                "die_result" => $blue_die,
-                "die_color" => "blue"
-            ]);
-            
-            // Notify all players about both dice results
-            $this->notifyAllPlayers("diceRollComplete", clienttranslate('Dice rolling complete: Red ${red_die}, Blue ${blue_die}'), [
-                "red_die" => $red_die,
-                "blue_die" => $blue_die
-            ]);
-
-            $this->gamestate->nextState("diceRolled");
-            
-        } else {
-            $this->trace("actRollDice: ERROR - Unexpected state $state_name");
-            throw new \BgaUserException("Cannot roll dice in current game state");
-        }
     }
 
     /**
@@ -949,7 +1235,7 @@ class Game extends \Table
     }
 
     /**
-     * Updated argPlayerTurn using robust player detection
+     * Updated argPlayerTurn using robust player detection - IMPROVED with error handling
      */
     public function argPlayerTurn(): array
     {
@@ -957,8 +1243,14 @@ class Game extends \Table
         
         $this->trace("argPlayerTurn: START for player $player_id");
         
-        // Get player's current position
-        $current_position = $this->getPlayerPosition($player_id);
+        // Get player's current position - ADD ERROR HANDLING
+        try {
+            $current_position = $this->getPlayerPosition($player_id);
+        } catch (Exception $e) {
+            $this->trace("argPlayerTurn: ERROR getting position for player $player_id: " . $e->getMessage());
+            $current_position = 'offense'; // Safe fallback
+        }
+        
         $this->trace("argPlayerTurn: Player $player_id current position: $current_position");
         
         // Get all available cards for this position
@@ -972,7 +1264,11 @@ class Game extends \Table
         
         if (!$player_data) {
             $this->trace("argPlayerTurn: ERROR - Could not find player data for player $player_id");
-            throw new \BgaSystemException("Player data not found for player $player_id");
+            // Return safe defaults instead of throwing exception
+            return [
+                "playableCardsIds" => [25], // Just stall card
+                "current_position" => $current_position,
+            ];
         }
         
         $this->trace("argPlayerTurn: Player $player_id resources - conditioning: {$player_data['conditioning']}, tokens: {$player_data['special_tokens']}");
@@ -1002,9 +1298,9 @@ class Game extends \Table
             "current_position" => $current_position,
         ];
     }
-	
-	/**
-     * Get the player ID for the current turn - more robust method
+    
+    /**
+     * Get the player ID for the current turn - more robust method - IMPROVED
      */
     private function getTurnPlayerId(): int
     {
@@ -1018,15 +1314,19 @@ class Game extends \Table
         // For first player turn, use offense player
         if ($state_name === 'firstPlayerTurn') {
             $offense_player = (int)$this->getGameStateValue("position_offense");
-            $this->trace("getTurnPlayerId: First player turn, using offense player: $offense_player");
-            return $offense_player;
+            if ($offense_player > 0) {
+                $this->trace("getTurnPlayerId: First player turn, using offense player: $offense_player");
+                return $offense_player;
+            }
         }
         
         // For second player turn, use defense player
         if ($state_name === 'secondPlayerTurn') {
             $defense_player = (int)$this->getGameStateValue("position_defense");
-            $this->trace("getTurnPlayerId: Second player turn, using defense player: $defense_player");
-            return $defense_player;
+            if ($defense_player > 0) {
+                $this->trace("getTurnPlayerId: Second player turn, using defense player: $defense_player");
+                return $defense_player;
+            }
         }
         
         // Fallback to active player if valid
@@ -1039,6 +1339,13 @@ class Game extends \Table
         if ($current_player > 0) {
             $this->trace("getTurnPlayerId: Using current player: $current_player");
             return $current_player;
+        }
+        
+        // LAST RESORT: Get first player from database
+        $first_player = (int)$this->getUniqueValueFromDB("SELECT player_id FROM player LIMIT 1");
+        if ($first_player > 0) {
+            $this->trace("getTurnPlayerId: EMERGENCY fallback to first player: $first_player");
+            return $first_player;
         }
         
         throw new \BgaSystemException("Could not determine player ID for turn");
@@ -1104,50 +1411,65 @@ class Game extends \Table
     }
 
     /**
-     * Get all game data
+     * Get all game data - IMPROVED with safety checks
      */
-	protected function getAllDatas(): array
-	{
-		$result = [];
-		$current_player_id = (int) $this->getCurrentPlayerId();
+    protected function getAllDatas(): array
+    {
+        $result = [];
+        $current_player_id = (int) $this->getCurrentPlayerId();
 
-		// Get player information including wrestler data
-		$result["players"] = $this->getCollectionFromDb(
-			"SELECT 
-				player_id id, 
-				player_score score, 
-				wrestler_id,
-				conditioning,
-				offense,
-				defense,
-				top,
-				bottom,
-				special_tokens,
-				stall_count 
-			FROM player"
-		);
+        try {
+            // Get player information including wrestler data
+            $result["players"] = $this->getCollectionFromDb(
+                "SELECT 
+                    player_id id, 
+                    player_score score, 
+                    player_name name,
+                    wrestler_id,
+                    conditioning,
+                    offense,
+                    defense,
+                    top,
+                    bottom,
+                    special_tokens,
+                    stall_count 
+                FROM player"
+            );
 
-		// Add wrestler details
-		foreach ($result["players"] as &$player) {
-			if ($player['wrestler_id']) {
-				$player['wrestler'] = self::$WRESTLERS[$player['wrestler_id']];
-			}
-		}
+            // Add wrestler details - with safety checks
+            foreach ($result["players"] as &$player) {
+                if ($player['wrestler_id'] && isset(self::$WRESTLERS[$player['wrestler_id']])) {
+                    $player['wrestler'] = self::$WRESTLERS[$player['wrestler_id']];
+                } else {
+                    $player['wrestler'] = null;
+                }
+            }
 
-		// Get available wrestlers for selection
-		$result["wrestlers"] = self::$WRESTLERS;
-		
-		// Get game state info
-		$result["game_state"] = [
-			"current_period" => $this->getGameStateValue("current_period"),
-			"current_round" => $this->getGameStateValue("current_round")
-		];
+            // Get available wrestlers for selection
+            $result["wrestlers"] = self::$WRESTLERS;
+            
+            // Get game state info - with safety checks
+            $result["game_state"] = [
+                "current_period" => $this->getGameStateValue("current_period") ?? 1,
+                "current_round" => $this->getGameStateValue("current_round") ?? 1
+            ];
 
-		$result["cardTypes"] = self::$CARD_TYPES;
+            $result["cardTypes"] = self::$CARD_TYPES;
+            
+        } catch (Exception $e) {
+            $this->trace("getAllDatas: ERROR - " . $e->getMessage());
+            // Return minimal safe data
+            $result = [
+                "players" => [],
+                "wrestlers" => self::$WRESTLERS,
+                "game_state" => ["current_period" => 1, "current_round" => 1],
+                "cardTypes" => self::$CARD_TYPES
+            ];
+        }
 
-		return $result;
-	}
-	
+        return $result;
+    }
+    
     /**
      * Updated setupNewGame to populate wrestlers
      */
@@ -1190,7 +1512,7 @@ class Game extends \Table
         
         $this->trace("setupNewGame: COMPLETE");
     }
-	
+    
     /**
      * Zombie turn handling
      */
@@ -1212,6 +1534,16 @@ class Game extends \Table
                     if (!empty($playable_cards)) {
                         $this->actPlayCard($playable_cards[0]);
                     }
+                    return;
+                case "firstPlayerChooseDie":
+                case "secondPlayerChooseDie":
+                    // Auto-choose red die
+                    $this->actChooseDie("red");
+                    return;
+                case "firstPlayerRerollOption":
+                case "secondPlayerRerollOption":
+                    // Auto-keep dice
+                    $this->actKeepDice();
                     return;
                 default:
                     $this->gamestate->nextState("zombiePass");
@@ -1237,11 +1569,11 @@ class Game extends \Table
                     $this->DbQuery("UPDATE player SET bottom = {$wrestler['bottom']} WHERE player_id = $active_player");
                     $this->DbQuery("UPDATE player SET special_tokens = {$wrestler['special_tokens']} WHERE player_id = $active_player");
                     
-					$player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $active_player");
-					if (!$player_name) {
-						$player_name = "Player $active_player"; // Fixed variable name
-					}                    
-					
+                    $player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $active_player");
+                    if (!$player_name) {
+                        $player_name = "Player $active_player";
+                    }                    
+                    
                     $this->notifyAllPlayers("wrestlerSelected", clienttranslate('${player_name} selected ${wrestler_name}'), [
                         "player_id" => $active_player,
                         "player_name" => $player_name,
