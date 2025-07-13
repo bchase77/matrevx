@@ -90,7 +90,7 @@ setup: function( gamedatas )
         ///////////////////////////////////////////////////
         //// Game & client states
 		
-		onEnteringState: function( stateName, args )
+        onEnteringState: function( stateName, args )
         {
             console.log( 'Entering state: '+stateName, args );
             
@@ -107,6 +107,11 @@ setup: function( gamedatas )
                 case 'firstPlayerTurn':
                 case 'secondPlayerTurn':
                     this.enterPlayerTurn(args);
+                    break;
+                    
+                case 'firstPlayerRollDice':
+                case 'secondPlayerRollDice':
+                    this.enterDiceRolling(args);
                     break;
                     
                 case 'dummy':
@@ -153,14 +158,20 @@ setup: function( gamedatas )
                         
                     case 'firstPlayerTurn':
                     case 'secondPlayerTurn':
-                        // Cards will be shown in hand area, just add pass button if needed
-                        // You might want to remove pass option or make it conditional
-                        // this.addActionButton('btn-pass', _('Pass'), () => this.bgaPerformAction("actPass"), null, null, 'gray'); 
+                        // Cards will be shown in hand area
+                        break;
+                        
+                    case 'firstPlayerRollDice':
+                        this.addActionButton('btn-roll-red', _('Roll Red Die'), () => this.onRollDice(), null, null, 'red');
+                        break;
+                        
+                    case 'secondPlayerRollDice':
+                        this.addActionButton('btn-roll-blue', _('Roll Blue Die'), () => this.onRollDice(), null, null, 'blue');
                         break;
                 }
             }
         },
-
+		
         ///////////////////////////////////////////////////
         //// Utility methods
         
@@ -286,6 +297,53 @@ setup: function( gamedatas )
             `;
         },
         
+       enterDiceRolling: function(args) {
+            console.log('Entering dice rolling state', args);
+            
+            // Hide hand area
+            document.getElementById('player-hand-area').style.display = 'none';
+            
+            // Show dice rolling info
+            const gameInfo = document.getElementById('game-info');
+            const stateName = this.gamedatas.gamestate.name;
+            
+            let diceHTML = '<div style="padding: 20px; background: #fff3cd; border-radius: 8px; margin: 10px;">';
+            diceHTML += '<h3>Dice Rolling Phase</h3>';
+            
+            if (stateName === 'firstPlayerRollDice') {
+                diceHTML += '<p>First player rolls the <strong style="color: red;">RED DIE</strong></p>';
+            } else if (stateName === 'secondPlayerRollDice') {
+                diceHTML += '<p>Second player rolls the <strong style="color: blue;">BLUE DIE</strong></p>';
+            }
+            
+            diceHTML += '</div>';
+            gameInfo.innerHTML = diceHTML;
+        },
+
+        onRollDice: function() {
+            console.log('Rolling dice...');
+            
+            // Disable the roll button immediately to prevent double-clicks
+            const rollBtn = document.querySelector('[id^="btn-roll"]');
+            if (rollBtn) {
+                rollBtn.disabled = true;
+                rollBtn.textContent = 'Rolling...';
+                rollBtn.style.opacity = '0.5';
+            }
+            
+            this.bgaPerformAction("actRollDice", {}).then(() => {
+                console.log('Dice roll successful');
+            }).catch(error => {
+                console.error('Error rolling dice:', error);
+                // Re-enable button on error
+                if (rollBtn) {
+                    rollBtn.disabled = false;
+                    rollBtn.textContent = rollBtn.id.includes('red') ? 'Roll Red Die' : 'Roll Blue Die';
+                    rollBtn.style.opacity = '1';
+                }
+            });
+        },
+		
         enterPlayerTurn: function(args) {
             // Show game area
             document.getElementById('wrestling-mat').style.display = 'block';
@@ -550,94 +608,149 @@ setup: function( gamedatas )
         ///////////////////////////////////////////////////
         //// Reaction to cometD notifications
 
-		setupNotifications: function()
-		{
-			console.log( 'notifications subscriptions setup' );
-			
-			// Existing notifications
-			dojo.subscribe('wrestlerSelected', this, "notif_wrestlerSelected");
-			dojo.subscribe('startingPositionChoice', this, "notif_startingPositionChoice");
-			dojo.subscribe('positionSelected', this, "notif_positionSelected");
-			
-			// New gameplay notifications
-			dojo.subscribe('firstCardPlayed', this, "notif_firstCardPlayed");
-			dojo.subscribe('secondCardPlayed', this, "notif_secondCardPlayed");
-			dojo.subscribe('cardsRevealed', this, "notif_cardsRevealed");
-			dojo.subscribe('conditioningAdjusted', this, "notif_conditioningAdjusted");
-			dojo.subscribe('diceRolled', this, "notif_diceRolled");
-			dojo.subscribe('effectsApplied', this, "notif_effectsApplied");
-			dojo.subscribe('tokensHandled', this, "notif_tokensHandled");
-			dojo.subscribe('scrambleDrawn', this, "notif_scrambleDrawn");
-			dojo.subscribe('newRound', this, "notif_newRound");
-		},
-        
-	notif_wrestlerSelected: function(notif) {
-		console.log('notif_wrestlerSelected', notif);
+        setupNotifications: function()
+        {
+            console.log( 'notifications subscriptions setup' );
+            
+            // Existing notifications
+            dojo.subscribe('wrestlerSelected', this, "notif_wrestlerSelected");
+            dojo.subscribe('startingPositionChoice', this, "notif_startingPositionChoice");
+            dojo.subscribe('positionSelected', this, "notif_positionSelected");
+            dojo.subscribe('firstCardPlayed', this, "notif_firstCardPlayed");
+            dojo.subscribe('secondCardPlayed', this, "notif_secondCardPlayed");
+            dojo.subscribe('cardsRevealed', this, "notif_cardsRevealed");
+            dojo.subscribe('conditioningAdjusted', this, "notif_conditioningAdjusted");
+            dojo.subscribe('effectsApplied', this, "notif_effectsApplied");
+            dojo.subscribe('tokensHandled', this, "notif_tokensHandled");
+            dojo.subscribe('scrambleDrawn', this, "notif_scrambleDrawn");
+            dojo.subscribe('newRound', this, "notif_newRound");
+            
+            // NEW dice rolling notifications
+            dojo.subscribe('redDiceRolled', this, "notif_redDiceRolled");
+            dojo.subscribe('blueDiceRolled', this, "notif_blueDiceRolled");
+            dojo.subscribe('diceRollComplete', this, "notif_diceRollComplete");
+        },
+
+        // Add these new notification handlers:
+        notif_redDiceRolled: function(notif) {
+            console.log('notif_redDiceRolled', notif);
+            
+            // Show red die result in game info
+            const gameInfo = document.getElementById('game-info');
+            let diceHTML = '<div style="padding: 20px; background: #f8d7da; border-radius: 8px; margin: 10px;">';
+            diceHTML += '<h3>Dice Results</h3>';
+            diceHTML += '<p><strong style="color: red;">Red Die:</strong> <span style="font-size: 24px; font-weight: bold; color: red;">' + notif.args.die_result + '</span></p>';
+            diceHTML += '<p>Waiting for blue die...</p>';
+            diceHTML += '</div>';
+            
+            gameInfo.innerHTML = diceHTML;
+        },
+
+        notif_blueDiceRolled: function(notif) {
+            console.log('notif_blueDiceRolled', notif);
+            
+            // Update to show blue die result
+            const gameInfo = document.getElementById('game-info');
+            let existingHTML = gameInfo.innerHTML;
+            
+            // Replace "Waiting for blue die..." with the actual result
+            existingHTML = existingHTML.replace('<p>Waiting for blue die...</p>', 
+                '<p><strong style="color: blue;">Blue Die:</strong> <span style="font-size: 24px; font-weight: bold; color: blue;">' + notif.args.die_result + '</span></p>');
+            
+            gameInfo.innerHTML = existingHTML;
+        },
+
+        notif_diceRollComplete: function(notif) {
+            console.log('notif_diceRollComplete', notif);
+            
+            // Show final dice results
+            const gameInfo = document.getElementById('game-info');
+            let diceHTML = '<div style="padding: 20px; background: #d1ecf1; border-radius: 8px; margin: 10px;">';
+            diceHTML += '<h3>Final Dice Results</h3>';
+            diceHTML += '<div style="display: flex; gap: 30px; justify-content: center; margin: 15px 0;">';
+            diceHTML += '<div style="text-align: center;">';
+            diceHTML += '<div style="font-size: 18px; color: red; font-weight: bold;">Red Die</div>';
+            diceHTML += '<div style="font-size: 36px; font-weight: bold; color: red; border: 3px solid red; border-radius: 8px; padding: 10px; background: white;">' + notif.args.red_die + '</div>';
+            diceHTML += '</div>';
+            diceHTML += '<div style="text-align: center;">';
+            diceHTML += '<div style="font-size: 18px; color: blue; font-weight: bold;">Blue Die</div>';
+            diceHTML += '<div style="font-size: 36px; font-weight: bold; color: blue; border: 3px solid blue; border-radius: 8px; padding: 10px; background: white;">' + notif.args.blue_die + '</div>';
+            diceHTML += '</div>';
+            diceHTML += '</div>';
+            diceHTML += '</div>';
+            
+            gameInfo.innerHTML = diceHTML;
+            
+            this.showMessage('Dice rolling complete: Red ' + notif.args.red_die + ', Blue ' + notif.args.blue_die, 'info');
+        },
 		
-		const playerId = notif.args.player_id;
-		const wrestlerName = notif.args.wrestler_name;
-		const wrestlerId = notif.args.wrestler_id;
-		
-		// Update local player data with wrestler stats
-		if (this.gamedatas.players[playerId]) {
-			const wrestler = this.gamedatas.wrestlers[wrestlerId];
-			if (wrestler) {
-				this.gamedatas.players[playerId].wrestler_id = wrestlerId;
-				this.gamedatas.players[playerId].conditioning = wrestler.conditioning_p1;
-				this.gamedatas.players[playerId].offense = wrestler.offense;
-				this.gamedatas.players[playerId].defense = wrestler.defense;
-				this.gamedatas.players[playerId].top = wrestler.top;
-				this.gamedatas.players[playerId].bottom = wrestler.bottom;
-				this.gamedatas.players[playerId].special_tokens = wrestler.special_tokens;
-				this.gamedatas.players[playerId].wrestler = wrestler;
+		notif_wrestlerSelected: function(notif) {
+			console.log('notif_wrestlerSelected', notif);
+			
+			const playerId = notif.args.player_id;
+			const wrestlerName = notif.args.wrestler_name;
+			const wrestlerId = notif.args.wrestler_id;
+			
+			// Update local player data with wrestler stats
+			if (this.gamedatas.players[playerId]) {
+				const wrestler = this.gamedatas.wrestlers[wrestlerId];
+				if (wrestler) {
+					this.gamedatas.players[playerId].wrestler_id = wrestlerId;
+					this.gamedatas.players[playerId].conditioning = wrestler.conditioning_p1;
+					this.gamedatas.players[playerId].offense = wrestler.offense;
+					this.gamedatas.players[playerId].defense = wrestler.defense;
+					this.gamedatas.players[playerId].top = wrestler.top;
+					this.gamedatas.players[playerId].bottom = wrestler.bottom;
+					this.gamedatas.players[playerId].special_tokens = wrestler.special_tokens;
+					this.gamedatas.players[playerId].wrestler = wrestler;
+				}
 			}
-		}
-		
-		// Update player panel
-		const wrestlerNameElement = document.getElementById(`wrestler-name-${playerId}`);
-		if (wrestlerNameElement) {
-			wrestlerNameElement.textContent = wrestlerName;
-		}
-		
-		// Update conditioning display
-		const conditioningElement = document.getElementById(`conditioning-${playerId}`);
-		if (conditioningElement && this.gamedatas.players[playerId]) {
-			conditioningElement.textContent = `Conditioning: ${this.gamedatas.players[playerId].conditioning || 0}`;
-		}
-		
-		// Update stats display
-		const statsElement = document.querySelector(`#player-wrestler-info-${playerId} .wrestler-stats-compact`);
-		if (statsElement && this.gamedatas.players[playerId]) {
-			const player = this.gamedatas.players[playerId];
-			statsElement.textContent = `O:${player.offense || 0} D:${player.defense || 0} T:${player.top || 0} B:${player.bottom || 0}`;
-		}
-		
-		// Remove wrestler from available list if visible
-		const wrestlerCard = document.getElementById(`wrestler-${wrestlerId}`);
-		if (wrestlerCard) {
-			wrestlerCard.style.opacity = '0.3';
-			wrestlerCard.style.pointerEvents = 'none';
-			wrestlerCard.innerHTML += '<div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: red; font-weight: bold; font-size: 18px; background: rgba(255,255,255,0.9); padding: 5px 10px; border-radius: 5px;">SELECTED</div>';
-			wrestlerCard.style.position = 'relative';
-		}
-		
-		// Check if this was our selection
-		if (playerId == this.player_id) {
-			// Remove confirm button
-			const confirmBtn = document.getElementById('confirm-wrestler-btn');
-			if (confirmBtn) {
-				confirmBtn.remove();
+			
+			// Update player panel
+			const wrestlerNameElement = document.getElementById(`wrestler-name-${playerId}`);
+			if (wrestlerNameElement) {
+				wrestlerNameElement.textContent = wrestlerName;
 			}
 			
-			// Show message
-			this.showMessage('Wrestler selected! Waiting for other players...', 'info');
+			// Update conditioning display
+			const conditioningElement = document.getElementById(`conditioning-${playerId}`);
+			if (conditioningElement && this.gamedatas.players[playerId]) {
+				conditioningElement.textContent = `Conditioning: ${this.gamedatas.players[playerId].conditioning || 0}`;
+			}
 			
-			// Disable all remaining cards for this player
-			document.querySelectorAll('.wrestler-card').forEach(card => {
-				card.style.pointerEvents = 'none';
-			});
-		}
-	},        
+			// Update stats display
+			const statsElement = document.querySelector(`#player-wrestler-info-${playerId} .wrestler-stats-compact`);
+			if (statsElement && this.gamedatas.players[playerId]) {
+				const player = this.gamedatas.players[playerId];
+				statsElement.textContent = `O:${player.offense || 0} D:${player.defense || 0} T:${player.top || 0} B:${player.bottom || 0}`;
+			}
+			
+			// Remove wrestler from available list if visible
+			const wrestlerCard = document.getElementById(`wrestler-${wrestlerId}`);
+			if (wrestlerCard) {
+				wrestlerCard.style.opacity = '0.3';
+				wrestlerCard.style.pointerEvents = 'none';
+				wrestlerCard.innerHTML += '<div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: red; font-weight: bold; font-size: 18px; background: rgba(255,255,255,0.9); padding: 5px 10px; border-radius: 5px;">SELECTED</div>';
+				wrestlerCard.style.position = 'relative';
+			}
+			
+			// Check if this was our selection
+			if (playerId == this.player_id) {
+				// Remove confirm button
+				const confirmBtn = document.getElementById('confirm-wrestler-btn');
+				if (confirmBtn) {
+					confirmBtn.remove();
+				}
+				
+				// Show message
+				this.showMessage('Wrestler selected! Waiting for other players...', 'info');
+				
+				// Disable all remaining cards for this player
+				document.querySelectorAll('.wrestler-card').forEach(card => {
+					card.style.pointerEvents = 'none';
+				});
+			}
+		},        
         notif_startingPositionChoice: function(notif) {
             console.log('notif_startingPositionChoice', notif);
             
