@@ -129,7 +129,7 @@ $machinestates = array(
         "transitions" => array("firstPlayerDice" => 14)
     ),
 
-    // UPDATED: First player chooses which die to roll
+    // First player chooses which die to roll
     14 => array(
         "name" => "firstPlayerChooseDie",
         "description" => clienttranslate('${actplayer} must choose which die to roll'),
@@ -168,7 +168,7 @@ $machinestates = array(
         "transitions" => array("secondPlayerDice" => 23)
     ),
 
-    // UPDATED: Second player chooses which die to roll
+    // Second player chooses which die to roll
     23 => array(
         "name" => "secondPlayerChooseDie", 
         "description" => clienttranslate('${actplayer} must choose which die to roll'),
@@ -213,7 +213,16 @@ $machinestates = array(
         "description" => '',
         "type" => "game",
         "action" => "stHandleTokens",
-        "transitions" => array("drawScramble" => 17)
+        "transitions" => array("statComparison" => 28)  // CHANGED: Go to stat comparison
+    ),
+
+    // NEW: Compare offensive and defensive stats
+    28 => array(
+        "name" => "statComparison",
+        "description" => '',
+        "type" => "game",
+        "action" => "stStatComparison",
+        "transitions" => array("drawScramble" => 17, "nextRound" => 18)
     ),
 
     // Draw scramble card if applicable
@@ -222,7 +231,7 @@ $machinestates = array(
         "description" => '',
         "type" => "game",
         "action" => "stDrawScramble",
-        "transitions" => array("nextRound" => 18, "endGame" => 99)
+        "transitions" => array("nextRound" => 18)  // CHANGED: Always go to next round after scramble
     ),
 
     // Check for next round/period

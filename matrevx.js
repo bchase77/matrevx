@@ -778,29 +778,161 @@ setup: function( gamedatas )
         ///////////////////////////////////////////////////
         //// Reaction to cometD notifications
 
-        setupNotifications: function()
-        {
-            console.log( 'notifications subscriptions setup' );
-            
-            // Existing notifications
-            dojo.subscribe('wrestlerSelected', this, "notif_wrestlerSelected");
-            dojo.subscribe('startingPositionChoice', this, "notif_startingPositionChoice");
-            dojo.subscribe('positionSelected', this, "notif_positionSelected");
-            dojo.subscribe('firstCardPlayed', this, "notif_firstCardPlayed");
-            dojo.subscribe('secondCardPlayed', this, "notif_secondCardPlayed");
-            dojo.subscribe('cardsRevealed', this, "notif_cardsRevealed");
-            dojo.subscribe('conditioningAdjusted', this, "notif_conditioningAdjusted");
-            dojo.subscribe('effectsApplied', this, "notif_effectsApplied");
-            dojo.subscribe('tokensHandled', this, "notif_tokensHandled");
-            dojo.subscribe('scrambleDrawn', this, "notif_scrambleDrawn");
-            dojo.subscribe('newRound', this, "notif_newRound");
-            
-            // UPDATED: Die choice and reroll notifications
-            dojo.subscribe('playerChoseDie', this, "notif_playerChoseDie");
-            dojo.subscribe('playerReroll', this, "notif_playerReroll");
-            dojo.subscribe('playerKeepDice', this, "notif_playerKeepDice");
-            dojo.subscribe('diceRerolled', this, "notif_diceRerolled");
-        },
+		setupNotifications: function()
+		{
+			console.log( 'notifications subscriptions setup' );
+			
+			// Existing notifications
+			dojo.subscribe('wrestlerSelected', this, "notif_wrestlerSelected");
+			dojo.subscribe('startingPositionChoice', this, "notif_startingPositionChoice");
+			dojo.subscribe('positionSelected', this, "notif_positionSelected");
+			dojo.subscribe('firstCardPlayed', this, "notif_firstCardPlayed");
+			dojo.subscribe('secondCardPlayed', this, "notif_secondCardPlayed");
+			dojo.subscribe('cardsRevealed', this, "notif_cardsRevealed");
+			dojo.subscribe('conditioningAdjusted', this, "notif_conditioningAdjusted");
+			dojo.subscribe('effectsApplied', this, "notif_effectsApplied");
+			dojo.subscribe('tokensHandled', this, "notif_tokensHandled");
+			dojo.subscribe('scrambleDrawn', this, "notif_scrambleDrawn");
+			dojo.subscribe('newRound', this, "notif_newRound");
+			
+			// Die choice and reroll notifications
+			dojo.subscribe('playerChoseDie', this, "notif_playerChoseDie");
+			dojo.subscribe('playerReroll', this, "notif_playerReroll");
+			dojo.subscribe('playerKeepDice', this, "notif_playerKeepDice");
+			dojo.subscribe('diceRerolled', this, "notif_diceRerolled");
+			
+			// NEW: Stat comparison and scramble card notifications
+			dojo.subscribe('statComparison', this, "notif_statComparison");
+			dojo.subscribe('scrambleCardDrawn', this, "notif_scrambleCardDrawn");
+			dojo.subscribe('scrambleCardResolved', this, "notif_scrambleCardResolved");
+		},
+
+		// Handle stat comparison results
+		notif_statComparison: function(notif) {
+			console.log('notif_statComparison', notif);
+			
+			const gameInfo = document.getElementById('game-info');
+			if (!gameInfo) return;
+			
+			// Create comparison result display
+			let comparisonHTML = '<div style="padding: 20px; background: #f0f8ff; border-radius: 8px; margin: 10px; border-left: 5px solid #0066cc;">';
+			comparisonHTML += '<h3>🥊 Stat Comparison Results</h3>';
+			
+			// Show the comparison
+			comparisonHTML += '<div style="display: flex; justify-content: center; align-items: center; gap: 20px; margin: 15px 0;">';
+			comparisonHTML += '<div style="text-align: center; padding: 15px; background: #ffebee; border-radius: 8px;">';
+			comparisonHTML += '<div style="font-weight: bold; color: #d32f2f;">OFFENSE</div>';
+			comparisonHTML += '<div style="font-size: 24px; font-weight: bold;">' + notif.args.offense_value + '</div>';
+			comparisonHTML += '<div style="font-size: 12px;">' + notif.args.offense_player_name + '</div>';
+			comparisonHTML += '</div>';
+			
+			comparisonHTML += '<div style="font-size: 24px; font-weight: bold;">VS</div>';
+			
+			comparisonHTML += '<div style="text-align: center; padding: 15px; background: #e3f2fd; border-radius: 8px;">';
+			comparisonHTML += '<div style="font-weight: bold; color: #1976d2;">DEFENSE</div>';
+			comparisonHTML += '<div style="font-size: 24px; font-weight: bold;">' + notif.args.defense_value + '</div>';
+			comparisonHTML += '<div style="font-size: 12px;">' + notif.args.defense_player_name + '</div>';
+			comparisonHTML += '</div>';
+			comparisonHTML += '</div>';
+			
+			// Show result with appropriate styling
+			let resultColor = '#666';
+			let resultIcon = '';
+			
+			switch(notif.args.comparison_type) {
+				case 'offense_wins':
+					resultColor = '#d32f2f';
+					resultIcon = '🎯';
+					break;
+				case 'tie':
+					resultColor = '#ff9800';
+					resultIcon = '⚖️';
+					break;
+				case 'defense_wins':
+					resultColor = '#1976d2';
+					resultIcon = '🛡️';
+					break;
+			}
+			
+			comparisonHTML += '<div style="text-align: center; padding: 15px; background: rgba(0,0,0,0.05); border-radius: 5px; margin-top: 10px;">';
+			comparisonHTML += '<div style="font-size: 18px; font-weight: bold; color: ' + resultColor + ';">' + resultIcon + ' ' + notif.args.result + '</div>';
+			
+			if (notif.args.scoring_card_played && notif.args.comparison_type === 'offense_wins') {
+				comparisonHTML += '<div style="margin-top: 10px; padding: 10px; background: #fff3cd; border-radius: 5px; border: 1px solid #ffc107;">';
+				comparisonHTML += '<strong>⭐ SCORING OPPORTUNITY!</strong><br>Scramble card will be drawn...';
+				comparisonHTML += '</div>';
+			}
+			
+			comparisonHTML += '</div>';
+			comparisonHTML += '</div>';
+			
+			gameInfo.innerHTML = comparisonHTML;
+			
+			// Show message
+			this.showMessage(notif.args.result, 'info');
+		},
+
+		// Handle scramble card being drawn
+		notif_scrambleCardDrawn: function(notif) {
+			console.log('notif_scrambleCardDrawn', notif);
+			
+			const gameInfo = document.getElementById('game-info');
+			if (!gameInfo) return;
+			
+			// Create scramble card display
+			let scrambleHTML = '<div style="padding: 20px; background: linear-gradient(135deg, #ff6b6b, #feca57); border-radius: 8px; margin: 10px; color: white; text-shadow: 1px 1px 2px rgba(0,0,0,0.3);">';
+			scrambleHTML += '<h3>🎲 SCRAMBLE CARD DRAWN!</h3>';
+			scrambleHTML += '<div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 5px; margin: 10px 0;">';
+			scrambleHTML += '<div style="font-size: 20px; font-weight: bold; margin-bottom: 10px;">' + notif.args.card_name + '</div>';
+			scrambleHTML += '<div style="font-size: 14px; line-height: 1.4;">' + notif.args.card_description + '</div>';
+			scrambleHTML += '</div>';
+			scrambleHTML += '<div style="text-align: center; font-style: italic;">Resolving effects...</div>';
+			scrambleHTML += '</div>';
+			
+			gameInfo.innerHTML = scrambleHTML;
+			
+			// Show message
+			this.showMessage(notif.args.player_name + ' draws scramble card: ' + notif.args.card_name, 'info');
+		},
+
+		// Handle scramble card resolution
+		notif_scrambleCardResolved: function(notif) {
+			console.log('notif_scrambleCardResolved', notif);
+			
+			const gameInfo = document.getElementById('game-info');
+			if (!gameInfo) return;
+			
+			// Update the scramble card display with results
+			let resolvedHTML = '<div style="padding: 20px; background: linear-gradient(135deg, #4ecdc4, #45b7d1); border-radius: 8px; margin: 10px; color: white; text-shadow: 1px 1px 2px rgba(0,0,0,0.3);">';
+			resolvedHTML += '<h3>✅ SCRAMBLE CARD RESOLVED!</h3>';
+			resolvedHTML += '<div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 5px; margin: 10px 0;">';
+			resolvedHTML += '<div style="font-size: 18px; font-weight: bold; margin-bottom: 10px;">' + notif.args.card_name + '</div>';
+			resolvedHTML += '<div style="font-size: 14px; line-height: 1.4;">';
+			
+			// Show each effect
+			for (let i = 0; i < notif.args.effects.length; i++) {
+				resolvedHTML += '<div style="margin: 5px 0;">• ' + notif.args.effects[i] + '</div>';
+			}
+			
+			resolvedHTML += '</div>';
+			resolvedHTML += '</div>';
+			resolvedHTML += '<div style="text-align: center; font-weight: bold;">Round complete!</div>';
+			resolvedHTML += '</div>';
+			
+			gameInfo.innerHTML = resolvedHTML;
+			
+			// Show message
+			this.showMessage('Scramble card resolved: ' + notif.args.effects.join(', '), 'info');
+			
+			// Update player scores if points were scored (you might want to add score tracking to player panels)
+			// This would require additional UI elements to show current scores
+		},
+
+		// ALSO ADD: Enhanced version of existing scrambleDrawn notification
+		notif_scrambleDrawn: function(notif) {
+			console.log('notif_scrambleDrawn', notif);
+			this.showMessage('Scramble situation occurred!', 'info');
+		},
 
         // NEW notification handlers:
         notif_playerChoseDie: function(notif) {
