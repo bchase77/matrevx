@@ -89,7 +89,7 @@ setup: function( gamedatas )
 },       
         ///////////////////////////////////////////////////
         //// Game & client states
-		
+        
         onEnteringState: function( stateName, args )
         {
             console.log( 'Entering state: '+stateName, args );
@@ -137,7 +137,39 @@ setup: function( gamedatas )
                     break;
             }               
         }, 
-
+        
+        // NEW: Action handler for die choice
+        onChooseDie: function(dieChoice) {
+            console.log('Player choosing die:', dieChoice);
+            
+            // Disable both die buttons immediately to prevent double-clicks
+            const redBtn = document.getElementById('btn-choose-red');
+            const blueBtn = document.getElementById('btn-choose-blue');
+            
+            if (redBtn) {
+                redBtn.disabled = true;
+                redBtn.style.opacity = '0.5';
+            }
+            if (blueBtn) {
+                blueBtn.disabled = true;
+                blueBtn.style.opacity = '0.5';
+            }
+            
+            this.bgaPerformAction("actChooseDie", { die_choice: dieChoice }).then(() => {
+                console.log('Die choice successful');
+            }).catch(error => {
+                console.error('Error choosing die:', error);
+                // Re-enable buttons on error
+                if (redBtn) {
+                    redBtn.disabled = false;
+                    redBtn.style.opacity = '1';
+                }
+                if (blueBtn) {
+                    blueBtn.disabled = false;
+                    blueBtn.style.opacity = '1';
+                }
+            });
+        },
 
         onUpdateActionButtons: function( stateName, args )
         {
@@ -161,17 +193,83 @@ setup: function( gamedatas )
                         // Cards will be shown in hand area
                         break;
                         
-                    case 'firstPlayerRollDice':
-                        this.addActionButton('btn-roll-red', _('Roll Red Die'), () => this.onRollDice(), null, null, 'red');
+                    // NEW: Die choice states
+                    case 'firstPlayerChooseDie':
+                    case 'secondPlayerChooseDie':
+                        this.addActionButton('btn-choose-red', _('Roll Red Die (STRENGTH)'), () => this.onChooseDie('red'), null, null, 'red');
+                        this.addActionButton('btn-choose-blue', _('Roll Blue Die (SPEED)'), () => this.onChooseDie('blue'), null, null, 'blue');
+                        
+                        // Show die information
+                        const dieInfoDiv = document.createElement('div');
+                        dieInfoDiv.style.cssText = 'margin: 15px 0; padding: 15px; background: #f0f8ff; border-radius: 8px; border-left: 4px solid #0066cc;';
+                        dieInfoDiv.innerHTML = `
+                            <div style="font-weight: bold; margin-bottom: 10px;">Choose Your Die:</div>
+                            <div style="display: flex; gap: 20px; justify-content: center;">
+                                <div style="text-align: center; padding: 10px; background: #ffebee; border-radius: 5px;">
+                                    <div style="font-weight: bold; color: #d32f2f;">Red Die (STRENGTH)</div>
+                                    <div style="font-size: 12px;">Values: -2, -2, 0, 0, 1, 2, 3, 3</div>
+                                    <div style="font-size: 12px; color: #666;">Cost: 3 conditioning, Gain: 1 token</div>
+                                </div>
+                                <div style="text-align: center; padding: 10px; background: #e3f2fd; border-radius: 5px;">
+                                    <div style="font-weight: bold; color: #1976d2;">Blue Die (SPEED)</div>
+                                    <div style="font-size: 12px;">Values: -1, -1, 0, 0, 1, 1, 2, 2</div>
+                                    <div style="font-size: 12px; color: #666;">Cost: 2 conditioning, Gain: 2 tokens</div>
+                                </div>
+                            </div>
+                        `;
+                        
+                        const actionBar = document.getElementById('generalactions');
+                        if (actionBar) {
+                            actionBar.appendChild(dieInfoDiv);
+                        }
                         break;
                         
-                    case 'secondPlayerRollDice':
-                        this.addActionButton('btn-roll-blue', _('Roll Blue Die'), () => this.onRollDice(), null, null, 'blue');
+                    // Reroll option states - ADD SAFETY CHECKS
+                    case 'firstPlayerRerollOption':
+                    case 'secondPlayerRerollOption':
+                        const rerollArgs = args && args.args;
+                        const canReroll = rerollArgs && rerollArgs.can_reroll;
+                        const dieType = rerollArgs && rerollArgs.die_type;
+                        const dieValue = rerollArgs && rerollArgs.die_value;
+                        const currentTokens = (rerollArgs && rerollArgs.current_tokens) || 0;
+                        
+                        console.log('Reroll options:', { canReroll, dieType, dieValue, currentTokens });
+                        
+                        // Always show keep button
+                        this.addActionButton('btn-keep-dice', _('Keep Result'), () => this.onKeepDice(), null, null, 'gray');
+                        
+                        // Show reroll button only if player can afford it
+                        if (canReroll && dieType) {
+                            const dieLabel = dieType === 'red' ? 'Red Die (STRENGTH)' : 'Blue Die (SPEED)';
+                            this.addActionButton('btn-reroll-dice', _('Reroll ' + dieLabel + ' (1 token)'), () => this.onRerollDice(), null, null, 'blue');
+                        } else {
+                            // Show disabled reroll button with explanation
+                            const disabledBtn = this.addActionButton('btn-reroll-disabled', _('Reroll (Need 1 token)'), null, null, null, 'gray');
+                            const buttonElement = document.getElementById('btn-reroll-disabled');
+                            if (buttonElement) {
+                                buttonElement.disabled = true;
+                                buttonElement.style.opacity = '0.5';
+                            }
+                        }
+                        
+                        // Show current status - ADD SAFETY CHECKS
+                        const statusDiv = document.createElement('div');
+                        statusDiv.style.cssText = 'margin: 10px 0; padding: 10px; background: #f0f0f0; border-radius: 5px;';
+                        statusDiv.innerHTML = `
+                            <div><strong>Your ${(dieType || 'unknown').toUpperCase()} die result:</strong> ${dieValue || '?'}</div>
+                            <div><strong>Your tokens:</strong> ${currentTokens}</div>
+                        `;
+                        
+                        const actionBar2 = document.getElementById('generalactions');
+                        if (actionBar2) {
+                            actionBar2.appendChild(statusDiv);
+                        }
                         break;
                 }
             }
         },
-		
+        
+        
         ///////////////////////////////////////////////////
         //// Utility methods
         
@@ -301,11 +399,20 @@ setup: function( gamedatas )
             console.log('Entering dice rolling state', args);
             
             // Hide hand area
-            document.getElementById('player-hand-area').style.display = 'none';
+            const handArea = document.getElementById('player-hand-area');
+            if (handArea) {
+                handArea.style.display = 'none';
+            }
             
             // Show dice rolling info
             const gameInfo = document.getElementById('game-info');
-            const stateName = this.gamedatas.gamestate.name;
+            if (!gameInfo) {
+                console.error('Game info element not found');
+                return;
+            }
+            
+            // SAFETY CHECK: Get state name safely
+            const stateName = this.gamedatas && this.gamedatas.gamestate && this.gamedatas.gamestate.name;
             
             let diceHTML = '<div style="padding: 20px; background: #fff3cd; border-radius: 8px; margin: 10px;">';
             diceHTML += '<h3>Dice Rolling Phase</h3>';
@@ -314,6 +421,8 @@ setup: function( gamedatas )
                 diceHTML += '<p>First player rolls the <strong style="color: red;">RED DIE</strong></p>';
             } else if (stateName === 'secondPlayerRollDice') {
                 diceHTML += '<p>Second player rolls the <strong style="color: blue;">BLUE DIE</strong></p>';
+            } else {
+                diceHTML += '<p>Dice rolling phase</p>';
             }
             
             diceHTML += '</div>';
@@ -343,22 +452,75 @@ setup: function( gamedatas )
                 }
             });
         },
-		
+
+        // NEW: Action handlers for reroll system
+        onRerollDice: function() {
+            console.log('Player choosing to reroll dice...');
+            
+            // Disable the reroll button immediately to prevent double-clicks
+            const rerollBtn = document.querySelector('[id^="btn-reroll"]');
+            if (rerollBtn) {
+                rerollBtn.disabled = true;
+                rerollBtn.textContent = 'Rerolling...';
+                rerollBtn.style.opacity = '0.5';
+            }
+            
+            this.bgaPerformAction("actRerollDice", {}).then(() => {
+                console.log('Reroll action successful');
+            }).catch(error => {
+                console.error('Error rerolling dice:', error);
+                // Re-enable button on error
+                if (rerollBtn) {
+                    rerollBtn.disabled = false;
+                    rerollBtn.textContent = rerollBtn.textContent.replace('Rerolling...', 'Reroll');
+                    rerollBtn.style.opacity = '1';
+                }
+            });
+        },
+
+        onKeepDice: function() {
+            console.log('Player choosing to keep dice result...');
+            
+            // Disable the keep button immediately to prevent double-clicks
+            const keepBtn = document.getElementById('btn-keep-dice');
+            if (keepBtn) {
+                keepBtn.disabled = true;
+                keepBtn.textContent = 'Keeping...';
+                keepBtn.style.opacity = '0.5';
+            }
+            
+            this.bgaPerformAction("actKeepDice", {}).then(() => {
+                console.log('Keep dice action successful');
+            }).catch(error => {
+                console.error('Error keeping dice:', error);
+                // Re-enable button on error
+                if (keepBtn) {
+                    keepBtn.disabled = false;
+                    keepBtn.textContent = 'Keep Result';
+                    keepBtn.style.opacity = '1';
+                }
+            });
+        },
+        
         enterPlayerTurn: function(args) {
             // Show game area
             document.getElementById('wrestling-mat').style.display = 'block';
             
             // If it's our turn, show our hand
             if (this.isCurrentPlayerActive()) {
-                // Get the args from the state
+                // Get the args from the state - ADD SAFETY CHECKS
                 const stateArgs = args && args.args;
-                const playableCardsIds = stateArgs && stateArgs.playableCardsIds || [];
-                const currentPosition = stateArgs && stateArgs.current_position || 'unknown';
+                const playableCardsIds = (stateArgs && stateArgs.playableCardsIds) ? stateArgs.playableCardsIds : [];
+                const currentPosition = (stateArgs && stateArgs.current_position) ? stateArgs.current_position : 'offense';
                 
                 console.log('Player turn args:', stateArgs);
+                console.log('Current position:', currentPosition);
+                console.log('Playable cards:', playableCardsIds);
                 
-                // Show position info
-                this.showPositionInfo(currentPosition);
+                // Show position info - with safety check
+                if (currentPosition) {
+                    this.showPositionInfo(currentPosition);
+                }
                 
                 // Display our available cards
                 this.displayPlayerHand(playableCardsIds, currentPosition);
@@ -367,7 +529,7 @@ setup: function( gamedatas )
 
         showPositionInfo: function(position) {
             const gameInfo = document.getElementById('game-info');
-            if (gameInfo) {
+            if (gameInfo && position) {
                 const positionHTML = `
                     <div style="padding: 15px; background: #e3f2fd; border-radius: 8px; margin: 10px;">
                         <h4>Your Current Position: <strong>${position.toUpperCase()}</strong></h4>
@@ -376,8 +538,8 @@ setup: function( gamedatas )
                 `;
                 gameInfo.innerHTML = positionHTML;
             }
-        },		
-		
+        },       
+        
        displayPlayerHand: function(playableCardsIds, currentPosition) {
             console.log('displayPlayerHand called with:', playableCardsIds, 'position:', currentPosition);
             
@@ -395,10 +557,12 @@ setup: function( gamedatas )
             // Show hand area with position info
             handArea.style.display = 'block';
             
-            // Update hand title to show position
+            // Update hand title to show position - ADD SAFETY CHECK
             const handTitle = handArea.querySelector('h3');
-            if (handTitle) {
+            if (handTitle && currentPosition) {
                 handTitle.textContent = `Your ${currentPosition.toUpperCase()} Cards`;
+            } else if (handTitle) {
+                handTitle.textContent = 'Your Cards';
             }
             
             // Use card types from game data - add safety check
@@ -410,6 +574,12 @@ setup: function( gamedatas )
             }
             
             console.log('Available cardTypes:', cardTypes);
+            
+            // SAFETY CHECK: Ensure playableCardsIds is an array
+            if (!Array.isArray(playableCardsIds)) {
+                console.warn('playableCardsIds is not an array:', playableCardsIds);
+                playableCardsIds = [];
+            }
             
             // Create card elements
             for (let i = 0; i < playableCardsIds.length; i++) {
@@ -430,15 +600,17 @@ setup: function( gamedatas )
                 cardElement.id = 'card-' + cardId;
 
                 // Build the inner HTML safely with better styling
-                let cardHTML = '<div class="card-header" style="font-weight: bold; font-size: 14px; margin-bottom: 8px;">' + card.card_name + '</div>';
+                let cardHTML = '<div class="card-header" style="font-weight: bold; font-size: 14px; margin-bottom: 8px;">' + (card.card_name || 'Unknown Card') + '</div>';
                 
-                // Position badge
-                const positionColor = this.getPositionColor(card.position);
-                cardHTML += '<div class="card-position" style="background: ' + positionColor + '; color: white; padding: 2px 6px; border-radius: 3px; font-size: 11px; display: inline-block; margin-bottom: 8px;">' + card.position.toUpperCase() + '</div>';
+                // Position badge - ADD SAFETY CHECK
+                if (card.position) {
+                    const positionColor = this.getPositionColor(card.position);
+                    cardHTML += '<div class="card-position" style="background: ' + positionColor + '; color: white; padding: 2px 6px; border-radius: 3px; font-size: 11px; display: inline-block; margin-bottom: 8px;">' + card.position.toUpperCase() + '</div>';
+                }
                 
                 cardHTML += '<div class="card-stats" style="font-size: 12px; line-height: 1.3;">';
-                cardHTML += '<div><strong>Conditioning:</strong> ' + card.conditioning_cost + '</div>';
-                cardHTML += '<div><strong>Tokens:</strong> ' + card.special_tokens + '</div>';
+                cardHTML += '<div><strong>Conditioning:</strong> ' + (card.conditioning_cost || 0) + '</div>';
+                cardHTML += '<div><strong>Tokens:</strong> ' + (card.special_tokens || 0) + '</div>';
                 if (card.scoring) {
                     cardHTML += '<div class="scoring-indicator" style="color: #ff6b35; font-weight: bold;">⭐ Scoring</div>';
                 }
@@ -481,7 +653,7 @@ setup: function( gamedatas )
             
             console.log('Added', handContainer.children.length, 'cards to hand');
         },
-		
+        
         getPositionColor: function(position) {
             const colors = {
                 'offense': '#e74c3c',   // Red
@@ -490,7 +662,7 @@ setup: function( gamedatas )
                 'bottom': '#27ae60',    // Green
                 'any': '#9b59b6'        // Purple
             };
-            return colors[position] || '#95a5a6';
+            return colors[position] || '#95a5a6'; // Gray fallback
         },
         
         leavePlayerTurn: function() {
@@ -525,9 +697,7 @@ setup: function( gamedatas )
                 selectedCard.style.border = '3px solid #0066cc';
                 selectedCard.style.transform = 'scale(1.05)';
                 selectedCard.style.boxShadow = '0 8px 16px rgba(0,102,204,0.3)';
-                selectedCard.style.background = '#f0f8ff';
-            }
-            
+			}
             this.selectedWrestler = wrestlerId;
             
             // Remove any existing confirm button
@@ -625,10 +795,80 @@ setup: function( gamedatas )
             dojo.subscribe('scrambleDrawn', this, "notif_scrambleDrawn");
             dojo.subscribe('newRound', this, "notif_newRound");
             
-            // NEW dice rolling notifications
-            dojo.subscribe('redDiceRolled', this, "notif_redDiceRolled");
-            dojo.subscribe('blueDiceRolled', this, "notif_blueDiceRolled");
-            dojo.subscribe('diceRollComplete', this, "notif_diceRollComplete");
+            // UPDATED: Die choice and reroll notifications
+            dojo.subscribe('playerChoseDie', this, "notif_playerChoseDie");
+            dojo.subscribe('playerReroll', this, "notif_playerReroll");
+            dojo.subscribe('playerKeepDice', this, "notif_playerKeepDice");
+            dojo.subscribe('diceRerolled', this, "notif_diceRerolled");
+        },
+
+        // NEW notification handlers:
+        notif_playerChoseDie: function(notif) {
+            console.log('notif_playerChoseDie', notif);
+            
+            // Show die choice and result in game info
+            const gameInfo = document.getElementById('game-info');
+            const dieColor = notif.args.die_choice === 'red' ? '#d32f2f' : '#1976d2';
+            const bgColor = notif.args.die_choice === 'red' ? '#ffebee' : '#e3f2fd';
+            
+            let diceHTML = '<div style="padding: 20px; background: ' + bgColor + '; border-radius: 8px; margin: 10px;">';
+            diceHTML += '<h3>Die Choice & Roll</h3>';
+            diceHTML += '<p><strong>' + notif.args.player_name + '</strong> chose <strong style="color: ' + dieColor + ';">' + notif.args.die_label + '</strong></p>';
+            diceHTML += '<div style="display: flex; align-items: center; gap: 15px; margin: 15px 0; justify-content: center;">';
+            diceHTML += '<span style="font-size: 36px; font-weight: bold; color: ' + dieColor + '; border: 3px solid ' + dieColor + '; border-radius: 8px; padding: 15px; background: white;">Face ' + notif.args.die_face + '</span>';
+            diceHTML += '<span style="font-size: 24px; font-weight: bold;">= Value ' + notif.args.die_value + '</span>';
+            diceHTML += '</div>';
+            
+            // Show costs/gains
+            if (notif.args.die_choice === 'red') {
+                diceHTML += '<p><em>Cost: 3 conditioning, Gained: 1 token</em></p>';
+            } else {
+                diceHTML += '<p><em>Cost: 2 conditioning, Gained: 2 tokens</em></p>';
+            }
+            
+            // Check if this is the second player
+            const currentHTML = gameInfo.innerHTML;
+            if (currentHTML.includes('Die Choice & Roll')) {
+                // This is the second player, show both results
+                diceHTML = currentHTML + diceHTML;
+                diceHTML += '<div style="margin-top: 15px; padding: 10px; background: rgba(255,255,255,0.8); border-radius: 5px; text-align: center;"><strong>Both players have rolled - results will be applied to offense stats</strong></div>';
+            } else {
+                diceHTML += '<p style="text-align: center; margin-top: 10px;"><em>Waiting for second player...</em></p>';
+            }
+            
+            diceHTML += '</div>';
+            gameInfo.innerHTML = diceHTML;
+        },
+
+        notif_playerReroll: function(notif) {
+            console.log('notif_playerReroll', notif);
+            this.showMessage(notif.args.player_name + ' spent 1 token to reroll their die', 'info');
+        },
+
+        notif_playerKeepDice: function(notif) {
+            console.log('notif_playerKeepDice', notif);
+            this.showMessage(notif.args.player_name + ' kept their dice result', 'info');
+        },
+
+        notif_diceRerolled: function(notif) {
+            console.log('notif_diceRerolled', notif);
+            
+            this.showMessage(
+                notif.args.player_name + ' rerolled ' + notif.args.die_label + ': ' + notif.args.die_value, 
+                'info'
+            );
+            
+            // Update the game info display if it exists
+            const gameInfo = document.getElementById('game-info');
+            if (gameInfo && gameInfo.innerHTML.includes('Die Choice & Roll')) {
+                // Find and update the appropriate player's die display
+                const playerName = notif.args.player_name;
+                const regex = new RegExp('(<p><strong>' + playerName + '</strong>.*?Face )\\d+', 's');
+                gameInfo.innerHTML = gameInfo.innerHTML.replace(regex, '$1' + notif.args.die_face);
+                
+                const valueRegex = new RegExp('(' + playerName + '.*?= Value )\\d+', 's');
+                gameInfo.innerHTML = gameInfo.innerHTML.replace(valueRegex, '$1' + notif.args.die_value);
+            }
         },
 
         // Add these new notification handlers:
@@ -683,74 +923,75 @@ setup: function( gamedatas )
             
             this.showMessage('Dice rolling complete: Red ' + notif.args.red_die + ', Blue ' + notif.args.blue_die, 'info');
         },
-		
-		notif_wrestlerSelected: function(notif) {
-			console.log('notif_wrestlerSelected', notif);
-			
-			const playerId = notif.args.player_id;
-			const wrestlerName = notif.args.wrestler_name;
-			const wrestlerId = notif.args.wrestler_id;
-			
-			// Update local player data with wrestler stats
-			if (this.gamedatas.players[playerId]) {
-				const wrestler = this.gamedatas.wrestlers[wrestlerId];
-				if (wrestler) {
-					this.gamedatas.players[playerId].wrestler_id = wrestlerId;
-					this.gamedatas.players[playerId].conditioning = wrestler.conditioning_p1;
-					this.gamedatas.players[playerId].offense = wrestler.offense;
-					this.gamedatas.players[playerId].defense = wrestler.defense;
-					this.gamedatas.players[playerId].top = wrestler.top;
-					this.gamedatas.players[playerId].bottom = wrestler.bottom;
-					this.gamedatas.players[playerId].special_tokens = wrestler.special_tokens;
-					this.gamedatas.players[playerId].wrestler = wrestler;
-				}
-			}
-			
-			// Update player panel
-			const wrestlerNameElement = document.getElementById(`wrestler-name-${playerId}`);
-			if (wrestlerNameElement) {
-				wrestlerNameElement.textContent = wrestlerName;
-			}
-			
-			// Update conditioning display
-			const conditioningElement = document.getElementById(`conditioning-${playerId}`);
-			if (conditioningElement && this.gamedatas.players[playerId]) {
-				conditioningElement.textContent = `Conditioning: ${this.gamedatas.players[playerId].conditioning || 0}`;
-			}
-			
-			// Update stats display
-			const statsElement = document.querySelector(`#player-wrestler-info-${playerId} .wrestler-stats-compact`);
-			if (statsElement && this.gamedatas.players[playerId]) {
-				const player = this.gamedatas.players[playerId];
-				statsElement.textContent = `O:${player.offense || 0} D:${player.defense || 0} T:${player.top || 0} B:${player.bottom || 0}`;
-			}
-			
-			// Remove wrestler from available list if visible
-			const wrestlerCard = document.getElementById(`wrestler-${wrestlerId}`);
-			if (wrestlerCard) {
-				wrestlerCard.style.opacity = '0.3';
-				wrestlerCard.style.pointerEvents = 'none';
-				wrestlerCard.innerHTML += '<div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: red; font-weight: bold; font-size: 18px; background: rgba(255,255,255,0.9); padding: 5px 10px; border-radius: 5px;">SELECTED</div>';
-				wrestlerCard.style.position = 'relative';
-			}
-			
-			// Check if this was our selection
-			if (playerId == this.player_id) {
-				// Remove confirm button
-				const confirmBtn = document.getElementById('confirm-wrestler-btn');
-				if (confirmBtn) {
-					confirmBtn.remove();
-				}
-				
-				// Show message
-				this.showMessage('Wrestler selected! Waiting for other players...', 'info');
-				
-				// Disable all remaining cards for this player
-				document.querySelectorAll('.wrestler-card').forEach(card => {
-					card.style.pointerEvents = 'none';
-				});
-			}
-		},        
+        
+        notif_wrestlerSelected: function(notif) {
+            console.log('notif_wrestlerSelected', notif);
+            
+            const playerId = notif.args.player_id;
+            const wrestlerName = notif.args.wrestler_name;
+            const wrestlerId = notif.args.wrestler_id;
+            
+            // Update local player data with wrestler stats
+            if (this.gamedatas.players[playerId]) {
+                const wrestler = this.gamedatas.wrestlers[wrestlerId];
+                if (wrestler) {
+                    this.gamedatas.players[playerId].wrestler_id = wrestlerId;
+                    this.gamedatas.players[playerId].conditioning = wrestler.conditioning_p1;
+                    this.gamedatas.players[playerId].offense = wrestler.offense;
+                    this.gamedatas.players[playerId].defense = wrestler.defense;
+                    this.gamedatas.players[playerId].top = wrestler.top;
+                    this.gamedatas.players[playerId].bottom = wrestler.bottom;
+                    this.gamedatas.players[playerId].special_tokens = wrestler.special_tokens;
+                    this.gamedatas.players[playerId].wrestler = wrestler;
+                }
+            }
+            
+            // Update player panel
+            const wrestlerNameElement = document.getElementById(`wrestler-name-${playerId}`);
+            if (wrestlerNameElement) {
+                wrestlerNameElement.textContent = wrestlerName;
+            }
+            
+            // Update conditioning display
+            const conditioningElement = document.getElementById(`conditioning-${playerId}`);
+            if (conditioningElement && this.gamedatas.players[playerId]) {
+                conditioningElement.textContent = `Conditioning: ${this.gamedatas.players[playerId].conditioning || 0}`;
+            }
+            
+            // Update stats display
+            const statsElement = document.querySelector(`#player-wrestler-info-${playerId} .wrestler-stats-compact`);
+            if (statsElement && this.gamedatas.players[playerId]) {
+                const player = this.gamedatas.players[playerId];
+                statsElement.textContent = `O:${player.offense || 0} D:${player.defense || 0} T:${player.top || 0} B:${player.bottom || 0}`;
+            }
+            
+            // Remove wrestler from available list if visible
+            const wrestlerCard = document.getElementById(`wrestler-${wrestlerId}`);
+            if (wrestlerCard) {
+                wrestlerCard.style.opacity = '0.3';
+                wrestlerCard.style.pointerEvents = 'none';
+                wrestlerCard.innerHTML += '<div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: red; font-weight: bold; font-size: 18px; background: rgba(255,255,255,0.9); padding: 5px 10px; border-radius: 5px;">SELECTED</div>';
+                wrestlerCard.style.position = 'relative';
+            }
+            
+            // Check if this was our selection
+            if (playerId == this.player_id) {
+                // Remove confirm button
+                const confirmBtn = document.getElementById('confirm-wrestler-btn');
+                if (confirmBtn) {
+                    confirmBtn.remove();
+                }
+                
+                // Show message
+                this.showMessage('Wrestler selected! Waiting for other players...', 'info');
+                
+                // Disable all remaining cards for this player
+                document.querySelectorAll('.wrestler-card').forEach(card => {
+                    card.style.pointerEvents = 'none';
+                });
+            }
+        },        
+        
         notif_startingPositionChoice: function(notif) {
             console.log('notif_startingPositionChoice', notif);
             
@@ -791,110 +1032,150 @@ setup: function( gamedatas )
             this.showMessage(`${notif.args.player_name} passed`, 'info');
         },
 
-		notif_firstCardPlayed: function(notif) {
-			console.log('notif_firstCardPlayed', notif);
-			this.showMessage(notif.args.player_name + ' has played a card', 'info');
-			
-			// Hide hand if it was our turn
-			if (notif.args.player_id == this.player_id) {
-				document.getElementById('player-hand-area').style.display = 'none';
-			}
-		},
+        notif_firstCardPlayed: function(notif) {
+            console.log('notif_firstCardPlayed', notif);
+            this.showMessage(notif.args.player_name + ' has played a card', 'info');
+            
+            // Hide hand if it was our turn
+            if (notif.args.player_id == this.player_id) {
+                document.getElementById('player-hand-area').style.display = 'none';
+            }
+        },
 
-		notif_secondCardPlayed: function(notif) {
-			console.log('notif_secondCardPlayed', notif);
-			this.showMessage(notif.args.player_name + ' has played a card', 'info');
-			
-			// Hide hand if it was our turn
-			if (notif.args.player_id == this.player_id) {
-				document.getElementById('player-hand-area').style.display = 'none';
-			}
-		},
+        notif_secondCardPlayed: function(notif) {
+            console.log('notif_secondCardPlayed', notif);
+            this.showMessage(notif.args.player_name + ' has played a card', 'info');
+            
+            // Hide hand if it was our turn
+            if (notif.args.player_id == this.player_id) {
+                document.getElementById('player-hand-area').style.display = 'none';
+            }
+        },
 
-		notif_cardsRevealed: function(notif) {
-			console.log('notif_cardsRevealed', notif);
-			
-			// Show both cards played
-			var gameInfo = document.getElementById('game-info');
-			var revealHTML = '<div style="padding: 20px; background: #fff3cd; border-radius: 8px; margin: 10px;">';
-			revealHTML += '<h3>Cards Revealed!</h3>';
-			revealHTML += '<p><strong>' + notif.args.first_player_name + '</strong> played: ' + notif.args.first_card_name + '</p>';
-			revealHTML += '<p><strong>' + notif.args.second_player_name + '</strong> played: ' + notif.args.second_card_name + '</p>';
-			revealHTML += '</div>';
-			
-			gameInfo.innerHTML = revealHTML;
-		},
+        notif_cardsRevealed: function(notif) {
+            console.log('notif_cardsRevealed', notif);
+            
+            // Show both cards played
+            var gameInfo = document.getElementById('game-info');
+            var revealHTML = '<div style="padding: 20px; background: #fff3cd; border-radius: 8px; margin: 10px;">';
+            revealHTML += '<h3>Cards Revealed!</h3>';
+            revealHTML += '<p><strong>' + notif.args.first_player_name + '</strong> played: ' + notif.args.first_card_name + '</p>';
+            revealHTML += '<p><strong>' + notif.args.second_player_name + '</strong> played: ' + notif.args.second_card_name + '</p>';
+            revealHTML += '</div>';
+            
+            gameInfo.innerHTML = revealHTML;
+        },
 
-		notif_conditioningAdjusted: function(notif) {
-			console.log('notif_conditioningAdjusted', notif);
-			
-			// Update conditioning displays for both players
-			for (var playerId in notif.args.updates) {
-				var update = notif.args.updates[playerId];
-				var conditioningElement = document.getElementById('conditioning-' + playerId);
-				if (conditioningElement) {
-					conditioningElement.textContent = 'Conditioning: ' + update.conditioning;
-				}
-			}
-			
-			this.showMessage('Conditioning adjusted based on cards played', 'info');
-		},
+        notif_conditioningAdjusted: function(notif) {
+            console.log('notif_conditioningAdjusted', notif);
+            
+            // Update conditioning displays for both players
+            for (var playerId in notif.args.updates) {
+                var update = notif.args.updates[playerId];
+                var conditioningElement = document.getElementById('conditioning-' + playerId);
+                if (conditioningElement) {
+                    conditioningElement.textContent = 'Conditioning: ' + update.conditioning;
+                }
+            }
+            
+            this.showMessage('Conditioning adjusted based on cards played', 'info');
+        },
 
-		notif_diceRolled: function(notif) {
-			console.log('notif_diceRolled', notif);
-			
-			var gameInfo = document.getElementById('game-info');
-			var diceHTML = '<div style="padding: 20px; background: #f8d7da; border-radius: 8px; margin: 10px;">';
-			diceHTML += '<h3>Dice Rolled!</h3>';
-			diceHTML += '<p>Red Die: <strong>' + notif.args.red_die + '</strong></p>';
-			diceHTML += '<p>Blue Die: <strong>' + notif.args.blue_die + '</strong></p>';
-			diceHTML += '</div>';
-			
-			gameInfo.innerHTML += diceHTML;
-		},
+        notif_diceRolled: function(notif) {
+            console.log('notif_diceRolled', notif);
+            
+            var gameInfo = document.getElementById('game-info');
+            var diceHTML = '<div style="padding: 20px; background: #f8d7da; border-radius: 8px; margin: 10px;">';
+            diceHTML += '<h3>Dice Rolled!</h3>';
+            diceHTML += '<p>Red Die: <strong>' + notif.args.red_die + '</strong></p>';
+            diceHTML += '<p>Blue Die: <strong>' + notif.args.blue_die + '</strong></p>';
+            diceHTML += '</div>';
+            
+            gameInfo.innerHTML += diceHTML;
+        },
 
-		notif_effectsApplied: function(notif) {
-			console.log('notif_effectsApplied', notif);
-			
-			var effectsHTML = '<div style="padding: 15px; background: #d1ecf1; border-radius: 8px; margin: 10px;">';
-			effectsHTML += '<h4>Effects Applied:</h4>';
-			effectsHTML += '<ul>';
-			for (var i = 0; i < notif.args.effects.length; i++) {
-				effectsHTML += '<li>' + notif.args.effects[i] + '</li>';
-			}
-			effectsHTML += '</ul></div>';
-			
-			document.getElementById('game-info').innerHTML += effectsHTML;
-		},
+        notif_effectsApplied: function(notif) {
+            console.log('notif_effectsApplied', notif);
+            
+            // Update offense displays for both players if offense_updates is provided
+            if (notif.args.offense_updates) {
+                for (const playerId in notif.args.offense_updates) {
+                    const newOffense = notif.args.offense_updates[playerId];
+                    
+                    // Update the compact stats display in player panel
+                    const statsElement = document.querySelector(`#player-wrestler-info-${playerId} .wrestler-stats-compact`);
+                    if (statsElement && this.gamedatas.players[playerId]) {
+                        const player = this.gamedatas.players[playerId];
+                        
+                        // Update the local data
+                        this.gamedatas.players[playerId].offense = newOffense;
+                        
+                        // Update the display
+                        statsElement.textContent = `O:${newOffense} D:${player.defense || 0} T:${player.top || 0} B:${player.bottom || 0}`;
+                        
+                        // Add a visual highlight to show the change
+                        statsElement.style.background = '#ffeb3b';
+                        statsElement.style.transition = 'background 2s ease';
+                        setTimeout(() => {
+                            statsElement.style.background = '';
+                        }, 2000);
+                    }
+                }
+            }
+            
+            // Show the effects in game info
+            let effectsHTML = '<div style="padding: 15px; background: #d1ecf1; border-radius: 8px; margin: 10px;">';
+            effectsHTML += '<h4>Effects Applied:</h4>';
+            
+            // Show dice results if provided
+            if (notif.args.first_die_value !== undefined && notif.args.second_die_value !== undefined) {
+                effectsHTML += '<div style="margin: 10px 0; padding: 10px; background: #e8f5e8; border-radius: 5px;">';
+                effectsHTML += '<strong>Dice Results Applied to Offense:</strong><br>';
+                effectsHTML += `Player 1 ${notif.args.first_die_choice.toUpperCase()} die: ${notif.args.first_die_value}<br>`;
+                effectsHTML += `Player 2 ${notif.args.second_die_choice.toUpperCase()} die: ${notif.args.second_die_value}`;
+                effectsHTML += '</div>';
+            }
+            
+            // Show other effects
+            effectsHTML += '<ul>';
+            for (let i = 0; i < notif.args.effects.length; i++) {
+                effectsHTML += '<li>' + notif.args.effects[i] + '</li>';
+            }
+            effectsHTML += '</ul></div>';
+            
+            document.getElementById('game-info').innerHTML += effectsHTML;
+            
+            this.showMessage('Card and dice effects applied - check your stats!', 'info');
+        },
+        
+        notif_tokensHandled: function(notif) {
+            console.log('notif_tokensHandled', notif);
+            
+            // Update special token displays for both players
+            for (var playerId in notif.args.updates) {
+                var update = notif.args.updates[playerId];
+                // Update player panel if you have token display there
+                // For now just show message
+            }
+            
+            this.showMessage('Special tokens updated', 'info');
+        },
 
-		notif_tokensHandled: function(notif) {
-			console.log('notif_tokensHandled', notif);
-			
-			// Update special token displays for both players
-			for (var playerId in notif.args.updates) {
-				var update = notif.args.updates[playerId];
-				// Update player panel if you have token display there
-				// For now just show message
-			}
-			
-			this.showMessage('Special tokens updated', 'info');
-		},
+        notif_scrambleDrawn: function(notif) {
+            console.log('notif_scrambleDrawn', notif);
+            this.showMessage('Scramble card drawn!', 'info');
+        },
 
-		notif_scrambleDrawn: function(notif) {
-			console.log('notif_scrambleDrawn', notif);
-			this.showMessage('Scramble card drawn!', 'info');
-		},
-
-		notif_newRound: function(notif) {
-			console.log('notif_newRound', notif);
-			
-			var gameInfo = document.getElementById('game-info');
-			var roundHTML = '<div style="padding: 20px; background: #d4edda; border-radius: 8px; margin: 10px;">';
-			roundHTML += '<h3>Period ' + notif.args.period + ', Round ' + notif.args.round + '</h3>';
-			roundHTML += '<p>New round begins!</p>';
-			roundHTML += '</div>';
-			
-			gameInfo.innerHTML = roundHTML;
-		},
+        notif_newRound: function(notif) {
+            console.log('notif_newRound', notif);
+            
+            var gameInfo = document.getElementById('game-info');
+            var roundHTML = '<div style="padding: 20px; background: #d4edda; border-radius: 8px; margin: 10px;">';
+            roundHTML += '<h3>Period ' + notif.args.period + ', Round ' + notif.args.round + '</h3>';
+            roundHTML += '<p>New round begins!</p>';
+            roundHTML += '</div>';
+            
+            gameInfo.innerHTML = roundHTML;
+        }
    });             
 });

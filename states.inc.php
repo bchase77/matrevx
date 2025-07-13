@@ -80,7 +80,7 @@ $machinestates = array(
         "transitions" => array("cardPlayed" => 20)
     ),
 
-    // NEW STATE: Switch to second player
+    // Switch to second player
     20 => array(
         "name" => "switchToSecondPlayer",
         "description" => '',
@@ -89,7 +89,7 @@ $machinestates = array(
         "transitions" => array("secondPlayerReady" => 11)
     ),
 
-    // Second player selects card (without seeing first player's card)
+    // Second player selects card
     11 => array(
         "name" => "secondPlayerTurn",
         "description" => clienttranslate('${actplayer} must play a card'),
@@ -120,45 +120,85 @@ $machinestates = array(
         "transitions" => array("rollDice" => 22)
     ),
 
-    // FIXED: Set first player for dice rolling
+    // Set first player for dice rolling
     22 => array(
         "name" => "setFirstPlayerForDice",
         "description" => '',
         "type" => "game",
         "action" => "stSetFirstPlayerForDice",
-        "transitions" => array("firstPlayerDice" => 14)  // FIXED: Added proper transition
+        "transitions" => array("firstPlayerDice" => 14)
     ),
 
-    // UPDATED: First player rolls red die
+    // UPDATED: First player chooses which die to roll
     14 => array(
-        "name" => "firstPlayerRollDice",
-        "description" => clienttranslate('${actplayer} must roll the red die'),
-        "descriptionmyturn" => clienttranslate('${you} must roll the red die'),
+        "name" => "firstPlayerChooseDie",
+        "description" => clienttranslate('${actplayer} must choose which die to roll'),
+        "descriptionmyturn" => clienttranslate('${you} must choose: Red die (STRENGTH) or Blue die (SPEED)'),
         "type" => "activeplayer",
-        "possibleactions" => array("actRollDice"),
-        "transitions" => array("diceRolled" => 21)
+        "possibleactions" => array("actChooseDie"),
+        "transitions" => array("diceChosen" => 24)
     ),
 
-    // NEW STATE: Switch to second player for dice
+    // First player reroll option
+    24 => array(
+        "name" => "firstPlayerRerollOption",
+        "description" => clienttranslate('${actplayer} may choose to reroll their die'),
+        "descriptionmyturn" => clienttranslate('${you} may reroll your die (costs 1 token)'),
+        "type" => "activeplayer",
+        "args" => "argRerollOption",
+        "possibleactions" => array("actRerollDice", "actKeepDice"),
+        "transitions" => array("reroll" => 25, "keep" => 21)
+    ),
+
+    // First player reroll
+    25 => array(
+        "name" => "firstPlayerReroll",
+        "description" => '',
+        "type" => "game",
+        "action" => "stFirstPlayerReroll",
+        "transitions" => array("rerolled" => 21)
+    ),
+
+    // Switch to second player for dice
     21 => array(
         "name" => "switchToSecondPlayerForDice",
         "description" => '',
         "type" => "game",
         "action" => "stSwitchToSecondPlayerForDice",
-        "transitions" => array("secondPlayerDice" => 23)  // FIXED: Added proper transition
+        "transitions" => array("secondPlayerDice" => 23)
     ),
 
-    // NEW STATE: Second player rolls blue die
+    // UPDATED: Second player chooses which die to roll
     23 => array(
-        "name" => "secondPlayerRollDice", 
-        "description" => clienttranslate('${actplayer} must roll the blue die'),
-        "descriptionmyturn" => clienttranslate('${you} must roll the blue die'),
+        "name" => "secondPlayerChooseDie", 
+        "description" => clienttranslate('${actplayer} must choose which die to roll'),
+        "descriptionmyturn" => clienttranslate('${you} must choose: Red die (STRENGTH) or Blue die (SPEED)'),
         "type" => "activeplayer",
-        "possibleactions" => array("actRollDice"),
-        "transitions" => array("diceRolled" => 15)
+        "possibleactions" => array("actChooseDie"),
+        "transitions" => array("diceChosen" => 26)
     ),
 
-    // Step 3: Apply card effects and trademark moves
+    // Second player reroll option
+    26 => array(
+        "name" => "secondPlayerRerollOption",
+        "description" => clienttranslate('${actplayer} may choose to reroll their die'),
+        "descriptionmyturn" => clienttranslate('${you} may reroll your die (costs 1 token)'),
+        "type" => "activeplayer",
+        "args" => "argRerollOption",
+        "possibleactions" => array("actRerollDice", "actKeepDice"),
+        "transitions" => array("reroll" => 27, "keep" => 15)
+    ),
+
+    // Second player reroll
+    27 => array(
+        "name" => "secondPlayerReroll",
+        "description" => '',
+        "type" => "game",
+        "action" => "stSecondPlayerReroll",
+        "transitions" => array("rerolled" => 15)
+    ),
+
+    // Apply card effects and trademark moves
     15 => array(
         "name" => "applyEffects",
         "description" => '',
@@ -167,7 +207,7 @@ $machinestates = array(
         "transitions" => array("handleTokens" => 16)
     ),
 
-    // Step 4: Collect or pay tokens
+    // Collect or pay tokens
     16 => array(
         "name" => "handleTokens",
         "description" => '',
@@ -176,7 +216,7 @@ $machinestates = array(
         "transitions" => array("drawScramble" => 17)
     ),
 
-    // Step 5: Draw scramble card if applicable
+    // Draw scramble card if applicable
     17 => array(
         "name" => "drawScramble",
         "description" => '',
