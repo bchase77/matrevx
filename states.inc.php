@@ -11,43 +11,7 @@
  * states.inc.php
  *
  * matrevx game states description
- *
  */
-
-/*
-   Game state machine is a tool used to facilitate game developpement by doing common stuff that can be set up
-   in a very easy way from this configuration file.
-
-   Please check the BGA Studio presentation about game state to understand this, and associated documentation.
-
-   Summary:
-
-   States types:
-   _ activeplayer: in this type of state, we expect some action from the active player.
-   _ multipleactiveplayer: in this type of state, we expect some action from multiple players (the active players)
-   _ game: this is an intermediary state where we don't expect any actions from players. Your game logic must decide what is the next game state.
-   _ manager: special type for initial and final state
-
-   Arguments of game states:
-   _ name: the name of the GameState, in order you can recognize it on your own code.
-   _ description: the description of the current game state is always displayed in the action status bar on
-                  the top of the game. Most of the time this is useless for game state with "game" type.
-   _ descriptionmyturn: the description of the current game state when it's your turn.
-   _ type: defines the type of game states (activeplayer / multipleactiveplayer / game / manager)
-   _ action: name of the method to call when this game state become the current game state. Usually, the
-             action method is prefixed by "st" (ex: "stMyGameStateName").
-   _ possibleactions: array that specify possible player actions on this step. It allows you to use "checkAction"
-                      method on both client side (Javacript: this.checkAction) and server side (PHP: $this->checkAction).
-   _ transitions: the transitions are the possible paths to go from a game state to another. You must name
-                  transitions in order to use transition names in "nextState" PHP method, and use IDs to
-                  specify the next game state for each transition.
-   _ args: name of the method to call to retrieve arguments for this gamestate. Arguments are sent to the
-           client side to be used on "onEnteringState" or to set arguments in the gamestate description.
-   _ updateGameProgression: when specified, the game progression is updated (=> call to your getGameProgression
-                            method).
-*/
-
-//    !! It is not a good idea to modify this file when a game is running !!
 
 $machinestates = array(
 
@@ -60,7 +24,7 @@ $machinestates = array(
         "transitions" => array("" => 2)
     ),
 
-    // Wrestler selection state - NO ACTION DEFINED
+    // Wrestler selection state
     2 => array(
         "name" => "wrestlerSelection",
         "description" => clienttranslate('Players must select their wrestlers'),
@@ -91,30 +55,124 @@ $machinestates = array(
         "possibleactions" => array(
             "actSelectPosition"
         ),
-        "transitions" => array("positionSelected" => 10)
+        "transitions" => array("positionSelected" => 9)
     ),
 
-    // Main game states
+    // Set first player for gameplay
+    9 => array(
+        "name" => "setFirstPlayer",
+        "description" => '',
+        "type" => "game",
+        "action" => "stSetFirstPlayer",
+        "transitions" => array("startRound" => 10)
+    ),
+
+    // First player selects card
     10 => array(
-        "name" => "playerTurn",
-        "description" => clienttranslate('${actplayer} must play a card or pass'),
-        "descriptionmyturn" => clienttranslate('${you} must play a card or pass'),
+        "name" => "firstPlayerTurn",
+        "description" => clienttranslate('${actplayer} must play a card'),
+        "descriptionmyturn" => clienttranslate('${you} must play a card'),
         "type" => "activeplayer",
         "args" => "argPlayerTurn",
         "possibleactions" => array(
-            "actPlayCard", 
-            "actPass"
+            "actPlayCard"
         ),
-        "transitions" => array("playCard" => 11, "pass" => 11)
+        "transitions" => array("cardPlayed" => 20)
     ),
 
-    11 => array(
-        "name" => "nextPlayer",
+    // NEW STATE: Switch to second player
+    20 => array(
+        "name" => "switchToSecondPlayer",
         "description" => '',
         "type" => "game",
-        "action" => "stNextPlayer",
+        "action" => "stSwitchToSecondPlayer",
+        "transitions" => array("secondPlayerReady" => 11)
+    ),
+
+    // Second player selects card (without seeing first player's card)
+    11 => array(
+        "name" => "secondPlayerTurn",
+        "description" => clienttranslate('${actplayer} must play a card'),
+        "descriptionmyturn" => clienttranslate('${you} must play a card'),
+        "type" => "activeplayer",
+        "args" => "argPlayerTurn",
+        "possibleactions" => array(
+            "actPlayCard"
+        ),
+        "transitions" => array("cardPlayed" => 12)
+    ),
+
+    // Reveal both cards and start resolution
+    12 => array(
+        "name" => "revealCards",
+        "description" => '',
+        "type" => "game",
+        "action" => "stRevealCards",
+        "transitions" => array("resolve" => 13)
+    ),
+
+    // Step 1: Adjust conditioning
+    13 => array(
+        "name" => "adjustConditioning",
+        "description" => '',
+        "type" => "game",
+        "action" => "stAdjustConditioning",
+        "transitions" => array("rollDice" => 14)
+    ),
+
+    // Step 2: Roll dice for stat changes/star card outcomes
+    14 => array(
+        "name" => "rollDice",
+        "description" => '',
+        "type" => "game",
+        "action" => "stRollDice",
+        "transitions" => array("applyEffects" => 15)
+    ),
+
+    // Step 3: Apply card effects and trademark moves
+    15 => array(
+        "name" => "applyEffects",
+        "description" => '',
+        "type" => "game",
+        "action" => "stApplyEffects",
+        "transitions" => array("handleTokens" => 16)
+    ),
+
+    // Step 4: Collect or pay tokens
+    16 => array(
+        "name" => "handleTokens",
+        "description" => '',
+        "type" => "game",
+        "action" => "stHandleTokens",
+        "transitions" => array("drawScramble" => 17)
+    ),
+
+    // Step 5: Draw scramble card if applicable
+    17 => array(
+        "name" => "drawScramble",
+        "description" => '',
+        "type" => "game",
+        "action" => "stDrawScramble",
+        "transitions" => array("nextRound" => 18, "endGame" => 99)
+    ),
+
+    // Check for next round/period
+    18 => array(
+        "name" => "nextRound",
+        "description" => '',
+        "type" => "game",
+        "action" => "stNextRound",
         "updateGameProgression" => true,
-        "transitions" => array("endGame" => 99, "nextPlayer" => 10)
+        "transitions" => array("setNextPlayer" => 19, "endGame" => 99)
+    ),
+
+    // Set next player for new round
+    19 => array(
+        "name" => "setNextPlayer",
+        "description" => '',
+        "type" => "game",
+        "action" => "stSetNextPlayer",
+        "transitions" => array("nextPlayer" => 10)
     ),
 
     // Final state.
