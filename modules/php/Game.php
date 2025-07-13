@@ -32,34 +32,35 @@ class Game extends \Table
     {
         parent::__construct();
 
-        $this->initGameStateLabels([
-            "current_period" => 10,
-            "current_round" => 11,
-            "position_offense" => 12,
-            "position_defense" => 13,
-            "red_die" => 14,
-            "blue_die" => 15,
-            // Round state tracking
-            "first_player_id" => 16,
-            "second_player_id" => 17,
-            "first_player_card" => 18,
-            "second_player_card" => 19,
-            // NEW: Track which die each player chose and their values
-            "first_player_die_choice" => 20,  // 'red' or 'blue'
-            "second_player_die_choice" => 21, // 'red' or 'blue'
-            "first_player_die_value" => 22,   // actual rolled value
-            "second_player_die_value" => 23,  // actual rolled value
-            // Existing variants
-            "my_first_game_variant" => 100,
-            "my_second_game_variant" => 101,
-        ]);
-        
-        // Load material from material.inc.php
-        $material = require(__DIR__ . '/material.inc.php');
-        self::$CARD_TYPES = $material['cardTypes'];
-        self::$WRESTLERS = $material['wrestlers'];
-    }
-
+    $this->initGameStateLabels([
+        "current_period" => 10,
+        "current_round" => 11,
+        "position_offense" => 12,
+        "position_defense" => 13,
+        "red_die" => 14,
+        "blue_die" => 15,
+        // Round state tracking
+        "first_player_id" => 16,
+        "second_player_id" => 17,
+        "first_player_card" => 18,
+        "second_player_card" => 19,
+        // Die choice tracking
+        "first_player_die_choice" => 20,
+        "second_player_die_choice" => 21,
+        "first_player_die_value" => 22,
+        "second_player_die_value" => 23,
+        // NEW: Simple momentum tracking
+        "momentum_player" => 24,           // Which player has momentum (0 = no momentum)
+        // Existing variants
+        "my_first_game_variant" => 100,
+        "my_second_game_variant" => 101,
+    ]);
+    
+    // Load material from material.inc.php
+    $material = require(__DIR__ . '/material.inc.php');
+    self::$CARD_TYPES = $material['cardTypes'];
+    self::$WRESTLERS = $material['wrestlers'];
+}
     /**
      * Get current position for a player - IMPROVED with debugging and error handling
      */
@@ -737,16 +738,15 @@ class Game extends \Table
 	}
 
     /**
-     * CORRECTED stApplyEffects - Apply each player's chosen die result to their offense
+     * stApplyEffects - Apply each player's chosen die result to their offense
      */
-	// 1. FIX: stApplyEffects method - cast player IDs to int
 	public function stApplyEffects(): void
 	{
 		// Get the data from global variables
 		$first_card_id = $this->getGameStateValue("first_player_card");
 		$second_card_id = $this->getGameStateValue("second_player_card");
-		$first_player_id = (int)$this->getGameStateValue("first_player_id");  // CAST TO INT
-		$second_player_id = (int)$this->getGameStateValue("second_player_id"); // CAST TO INT
+		$first_player_id = (int)$this->getGameStateValue("first_player_id");
+		$second_player_id = (int)$this->getGameStateValue("second_player_id");
 
 		// Validate that we have the data
 		if (!$first_card_id || !$second_card_id || !$first_player_id || !$second_player_id) {
@@ -755,7 +755,7 @@ class Game extends \Table
 		}
 
 		// Get die choices and values for each player
-		$first_die_choice = $this->getGameStateValue("first_player_die_choice"); // 1=red, 2=blue
+		$first_die_choice = $this->getGameStateValue("first_player_die_choice");
 		$second_die_choice = $this->getGameStateValue("second_player_die_choice");
 		$first_die_value = $this->getGameStateValue("first_player_die_value");
 		$second_die_value = $this->getGameStateValue("second_player_die_value");
@@ -768,7 +768,7 @@ class Game extends \Table
 		$first_card = self::$CARD_TYPES[$first_card_id];
 		$second_card = self::$CARD_TYPES[$second_card_id];
 
-		// Get wrestler data - CAST TO INT
+		// Get wrestler data
 		$first_wrestler_id = (int)$this->getUniqueValueFromDB("SELECT wrestler_id FROM player WHERE player_id = " . (int)$first_player_id);
 		$second_wrestler_id = (int)$this->getUniqueValueFromDB("SELECT wrestler_id FROM player WHERE player_id = " . (int)$second_player_id);
 		
@@ -779,7 +779,7 @@ class Game extends \Table
 		$first_wrestler = self::$WRESTLERS[$first_wrestler_id];
 		$second_wrestler = self::$WRESTLERS[$second_wrestler_id];
 
-		// APPLY DICE RESULTS TO OFFENSE STATS - ENSURE INT PARAMETERS
+		// APPLY DICE RESULTS TO OFFENSE STATS
 		$this->applyDiceToOffense($first_player_id, (int)$first_die_value);
 		$this->applyDiceToOffense($second_player_id, (int)$second_die_value);
 
@@ -838,6 +838,280 @@ class Game extends \Table
 		$this->gamestate->nextState("handleTokens");
 	}
 
+	// 2. UPDATED: stStatComparison method with simple momentum tracking
+	public function stStatComparison(): void
+	{
+		$this->trace("stStatComparison: START - Comparing offensive and defensive stats");
+		
+		// Get current round data
+		$first_card_id = $this->getGameStateValue("first_player_card");
+		$second_card_id = $this->getGameStateValue("second_player_card");
+		$first_player_id = (int)$this->getGameStateValue("first_player_id");
+		$second_player_id = (int)$this->getGameStateValue("second_player_id");
+		
+		// Get current positions
+		$offense_player_id = (int)$this->getGameStateValue("position_offense");
+		$defense_player_id = (int)$this->getGameStateValue("position_defense");
+		
+		$this->trace("stStatComparison: Offense player: $offense_player_id, Defense player: $defense_player_id");
+		
+		// Get current stats for both players
+		$offense_stats = $this->getObjectFromDB("SELECT offense, defense FROM player WHERE player_id = $offense_player_id");
+		$defense_stats = $this->getObjectFromDB("SELECT offense, defense FROM player WHERE player_id = $defense_player_id");
+		
+		if (!$offense_stats || !$defense_stats) {
+			throw new \BgaSystemException("Could not retrieve player stats for comparison");
+		}
+		
+		$offense_value = (int)$offense_stats['offense'];
+		$defense_value = (int)$defense_stats['defense'];
+		
+		$this->trace("stStatComparison: Offense stat: $offense_value vs Defense stat: $defense_value");
+		
+		// Determine which card the offense player played
+		$offense_card_id = null;
+		$offense_card_scoring = false;
+		
+		if ($first_player_id == $offense_player_id) {
+			$offense_card_id = $first_card_id;
+		} else if ($second_player_id == $offense_player_id) {
+			$offense_card_id = $second_card_id;
+		}
+		
+		if ($offense_card_id) {
+			$offense_card = self::$CARD_TYPES[$offense_card_id];
+			$offense_card_scoring = $offense_card['scoring'];
+			$this->trace("stStatComparison: Offense player played card {$offense_card['card_name']}, scoring: " . ($offense_card_scoring ? 'YES' : 'NO'));
+		}
+		
+		// Get player names for notifications
+		$offense_player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $offense_player_id");
+		$defense_player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $defense_player_id");
+		
+		// Perform the stat comparison and handle momentum
+		$comparison_result = '';
+		$next_state = '';
+		
+		if ($offense_value > $defense_value) {
+			// Offense wins - clear momentum
+			$this->trace("stStatComparison: Offense wins ($offense_value > $defense_value)");
+			$comparison_result = "Offense succeeds! {$offense_player_name}'s offense ({$offense_value}) beats {$defense_player_name}'s defense ({$defense_value})";
+			
+			// Clear momentum since offense succeeded
+			$this->setGameStateValue("momentum_player", 0);
+			
+			if ($offense_card_scoring) {
+				$this->trace("stStatComparison: Scoring card played - will draw scramble card");
+				$comparison_result .= " AND played a scoring card! Drawing scramble card...";
+				$next_state = 'drawScramble';
+			} else {
+				$this->trace("stStatComparison: Non-scoring card - round ends normally");
+				$next_state = 'nextRound';
+			}
+			
+		} else if ($offense_value == $defense_value) {
+			// Tie - second player gains momentum
+			$this->trace("stStatComparison: Stats tied ($offense_value = $defense_value) - second player gains momentum");
+			
+			$second_player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $second_player_id");
+			
+			$comparison_result = "Stats tied! {$offense_player_name}'s offense ({$offense_value}) equals {$defense_player_name}'s defense ({$defense_value}). {$second_player_name} gains momentum for next round!";
+			
+			// Store momentum for second player
+			$this->setGameStateValue("momentum_player", $second_player_id);
+			
+			$next_state = 'nextRound';
+			
+		} else {
+			// Defense wins - clear momentum
+			$this->trace("stStatComparison: Defense wins ($offense_value < $defense_value)");
+			$comparison_result = "Defense succeeds! {$defense_player_name}'s defense ({$defense_value}) stops {$offense_player_name}'s offense ({$offense_value}). Round ends.";
+			
+			// Clear momentum since defense succeeded
+			$this->setGameStateValue("momentum_player", 0);
+			
+			$next_state = 'nextRound';
+		}
+		
+		// Notify all players of the comparison result
+		$this->notifyAllPlayers("statComparison", clienttranslate('${result}'), [
+			"result" => $comparison_result,
+			"offense_value" => $offense_value,
+			"defense_value" => $defense_value,
+			"offense_player_id" => $offense_player_id,
+			"defense_player_id" => $defense_player_id,
+			"offense_player_name" => $offense_player_name,
+			"defense_player_name" => $defense_player_name,
+			"scoring_card_played" => $offense_card_scoring,
+			"comparison_type" => $offense_value > $defense_value ? 'offense_wins' : ($offense_value == $defense_value ? 'tie' : 'defense_wins'),
+			"momentum_player_id" => $offense_value == $defense_value ? $second_player_id : 0
+		]);
+		
+		$this->gamestate->nextState($next_state);
+	}
+
+	// 3. UPDATED: stDrawScramble method with actual scramble card logic
+	public function stDrawScramble(): void
+	{
+		$this->trace("stDrawScramble: START - Drawing and resolving scramble card");
+		
+		// Get the offensive player (who triggered the scramble)
+		$offense_player_id = (int)$this->getGameStateValue("position_offense");
+		$offense_player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $offense_player_id");
+		
+		// Draw a scramble card (implement your scramble card deck system here)
+		$scramble_card = $this->drawScrambleCard();
+		
+		$this->trace("stDrawScramble: Drew scramble card: " . $scramble_card['name']);
+		
+		// Notify about scramble card draw
+		$this->notifyAllPlayers("scrambleCardDrawn", clienttranslate('${player_name} draws scramble card: ${card_name}'), [
+			"player_id" => $offense_player_id,
+			"player_name" => $offense_player_name,
+			"card_name" => $scramble_card['name'],
+			"card_description" => $scramble_card['description'],
+			"card_effect" => $scramble_card['effect']
+		]);
+		
+		// Apply scramble card effects
+		$this->applyScrambleCardEffects($scramble_card, $offense_player_id);
+		
+		$this->gamestate->nextState("nextRound");
+	}
+
+	// 4. NEW: Method to draw a scramble card
+	private function drawScrambleCard(): array
+	{
+		// Define scramble cards (you can move this to material.inc.php later)
+		$scramble_cards = [
+			1 => [
+				"name" => "Takedown",
+				"description" => "Score 2 points and switch to top position",
+				"effect" => "score_points",
+				"points" => 2,
+				"position_change" => "top"
+			],
+			2 => [
+				"name" => "Escape",
+				"description" => "Score 1 point and switch to neutral",
+				"effect" => "score_points", 
+				"points" => 1,
+				"position_change" => "neutral"
+			],
+			3 => [
+				"name" => "Reversal",
+				"description" => "Score 2 points and reverse positions",
+				"effect" => "score_points",
+				"points" => 2,
+				"position_change" => "reverse"
+			],
+			4 => [
+				"name" => "Near Fall",
+				"description" => "Score 2 points and maintain top position",
+				"effect" => "score_points",
+				"points" => 2,
+				"position_change" => "maintain"
+			],
+			5 => [
+				"name" => "Stalemate",
+				"description" => "No points scored, return to neutral",
+				"effect" => "no_score",
+				"points" => 0,
+				"position_change" => "neutral"
+			],
+			6 => [
+				"name" => "Penalty",
+				"description" => "Opponent scores 1 point due to penalty",
+				"effect" => "opponent_score",
+				"points" => 1,
+				"position_change" => "maintain"
+			]
+		];
+		
+		// Randomly select a scramble card
+		$card_id = bga_rand(1, count($scramble_cards));
+		return $scramble_cards[$card_id];
+	}
+
+	// 5. NEW: Method to apply scramble card effects
+	private function applyScrambleCardEffects(array $scramble_card, int $player_id): void
+	{
+		$this->trace("applyScrambleCardEffects: Applying {$scramble_card['name']} for player $player_id");
+		
+		$effects_applied = [];
+		
+		switch ($scramble_card['effect']) {
+			case 'score_points':
+				// Award points to the player
+				$this->DbQuery("UPDATE player SET player_score = player_score + {$scramble_card['points']} WHERE player_id = $player_id");
+				$effects_applied[] = "Scored {$scramble_card['points']} points";
+				break;
+				
+			case 'opponent_score':
+				// Award points to opponent
+				$offense_player_id = (int)$this->getGameStateValue("position_offense");
+				$defense_player_id = (int)$this->getGameStateValue("position_defense");
+				$opponent_id = $player_id == $offense_player_id ? $defense_player_id : $offense_player_id;
+				
+				$this->DbQuery("UPDATE player SET player_score = player_score + {$scramble_card['points']} WHERE player_id = $opponent_id");
+				$opponent_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $opponent_id");
+				$effects_applied[] = "{$opponent_name} scored {$scramble_card['points']} points due to penalty";
+				break;
+				
+			case 'no_score':
+				$effects_applied[] = "No points scored";
+				break;
+		}
+		
+		// Handle position changes
+		if (isset($scramble_card['position_change'])) {
+			$position_effect = $this->applyPositionChange($scramble_card['position_change'], $player_id);
+			if ($position_effect) {
+				$effects_applied[] = $position_effect;
+			}
+		}
+		
+		// Notify about scramble card effects
+		$this->notifyAllPlayers("scrambleCardResolved", clienttranslate('Scramble card resolved: ${effects}'), [
+			"effects" => $effects_applied,
+			"card_name" => $scramble_card['name']
+		]);
+	}
+
+	// 6. NEW: Method to handle position changes from scramble cards
+	private function applyPositionChange(string $position_change, int $player_id): ?string
+	{
+		$offense_player_id = (int)$this->getGameStateValue("position_offense");
+		$defense_player_id = (int)$this->getGameStateValue("position_defense");
+		
+		switch ($position_change) {
+			case 'top':
+				// Player goes to top, opponent to bottom
+				$this->setGameStateValue("position_top", $player_id);
+				$this->setGameStateValue("position_bottom", $player_id == $offense_player_id ? $defense_player_id : $offense_player_id);
+				return "Position changed to top/bottom";
+				
+			case 'neutral':
+				// Both players return to neutral (offense/defense)
+				return "Returned to neutral position";
+				
+			case 'reverse':
+				// Reverse current positions
+				$this->setGameStateValue("position_offense", $defense_player_id);
+				$this->setGameStateValue("position_defense", $offense_player_id);
+				return "Positions reversed";
+				
+			case 'maintain':
+				// Keep current positions
+				return "Positions maintained";
+				
+			default:
+				return null;
+		}
+	}
+
+
+
 
 	// 2. FIX: stHandleTokens method - cast player IDs to int
 	public function stHandleTokens(): void
@@ -884,25 +1158,10 @@ class Game extends \Table
 			]
 		]);
 
-		$this->gamestate->nextState("drawScramble");
+		$this->gamestate->nextState("statComparison");
 	}
 
     
-    /**
-     * Step 5: Draw scramble card if applicable
-     */
-    public function stDrawScramble(): void
-    {
-        // Placeholder logic - determine if scramble card should be drawn
-        $should_draw_scramble = false; // You'll implement the logic for when this happens
-        
-        if ($should_draw_scramble) {
-            $this->notifyAllPlayers("scrambleDrawn", clienttranslate('Scramble card drawn!'), []);
-        }
-
-        $this->gamestate->nextState("nextRound");
-    }
-
     /**
      * Roll the 8-sided red die (STRENGTH)
      * Values: -2, -2, 0, 0, 1, 2, 3, 3
@@ -987,75 +1246,102 @@ class Game extends \Table
     /**
      * Determine next round/period
      */
-    public function stNextRound(): void
-    {
-        // Clear ALL round state using global variables
-        $this->setGameStateValue("first_player_card", 0);
-        $this->setGameStateValue("second_player_card", 0);
-        $this->setGameStateValue("first_player_id", 0);
-        $this->setGameStateValue("second_player_id", 0);
-        
-        // Clear die choice state
-        $this->setGameStateValue("first_player_die_choice", 0);
-        $this->setGameStateValue("second_player_die_choice", 0);
-        $this->setGameStateValue("first_player_die_value", 0);
-        $this->setGameStateValue("second_player_die_value", 0);
+	// 5. UPDATED: stNextRound method to clear round state but preserve momentum
+	public function stNextRound(): void
+	{
+		// Get momentum before clearing other state
+		$momentum_player = (int)$this->getGameStateValue("momentum_player");
+		
+		// Clear round state but keep momentum
+		$this->setGameStateValue("first_player_card", 0);
+		$this->setGameStateValue("second_player_card", 0);
+		$this->setGameStateValue("first_player_id", 0);
+		$this->setGameStateValue("second_player_id", 0);
+		
+		// Clear die choice state
+		$this->setGameStateValue("first_player_die_choice", 0);
+		$this->setGameStateValue("second_player_die_choice", 0);
+		$this->setGameStateValue("first_player_die_value", 0);
+		$this->setGameStateValue("second_player_die_value", 0);
 
-        // Increment round
-        $current_round = $this->getGameStateValue("current_round");
-        $current_period = $this->getGameStateValue("current_period");
-        
-        $current_round++;
-        
-        // Check if period should advance
-        $rounds_per_period = [1 => 9, 2 => 6, 3 => 6];
-        if ($current_round > $rounds_per_period[$current_period]) {
-            $current_period++;
-            $current_round = 1;
-            
-            if ($current_period > 3) {
-                // Game ends
-                $this->gamestate->nextState("endGame");
-                return;
-            }
-        }
-        
-        $this->setGameStateValue("current_round", $current_round);
-        $this->setGameStateValue("current_period", $current_period);
+		// Increment round
+		$current_round = $this->getGameStateValue("current_round");
+		$current_period = $this->getGameStateValue("current_period");
+		
+		$current_round++;
+		
+		// Check if period should advance
+		$rounds_per_period = [1 => 9, 2 => 6, 3 => 6];
+		if ($current_round > $rounds_per_period[$current_period]) {
+			$current_period++;
+			$current_round = 1;
+			
+			// Clear momentum at start of new period
+			$this->setGameStateValue("momentum_player", 0);
+			$momentum_player = 0;
+			
+			if ($current_period > 3) {
+				// Game ends
+				$this->gamestate->nextState("endGame");
+				return;
+			}
+		}
+		
+		$this->setGameStateValue("current_round", $current_round);
+		$this->setGameStateValue("current_period", $current_period);
 
-        $this->notifyAllPlayers("newRound", clienttranslate('Period ${period}, Round ${round}'), [
-            "period" => $current_period,
-            "round" => $current_round
-        ]);
+		// Include momentum info in notification
+		$momentum_info = '';
+		if ($momentum_player > 0) {
+			$momentum_player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $momentum_player");
+			$momentum_info = " ({$momentum_player_name} has momentum)";
+		}
 
-        $this->gamestate->nextState("setNextPlayer");
-    }
+		$this->notifyAllPlayers("newRound", clienttranslate('Period ${period}, Round ${round}${momentum_info}'), [
+			"period" => $current_period,
+			"round" => $current_round,
+			"momentum_info" => $momentum_info,
+			"momentum_player" => $momentum_player
+		]);
+
+		$this->gamestate->nextState("setNextPlayer");
+	}
 
     /**
      * Set the first player for the round - IMPROVED with debugging
      */
-    public function stSetFirstPlayer(): void
-    {
-        $this->trace("stSetFirstPlayer: START");
-        
-        // Get the offense player to go first
-        $offense_player_id = $this->getGameStateValue("position_offense");
-        $defense_player_id = $this->getGameStateValue("position_defense");
-        
-        $this->trace("stSetFirstPlayer: Offense player: $offense_player_id, Defense player: $defense_player_id");
-        
-        if ($offense_player_id == 0) {
-            throw new \BgaSystemException("No offense player set in stSetFirstPlayer");
-        }
-        
-        // Set the active player
-        $this->gamestate->changeActivePlayer($offense_player_id);
-        
-        $this->trace("stSetFirstPlayer: Set offense player $offense_player_id as active");
-        $this->trace("stSetFirstPlayer: COMPLETE - transitioning to first player turn");
-        $this->gamestate->nextState("startRound");
-    }
-
+	// 3. UPDATED: stSetFirstPlayer method to check for momentum
+	public function stSetFirstPlayer(): void
+	{
+		$this->trace("stSetFirstPlayer: START");
+		
+		// Check if anyone has momentum
+		$momentum_player = (int)$this->getGameStateValue("momentum_player");
+		
+		if ($momentum_player > 0) {
+			// Player with momentum goes first
+			$this->trace("stSetFirstPlayer: Player $momentum_player has momentum and goes first");
+			$this->gamestate->changeActivePlayer($momentum_player);
+			
+			// Clear momentum after using it
+			$this->setGameStateValue("momentum_player", 0);
+			
+		} else {
+			// Normal logic: offense player goes first
+			$offense_player_id = $this->getGameStateValue("position_offense");
+			
+			$this->trace("stSetFirstPlayer: No momentum, offense player $offense_player_id goes first");
+			
+			if ($offense_player_id == 0) {
+				throw new \BgaSystemException("No offense player set in stSetFirstPlayer");
+			}
+			
+			$this->gamestate->changeActivePlayer($offense_player_id);
+		}
+		
+		$this->trace("stSetFirstPlayer: COMPLETE - transitioning to first player turn");
+		$this->gamestate->nextState("startRound");
+	}
     /**
      * Switch from first player to second player
      */
@@ -1156,38 +1442,51 @@ class Game extends \Table
     /**
      * Set the next player for the round - IMPROVED
      */
-    public function stSetNextPlayer(): void 
-    {
-        $current_player_id = (int)$this->getActivePlayerId();
-        $this->trace("stSetNextPlayer: Current player: $current_player_id");
-        
-        // Get both players
-        $players = $this->getCollectionFromDB("SELECT player_id FROM player");
-        $player_ids = array_keys($players);
-        
-        $this->trace("stSetNextPlayer: All player IDs: " . implode(', ', $player_ids));
-        
-        // Find the other player
-        $next_player_id = null;
-        foreach ($player_ids as $pid) {
-            if ($pid != $current_player_id) {
-                $next_player_id = $pid;
-                break;
-            }
-        }
-        
-        if ($next_player_id === null) {
-            throw new \BgaSystemException("Could not determine next player");
-        }
-        
-        $this->trace("stSetNextPlayer: Setting next player to: $next_player_id");
-        
-        // Set the active player
-        $this->gamestate->changeActivePlayer($next_player_id);
-        
-        $this->trace("stSetNextPlayer: COMPLETE - transitioning to next player turn");
-        $this->gamestate->nextState("nextPlayer");
-    }
+	// 4. UPDATED: stSetNextPlayer method to check for momentum
+	public function stSetNextPlayer(): void 
+	{
+		$this->trace("stSetNextPlayer: START");
+		
+		// Check if anyone has momentum
+		$momentum_player = (int)$this->getGameStateValue("momentum_player");
+		
+		if ($momentum_player > 0) {
+			// Player with momentum goes first
+			$this->trace("stSetNextPlayer: Player $momentum_player has momentum and goes first");
+			$this->gamestate->changeActivePlayer($momentum_player);
+			
+			// Clear momentum after using it
+			$this->setGameStateValue("momentum_player", 0);
+			
+		} else {
+			// Normal logic: alternate players or use standard order
+			$current_player_id = (int)$this->getActivePlayerId();
+			
+			// Get both players
+			$players = $this->getCollectionFromDB("SELECT player_id FROM player");
+			$player_ids = array_keys($players);
+			
+			// Find the other player
+			$next_player_id = null;
+			foreach ($player_ids as $pid) {
+				if ($pid != $current_player_id) {
+					$next_player_id = $pid;
+					break;
+				}
+			}
+			
+			if ($next_player_id === null) {
+				throw new \BgaSystemException("Could not determine next player");
+			}
+			
+			$this->trace("stSetNextPlayer: Setting next player to: $next_player_id");
+			$this->gamestate->changeActivePlayer($next_player_id);
+		}
+		
+		$this->trace("stSetNextPlayer: COMPLETE - transitioning to next player turn");
+		$this->gamestate->nextState("nextPlayer");
+	}
+
 
     public function actPass(): void
     {
