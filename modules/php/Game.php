@@ -28,6 +28,9 @@ class Game extends \Table
     /**
      * Your global variables labels:
      */
+	/**
+     * Updated constructor - don't add new game state labels yet
+     */
 	public function __construct()
 	{
 		parent::__construct();
@@ -48,6 +51,7 @@ class Game extends \Table
 		self::$CARD_TYPES = $material['cardTypes'];
 		self::$WRESTLERS = $material['wrestlers'];
 	}
+
 	
 	// Global variables to track round state
     private static array $ROUND_STATE = [
@@ -256,15 +260,21 @@ class Game extends \Table
 		$this->gamestate->nextState("positionSelected");
 	}
 	
-    /**
-     * Updated actPlayCard with better debugging
+   /**
+     * Simple fix - store round data in player table temporarily
      */
     public function actPlayCard(int $card_id): void
     {
-        $player_id = (int)$this->getActivePlayerId();
+        $player_id = (int)$this->getCurrentPlayerId();
         $state_name = $this->gamestate->state()['name'];
 
         $this->trace("actPlayCard: Player $player_id playing card $card_id in state $state_name");
+
+        // Validate that we have a valid player ID
+        if ($player_id <= 0) {
+            $this->trace("actPlayCard: ERROR - Invalid player ID: $player_id");
+            throw new \BgaUserException('Invalid player - please refresh the page');
+        }
 
         // Validate card choice using the same logic as argPlayerTurn
         $args = $this->argPlayerTurn();
@@ -284,17 +294,19 @@ class Game extends \Table
         }
 
         $card_name = self::$CARD_TYPES[$card_id]['card_name'];
-        $player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $player_id");
+        
+        // Get player name with proper casting and validation
+        $player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = " . (int)$player_id);
         if (!$player_name) {
+            $this->trace("actPlayCard: WARNING - Could not find name for player $player_id, using fallback");
             $player_name = "Player $player_id";
         }
 
         $this->trace("actPlayCard: Player $player_id ($player_name) successfully playing card $card_id ($card_name)");
 
         if ($state_name === 'firstPlayerTurn') {
-            // Store first player's card (hidden)
-            self::$ROUND_STATE['first_player_card'] = $card_id;
-            self::$ROUND_STATE['first_player_id'] = $player_id;
+            // Store first player's card in a custom column temporarily
+            $this->DbQuery("UPDATE player SET player_score = $card_id WHERE player_id = $player_id");
             
             $this->trace("actPlayCard: Stored first player card, transitioning to second player");
             
@@ -307,17 +319,25 @@ class Game extends \Table
             $this->gamestate->nextState("cardPlayed");
             
         } else if ($state_name === 'secondPlayerTurn') {
-            // Store second player's card
-            self::$ROUND_STATE['second_player_card'] = $card_id;
-            self::$ROUND_STATE['second_player_id'] = $player_id;
+            // For second player, we can get the first player info from offense position
+            $first_player_id = $this->getGameStateValue("position_offense");
+            $first_card = $this->getUniqueValueFromDB("SELECT player_score FROM player WHERE player_id = $first_player_id");
             
-            $this->trace("actPlayCard: Stored second player card, transitioning to reveal");
+            $this->trace("actPlayCard: Second player card played. First player: $first_player_id, First card: $first_card, Second player: $player_id, Second card: $card_id");
             
             // Notify that second player played (but don't reveal yet)
             $this->notifyAllPlayers("secondCardPlayed", clienttranslate('${player_name} has played a card'), [
                 "player_id" => $player_id,
                 "player_name" => $player_name,
             ]);
+
+            // Store the card data directly for the reveal method
+            self::$ROUND_STATE = [
+                'first_player_card' => (int)$first_card,
+                'second_player_card' => $card_id,
+                'first_player_id' => $first_player_id,
+                'second_player_id' => $player_id
+            ];
 
             $this->gamestate->nextState("cardPlayed");
         } else {
@@ -326,21 +346,43 @@ class Game extends \Table
         }
     }
 
+
     /**
-     * Reveal both cards simultaneously
+     * Updated stRevealCards with direct data access
      */
     public function stRevealCards(): void
     {
-        $first_card = self::$ROUND_STATE['first_player_card'];
-        $second_card = self::$ROUND_STATE['second_player_card'];
-        $first_player_id = self::$ROUND_STATE['first_player_id'];
-        $second_player_id = self::$ROUND_STATE['second_player_id'];
+        // Get the data directly from what we stored
+        $first_player_id = $this->getGameStateValue("position_offense");
+        $second_player_id = $this->getGameStateValue("position_defense");
+        
+        $first_card = $this->getUniqueValueFromDB("SELECT player_score FROM player WHERE player_id = " . (int)$first_player_id);
+        $second_card = self::$ROUND_STATE['second_player_card'] ?? 0;
 
-        $first_player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $first_player_id");
-        $second_player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $second_player_id");
+        $this->trace("stRevealCards: first_player=$first_player_id, first_card=$first_card, second_player=$second_player_id, second_card=$second_card");
+
+        // Validate that we have the data
+        if (!$first_card || !$second_card || !$first_player_id || !$second_player_id) {
+            $this->trace("stRevealCards: ERROR - Missing card data");
+            throw new \BgaSystemException("Missing card data in stRevealCards");
+        }
+
+        // Get player names with proper casting
+        $first_player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = " . (int)$first_player_id);
+        $second_player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = " . (int)$second_player_id);
+        
+        // Fallback names if queries fail
+        if (!$first_player_name) {
+            $first_player_name = "Player $first_player_id";
+        }
+        if (!$second_player_name) {
+            $second_player_name = "Player $second_player_id";
+        }
         
         $first_card_name = self::$CARD_TYPES[$first_card]['card_name'];
         $second_card_name = self::$CARD_TYPES[$second_card]['card_name'];
+
+        $this->trace("stRevealCards: Revealing cards - $first_player_name played $first_card_name, $second_player_name played $second_card_name");
 
         // Reveal both cards
         $this->notifyAllPlayers("cardsRevealed", clienttranslate('Cards revealed: ${first_player_name} played ${first_card_name}, ${second_player_name} played ${second_card_name}'), [
@@ -353,6 +395,9 @@ class Game extends \Table
             "second_card_id" => $second_card,
             "second_card_name" => $second_card_name,
         ]);
+
+        // Clean up - reset the temporary score storage
+        $this->DbQuery("UPDATE player SET player_score = 0 WHERE player_id = " . (int)$first_player_id);
 
         $this->gamestate->nextState("resolve");
     }
@@ -696,11 +741,11 @@ class Game extends \Table
     }
 
     /**
-     * Updated player turn arguments - returns cards based on position - WITH MORE DEBUGGING
+     * Updated argPlayerTurn using robust player detection
      */
     public function argPlayerTurn(): array
     {
-        $player_id = (int)$this->getActivePlayerId();
+        $player_id = $this->getTurnPlayerId();
         
         $this->trace("argPlayerTurn: START for player $player_id");
         
@@ -716,6 +761,12 @@ class Game extends \Table
         $player_data = $this->getObjectFromDB(
             "SELECT conditioning, special_tokens FROM player WHERE player_id = $player_id"
         );
+        
+        if (!$player_data) {
+            $this->trace("argPlayerTurn: ERROR - Could not find player data for player $player_id");
+            throw new \BgaSystemException("Player data not found for player $player_id");
+        }
+        
         $this->trace("argPlayerTurn: Player $player_id resources - conditioning: {$player_data['conditioning']}, tokens: {$player_data['special_tokens']}");
         
         // Filter to only cards the player can afford
@@ -742,6 +793,47 @@ class Game extends \Table
             "playableCardsIds" => $playable_cards,
             "current_position" => $current_position,
         ];
+    }
+	
+	/**
+     * Get the player ID for the current turn - more robust method
+     */
+    private function getTurnPlayerId(): int
+    {
+        // Try multiple methods to get the player ID
+        $active_player = (int)$this->getActivePlayerId();
+        $current_player = (int)$this->getCurrentPlayerId();
+        $state_name = $this->gamestate->state()['name'];
+        
+        $this->trace("getTurnPlayerId: active=$active_player, current=$current_player, state=$state_name");
+        
+        // For first player turn, use offense player
+        if ($state_name === 'firstPlayerTurn') {
+            $offense_player = (int)$this->getGameStateValue("position_offense");
+            $this->trace("getTurnPlayerId: First player turn, using offense player: $offense_player");
+            return $offense_player;
+        }
+        
+        // For second player turn, use defense player
+        if ($state_name === 'secondPlayerTurn') {
+            $defense_player = (int)$this->getGameStateValue("position_defense");
+            $this->trace("getTurnPlayerId: Second player turn, using defense player: $defense_player");
+            return $defense_player;
+        }
+        
+        // Fallback to active player if valid
+        if ($active_player > 0) {
+            $this->trace("getTurnPlayerId: Using active player: $active_player");
+            return $active_player;
+        }
+        
+        // Final fallback to current player
+        if ($current_player > 0) {
+            $this->trace("getTurnPlayerId: Using current player: $current_player");
+            return $current_player;
+        }
+        
+        throw new \BgaSystemException("Could not determine player ID for turn");
     }
 
     /**
