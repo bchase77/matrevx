@@ -216,14 +216,23 @@ $machinestates = array(
         "transitions" => array("statComparison" => 28)  // CHANGED: Go to stat comparison
     ),
 
-    // NEW: Compare offensive and defensive stats
-    28 => array(
-        "name" => "statComparison",
-        "description" => '',
-        "type" => "game",
-        "action" => "stStatComparison",
-        "transitions" => array("drawScramble" => 17, "nextRound" => 18)
-    ),
+	29 => array(
+		"name" => "scrambleResolution",
+		"description" => clienttranslate('${actplayer} must resolve the scramble card'),
+		"descriptionmyturn" => clienttranslate('${you} must resolve the scramble card'),
+		"type" => "activeplayer",
+		"possibleactions" => array("actResolveScramble"),
+		"transitions" => array("resolved" => 18)  // Go to nextRound after resolution
+	),
+
+	// UPDATE state 28 (statComparison) transitions:
+	28 => array(
+		"name" => "statComparison", 
+		"description" => '',
+		"type" => "game",
+		"action" => "stStatComparison",
+		"transitions" => array("drawScramble" => 29, "nextRound" => 18)  // CHANGED: Go to scrambleResolution instead of 17
+	),
 
     // Draw scramble card if applicable
     17 => array(

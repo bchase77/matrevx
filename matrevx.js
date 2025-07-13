@@ -171,6 +171,30 @@ setup: function( gamedatas )
             });
         },
 
+		onResolveScramble: function() {
+			console.log('Player resolving scramble card...');
+			
+			// Disable the button immediately to prevent double-clicks
+			const scrambleBtn = document.getElementById('btn-resolve-scramble');
+			if (scrambleBtn) {
+				scrambleBtn.disabled = true;
+				scrambleBtn.textContent = 'Resolving...';
+				scrambleBtn.style.opacity = '0.5';
+			}
+			
+			this.bgaPerformAction("actResolveScramble", {}).then(() => {
+				console.log('Scramble resolution successful');
+			}).catch(error => {
+				console.error('Error resolving scramble:', error);
+				// Re-enable button on error
+				if (scrambleBtn) {
+					scrambleBtn.disabled = false;
+					scrambleBtn.textContent = 'Resolve Scramble Card';
+					scrambleBtn.style.opacity = '1';
+				}
+			});
+		},
+
         onUpdateActionButtons: function( stateName, args )
         {
             console.log( 'onUpdateActionButtons: '+stateName, args );
@@ -265,6 +289,32 @@ setup: function( gamedatas )
                             actionBar2.appendChild(statusDiv);
                         }
                         break;
+
+					case 'scrambleResolution':
+						this.addActionButton('btn-resolve-scramble', _('Resolve Scramble Card'), () => this.onResolveScramble(), null, null, 'blue');
+						
+						// Show scramble card info
+						const scrambleInfoDiv = document.createElement('div');
+						scrambleInfoDiv.style.cssText = 'margin: 15px 0; padding: 15px; background: linear-gradient(135deg, #ff6b6b, #feca57); border-radius: 8px; color: white; text-shadow: 1px 1px 2px rgba(0,0,0,0.3);';
+						scrambleInfoDiv.innerHTML = `
+							<div style="font-weight: bold; margin-bottom: 10px; font-size: 18px;">🎲 SCRAMBLE CARD DRAWN!</div>
+							<div style="background: rgba(255,255,255,0.2); padding: 10px; border-radius: 5px; margin: 10px 0;">
+								<div style="font-size: 14px; line-height: 1.4;">
+									Your offense succeeded with a scoring card!<br>
+									Click to resolve the scramble situation...
+								</div>
+							</div>
+							<div style="font-size: 12px; font-style: italic; text-align: center;">
+								Possible outcomes: Win (2 points) or Lose (0 points, -1 offense)
+							</div>
+						`;
+						
+						const actionBar3 = document.getElementById('generalactions');
+						if (actionBar3) {
+							actionBar3.appendChild(scrambleInfoDiv);
+						}
+						break;
+	
                 }
             }
         },
@@ -805,6 +855,8 @@ setup: function( gamedatas )
 			dojo.subscribe('statComparison', this, "notif_statComparison");
 			dojo.subscribe('scrambleCardDrawn', this, "notif_scrambleCardDrawn");
 			dojo.subscribe('scrambleCardResolved', this, "notif_scrambleCardResolved");
+			
+			dojo.subscribe('scrambleResolved', this, "notif_scrambleResolved");
 		},
 
 		// Handle stat comparison results
@@ -932,6 +984,63 @@ setup: function( gamedatas )
 		notif_scrambleDrawn: function(notif) {
 			console.log('notif_scrambleDrawn', notif);
 			this.showMessage('Scramble situation occurred!', 'info');
+		},
+
+		notif_scrambleResolved: function(notif) {
+			console.log('notif_scrambleResolved', notif);
+			
+			const gameInfo = document.getElementById('game-info');
+			if (!gameInfo) return;
+			
+			// Create scramble resolution display
+			let resolvedHTML = '<div style="padding: 20px; border-radius: 8px; margin: 10px; color: white; text-shadow: 1px 1px 2px rgba(0,0,0,0.3);">';
+			
+			if (notif.args.outcome === 'success') {
+				resolvedHTML = resolvedHTML.replace('style="', 'style="background: linear-gradient(135deg, #4ecdc4, #45b7d1); ');
+				resolvedHTML += '<h3>🎯 SCRAMBLE SUCCESS!</h3>';
+				resolvedHTML += '<div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 5px; margin: 10px 0;">';
+				resolvedHTML += '<div style="font-size: 18px; font-weight: bold; margin-bottom: 10px;">' + notif.args.player_name + ' WINS THE SCRAMBLE!</div>';
+				resolvedHTML += '<div style="font-size: 16px;">✅ Scored ' + notif.args.points + ' points!</div>';
+				resolvedHTML += '</div>';
+			} else {
+				resolvedHTML = resolvedHTML.replace('style="', 'style="background: linear-gradient(135deg, #e74c3c, #c0392b); ');
+				resolvedHTML += '<h3>💥 SCRAMBLE FAILED!</h3>';
+				resolvedHTML += '<div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 5px; margin: 10px 0;">';
+				resolvedHTML += '<div style="font-size: 18px; font-weight: bold; margin-bottom: 10px;">' + notif.args.player_name + ' LOSES THE SCRAMBLE!</div>';
+				resolvedHTML += '<div style="font-size: 14px;">❌ No points scored</div>';
+				resolvedHTML += '<div style="font-size: 14px;">📉 Offense reduced by ' + notif.args.offense_penalty + ' (now ' + notif.args.new_offense + ')</div>';
+				resolvedHTML += '<div style="font-size: 14px;">🚫 Cannot score again this round</div>';
+				resolvedHTML += '</div>';
+			}
+			
+			resolvedHTML += '<div style="text-align: center; font-weight: bold;">Round complete!</div>';
+			resolvedHTML += '</div>';
+			
+			gameInfo.innerHTML = resolvedHTML;
+			
+			// Update player panel stats if offense was reduced
+			if (notif.args.outcome === 'failure') {
+				const statsElement = document.querySelector(`#player-wrestler-info-${notif.args.player_id} .wrestler-stats-compact`);
+				if (statsElement && this.gamedatas.players[notif.args.player_id]) {
+					const player = this.gamedatas.players[notif.args.player_id];
+					
+					// Update local data
+					this.gamedatas.players[notif.args.player_id].offense = notif.args.new_offense;
+					
+					// Update display
+					statsElement.textContent = `O:${notif.args.new_offense} D:${player.defense || 0} T:${player.top || 0} B:${player.bottom || 0}`;
+					
+					// Add visual highlight
+					statsElement.style.background = '#ff6b6b';
+					statsElement.style.transition = 'background 2s ease';
+					setTimeout(() => {
+						statsElement.style.background = '';
+					}, 2000);
+				}
+			}
+			
+			// Show message
+			this.showMessage(notif.args.description, notif.args.outcome === 'success' ? 'info' : 'error');
 		},
 
         // NEW notification handlers:

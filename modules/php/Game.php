@@ -221,6 +221,67 @@ class Game extends \Table
         }
     }
 
+	// NEW: Player action to resolve scramble card
+	public function actResolveScramble(): void
+	{
+		$player_id = (int)$this->getCurrentPlayerId();
+		$this->trace("actResolveScramble: Player $player_id resolving scramble card");
+		
+		// Validate that this is the offense player
+		$offense_player_id = (int)$this->getGameStateValue("position_offense");
+		if ($player_id != $offense_player_id) {
+			throw new \BgaUserException("Only the offense player can resolve the scramble card");
+		}
+		
+		// Get player name
+		$player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $player_id");
+		if (!$player_name) {
+			$player_name = "Player $player_id";
+		}
+		
+		// Randomly determine scramble outcome (50/50 chance)
+		$scramble_success = bga_rand(1, 2) == 1; // 1 = success, 2 = failure
+		
+		if ($scramble_success) {
+			// Offense wins the scramble - gets 2 points
+			$this->trace("actResolveScramble: Offense wins scramble - awarding 2 points");
+			
+			$this->DbQuery("UPDATE player SET player_score = player_score + 2 WHERE player_id = $player_id");
+			
+			$this->notifyAllPlayers("scrambleResolved", clienttranslate('${player_name} wins the scramble and scores 2 points!'), [
+				"player_id" => $player_id,
+				"player_name" => $player_name,
+				"outcome" => "success",
+				"points" => 2,
+				"description" => "Offense wins the scramble and gets 2 points"
+			]);
+			
+		} else {
+			// Offense loses the scramble - gets 0 points, loses 1 offense, cannot score more this round
+			$this->trace("actResolveScramble: Offense loses scramble - penalty applied");
+			
+			$this->DbQuery("UPDATE player SET offense = offense - 1 WHERE player_id = $player_id");
+			
+			// Get updated offense value
+			$new_offense = $this->getUniqueValueFromDB("SELECT offense FROM player WHERE player_id = $player_id");
+			
+			$this->notifyAllPlayers("scrambleResolved", clienttranslate('${player_name} loses the scramble! Offense reduced and cannot score again this round.'), [
+				"player_id" => $player_id,
+				"player_name" => $player_name,
+				"outcome" => "failure",
+				"points" => 0,
+				"offense_penalty" => 1,
+				"new_offense" => $new_offense,
+				"description" => "Offense loses the scramble, gets 0 points, offense reduced by 1, cannot score more this round"
+			]);
+			
+			// You could add a flag here to prevent further scoring this round if needed
+			// For now, we'll just apply the offense penalty
+		}
+		
+		$this->gamestate->nextState("resolved");
+	}
+
     /**
      * Position selection action
      */
@@ -903,6 +964,9 @@ class Game extends \Table
 			if ($offense_card_scoring) {
 				$this->trace("stStatComparison: Scoring card played - will draw scramble card");
 				$comparison_result .= " AND played a scoring card! Drawing scramble card...";
+				
+				// Set the offense player as active for scramble resolution
+				$this->gamestate->changeActivePlayer($offense_player_id);
 				$next_state = 'drawScramble';
 			} else {
 				$this->trace("stStatComparison: Non-scoring card - round ends normally");
@@ -950,34 +1014,7 @@ class Game extends \Table
 		$this->gamestate->nextState($next_state);
 	}
 
-	// 3. UPDATED: stDrawScramble method with actual scramble card logic
-	public function stDrawScramble(): void
-	{
-		$this->trace("stDrawScramble: START - Drawing and resolving scramble card");
-		
-		// Get the offensive player (who triggered the scramble)
-		$offense_player_id = (int)$this->getGameStateValue("position_offense");
-		$offense_player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $offense_player_id");
-		
-		// Draw a scramble card (implement your scramble card deck system here)
-		$scramble_card = $this->drawScrambleCard();
-		
-		$this->trace("stDrawScramble: Drew scramble card: " . $scramble_card['name']);
-		
-		// Notify about scramble card draw
-		$this->notifyAllPlayers("scrambleCardDrawn", clienttranslate('${player_name} draws scramble card: ${card_name}'), [
-			"player_id" => $offense_player_id,
-			"player_name" => $offense_player_name,
-			"card_name" => $scramble_card['name'],
-			"card_description" => $scramble_card['description'],
-			"card_effect" => $scramble_card['effect']
-		]);
-		
-		// Apply scramble card effects
-		$this->applyScrambleCardEffects($scramble_card, $offense_player_id);
-		
-		$this->gamestate->nextState("nextRound");
-	}
+
 
 	// 4. NEW: Method to draw a scramble card
 	private function drawScrambleCard(): array
