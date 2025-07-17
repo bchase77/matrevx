@@ -139,26 +139,6 @@ $machinestates = array(
         "transitions" => array("diceChosen" => 24)
     ),
 
-    // First player reroll option
-    24 => array(
-        "name" => "firstPlayerRerollOption",
-        "description" => clienttranslate('${actplayer} may choose to reroll their die'),
-        "descriptionmyturn" => clienttranslate('${you} may reroll your die (costs 1 token)'),
-        "type" => "activeplayer",
-        "args" => "argRerollOption",
-        "possibleactions" => array("actRerollDice", "actKeepDice"),
-        "transitions" => array("reroll" => 25, "keep" => 21)
-    ),
-
-    // First player reroll
-    25 => array(
-        "name" => "firstPlayerReroll",
-        "description" => '',
-        "type" => "game",
-        "action" => "stFirstPlayerReroll",
-        "transitions" => array("rerolled" => 21)
-    ),
-
     // Switch to second player for dice
     21 => array(
         "name" => "switchToSecondPlayerForDice",
@@ -178,25 +158,45 @@ $machinestates = array(
         "transitions" => array("diceChosen" => 26)
     ),
 
-    // Second player reroll option
-    26 => array(
-        "name" => "secondPlayerRerollOption",
-        "description" => clienttranslate('${actplayer} may choose to reroll their die'),
-        "descriptionmyturn" => clienttranslate('${you} may reroll your die (costs 1 token)'),
-        "type" => "activeplayer",
-        "args" => "argRerollOption",
-        "possibleactions" => array("actRerollDice", "actKeepDice"),
-        "transitions" => array("reroll" => 27, "keep" => 15)
-    ),
+	// First player reroll option (state 24)
+	24 => array(
+		"name" => "firstPlayerRerollOption",
+		"description" => clienttranslate('${actplayer} may choose to reroll their die'),
+		"descriptionmyturn" => clienttranslate('${you} may reroll your die (costs 1 token, undoes all effects)'),
+		"type" => "activeplayer",
+		"args" => "argRerollOption",
+		"possibleactions" => array("actRerollDice", "actKeepDice"),
+		"transitions" => array("reroll" => 25, "keep" => 21)
+	),
 
-    // Second player reroll
-    27 => array(
-        "name" => "secondPlayerReroll",
-        "description" => '',
-        "type" => "game",
-        "action" => "stSecondPlayerReroll",
-        "transitions" => array("rerolled" => 15)
-    ),
+	// First player reroll (state 25) - UPDATED: goes back to die choice
+	25 => array(
+		"name" => "firstPlayerReroll",
+		"description" => '',
+		"type" => "game",
+		"action" => "stFirstPlayerReroll",
+		"transitions" => array("rerolled" => 14)  // CHANGED: Goes back to firstPlayerChooseDie
+	),
+
+	// Second player reroll option (state 26)
+	26 => array(
+		"name" => "secondPlayerRerollOption",
+		"description" => clienttranslate('${actplayer} may choose to reroll their die'),
+		"descriptionmyturn" => clienttranslate('${you} may reroll your die (costs 1 token, undoes all effects)'),
+		"type" => "activeplayer",
+		"args" => "argRerollOption",
+		"possibleactions" => array("actRerollDice", "actKeepDice"),
+		"transitions" => array("reroll" => 27, "keep" => 15)
+	),
+
+	// Second player reroll (state 27) - UPDATED: goes back to die choice
+	27 => array(
+		"name" => "secondPlayerReroll",
+		"description" => '',
+		"type" => "game",
+		"action" => "stSecondPlayerReroll",
+		"transitions" => array("rerolled" => 23)  // CHANGED: Goes back to secondPlayerChooseDie
+	),
 
     // Apply card effects and trademark moves
     15 => array(
