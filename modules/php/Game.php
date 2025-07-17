@@ -221,7 +221,7 @@ class Game extends \Table
         }
     }
 
-	// NEW: Player action to resolve scramble card
+	// 2. FIX: actResolveScramble method to send proper score update notifications
 	public function actResolveScramble(): void
 	{
 		$player_id = (int)$this->getCurrentPlayerId();
@@ -248,12 +248,24 @@ class Game extends \Table
 			
 			$this->DbQuery("UPDATE player SET player_score = player_score + 2 WHERE player_id = $player_id");
 			
+			// GET UPDATED SCORE FOR NOTIFICATION
+			$new_score = (int)$this->getUniqueValueFromDB("SELECT player_score FROM player WHERE player_id = $player_id");
+			
 			$this->notifyAllPlayers("scrambleResolved", clienttranslate('${player_name} wins the scramble and scores 2 points!'), [
 				"player_id" => $player_id,
 				"player_name" => $player_name,
 				"outcome" => "success",
 				"points" => 2,
+				"new_score" => $new_score,  // ADD NEW SCORE
 				"description" => "Offense wins the scramble and gets 2 points"
+			]);
+			
+			// ALSO SEND SCORE UPDATE NOTIFICATION FOR ALL PLAYERS TO SEE
+			$this->notifyAllPlayers("playerScoreUpdate", clienttranslate('${player_name} score updated'), [
+				"player_id" => $player_id,
+				"player_name" => $player_name,
+				"new_score" => $new_score,
+				"points_gained" => 2
 			]);
 			
 		} else {
@@ -263,7 +275,7 @@ class Game extends \Table
 			$this->DbQuery("UPDATE player SET offense = offense - 1 WHERE player_id = $player_id");
 			
 			// Get updated offense value
-			$new_offense = $this->getUniqueValueFromDB("SELECT offense FROM player WHERE player_id = $player_id");
+			$new_offense = (int)$this->getUniqueValueFromDB("SELECT offense FROM player WHERE player_id = $player_id");
 			
 			$this->notifyAllPlayers("scrambleResolved", clienttranslate('${player_name} loses the scramble! Offense reduced and cannot score again this round.'), [
 				"player_id" => $player_id,
@@ -274,14 +286,32 @@ class Game extends \Table
 				"new_offense" => $new_offense,
 				"description" => "Offense loses the scramble, gets 0 points, offense reduced by 1, cannot score more this round"
 			]);
-			
-			// You could add a flag here to prevent further scoring this round if needed
-			// For now, we'll just apply the offense penalty
 		}
 		
 		$this->gamestate->nextState("resolved");
 	}
 
+	// 3. FIX: Add method to handle any other scoring situations
+	private function awardPoints(int $player_id, int $points, string $reason = ""): void
+	{
+		$this->trace("awardPoints: Awarding $points points to player $player_id for: $reason");
+		
+		if ($points > 0) {
+			$this->DbQuery("UPDATE player SET player_score = player_score + $points WHERE player_id = $player_id");
+			
+			$new_score = (int)$this->getUniqueValueFromDB("SELECT player_score FROM player WHERE player_id = $player_id");
+			$player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $player_id");
+			
+			// Notify all players about score update
+			$this->notifyAllPlayers("playerScoreUpdate", clienttranslate('${player_name} scores ${points} points'), [
+				"player_id" => $player_id,
+				"player_name" => $player_name,
+				"new_score" => $new_score,
+				"points_gained" => $points,
+				"reason" => $reason
+			]);
+		}
+	}
     /**
      * Position selection action
      */
@@ -328,72 +358,85 @@ class Game extends \Table
         $this->gamestate->nextState("positionSelected");
     }
     
-    /**
-     * NEW: Player chooses which die to roll (red or blue)
-     */
-    public function actChooseDie(string $die_choice): void
-    {
-        $player_id = (int)$this->getCurrentPlayerId();
-        $state_name = $this->gamestate->state()['name'];
-        
-        $this->trace("actChooseDie: Player $player_id choosing $die_choice in state $state_name");
+	/**
+	 * FIXED: Enhanced actChooseDie method to ensure proper data storage
+	 */
+	public function actChooseDie(string $die_choice): void
+	{
+		$player_id = (int)$this->getCurrentPlayerId();
+		$state_name = $this->gamestate->state()['name'];
+		
+		$this->trace("actChooseDie: START - Player $player_id choosing $die_choice in state $state_name");
+		
+		// Validate die choice
+		if (!in_array($die_choice, ['red', 'blue'])) {
+			throw new \BgaUserException('Invalid die choice - must be red or blue');
+		}
 
-        // Validate die choice
-        if (!in_array($die_choice, ['red', 'blue'])) {
-            throw new \BgaUserException('Invalid die choice - must be red or blue');
-        }
+		// Store die choice FIRST
+		$die_choice_numeric = $die_choice === 'red' ? 1 : 2;
+		if ($state_name === 'firstPlayerChooseDie') {
+			$this->setGameStateValue("first_player_die_choice", $die_choice_numeric);
+			$this->trace("actChooseDie: Stored first_player_die_choice = $die_choice_numeric");
+		} else if ($state_name === 'secondPlayerChooseDie') {
+			$this->setGameStateValue("second_player_die_choice", $die_choice_numeric);
+			$this->trace("actChooseDie: Stored second_player_die_choice = $die_choice_numeric");
+		}
 
-        // Get player name
-        $player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = " . (int)$player_id);
-        if (!$player_name) {
-            $player_name = "Player $player_id";
-        }
+		// Roll the chosen die and get the actual value
+		$die_value = 0;
+		$die_face = 0;
+		
+		if ($die_choice === 'red') {
+			$die_value = $this->rollRedDie();
+			$die_face = $this->getGameStateValue("red_die");
+			$this->trace("actChooseDie: Rolled red die - face=$die_face, value=$die_value");
+		} else { // blue
+			$die_value = $this->rollBlueDie();
+			$die_face = $this->getGameStateValue("blue_die");
+			$this->trace("actChooseDie: Rolled blue die - face=$die_face, value=$die_value");
+		}
 
-        $die_label = $die_choice === 'red' ? 'Red (STRENGTH)' : 'Blue (SPEED)';
-        $this->trace("actChooseDie: Player $player_id chose $die_label");
+		// Store die value immediately after rolling
+		if ($state_name === 'firstPlayerChooseDie') {
+			$this->setGameStateValue("first_player_die_value", $die_value);
+			$this->trace("actChooseDie: Stored first_player_die_value = $die_value");
+		} else if ($state_name === 'secondPlayerChooseDie') {
+			$this->setGameStateValue("second_player_die_value", $die_value);
+			$this->trace("actChooseDie: Stored second_player_die_value = $die_value");
+		}
 
-        // Store the player's die choice
-        if ($state_name === 'firstPlayerChooseDie') {
-            $this->setGameStateValue("first_player_die_choice", $die_choice === 'red' ? 1 : 2); // 1=red, 2=blue
-        } else if ($state_name === 'secondPlayerChooseDie') {
-            $this->setGameStateValue("second_player_die_choice", $die_choice === 'red' ? 1 : 2);
-        }
+		// Apply dice costs and rewards AFTER storing the values
+		$this->applyDiceCosts($player_id, $die_choice);
+		
+		// FIXED: Get updated token count after applying costs
+		$new_tokens = (int)$this->getUniqueValueFromDB("SELECT special_tokens FROM player WHERE player_id = $player_id");
+		$new_conditioning = (int)$this->getUniqueValueFromDB("SELECT conditioning FROM player WHERE player_id = $player_id");
+		
+		$this->trace("actChooseDie: After costs - tokens=$new_tokens, conditioning=$new_conditioning");
 
-        // Roll the chosen die
-        if ($die_choice === 'red') {
-            $die_value = $this->rollRedDie();
-            $die_face = $this->getGameStateValue("red_die");
-            
-            // Apply dice costs and rewards
-            $this->applyDiceCosts($player_id, 'red');
-            
-        } else { // blue
-            $die_value = $this->rollBlueDie();
-            $die_face = $this->getGameStateValue("blue_die");
-            
-            // Apply dice costs and rewards
-            $this->applyDiceCosts($player_id, 'blue');
-        }
+		// Get player name and notify
+		$player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = " . (int)$player_id);
+		if (!$player_name) {
+			$player_name = "Player $player_id";
+		}
 
-        // Store the player's die value
-        if ($state_name === 'firstPlayerChooseDie') {
-            $this->setGameStateValue("first_player_die_value", $die_value);
-        } else if ($state_name === 'secondPlayerChooseDie') {
-            $this->setGameStateValue("second_player_die_value", $die_value);
-        }
+		$die_label = $die_choice === 'red' ? 'Red (STRENGTH)' : 'Blue (SPEED)';
+		
+		$this->notifyAllPlayers("playerChoseDie", clienttranslate('${player_name} chose ${die_label} and rolled: ${die_value}'), [
+			"player_id" => $player_id,
+			"player_name" => $player_name,
+			"die_choice" => $die_choice,
+			"die_label" => $die_label,
+			"die_face" => $die_face,
+			"die_value" => $die_value,
+			"new_tokens" => $new_tokens,          // FIXED: Include updated token count
+			"new_conditioning" => $new_conditioning // FIXED: Include updated conditioning
+		]);
 
-        // Notify all players about the die choice and roll
-        $this->notifyAllPlayers("playerChoseDie", clienttranslate('${player_name} chose ${die_label} and rolled: ${die_value}'), [
-            "player_id" => $player_id,
-            "player_name" => $player_name,
-            "die_choice" => $die_choice,
-            "die_label" => $die_label,
-            "die_face" => $die_face,
-            "die_value" => $die_value,
-        ]);
+		$this->gamestate->nextState("diceChosen");
+	}
 
-        $this->gamestate->nextState("diceChosen");
-    }
 
     /**
      * First player reroll state - reroll their chosen die
@@ -522,49 +565,79 @@ class Game extends \Table
     /**
      * Updated reroll argument method - IMPROVED with error handling
      */
-    public function argRerollOption(): array
-    {
-        $player_id = (int)$this->getActivePlayerId();
-        $can_reroll = $this->canPlayerReroll($player_id);
-        
-        $state_name = $this->gamestate->state()['name'];
-        
-        // Determine which player and get their die choice and value
-        $die_choice_value = 0;
-        $die_value = 0;
-        
-        if (str_contains($state_name, 'first')) {
-            $die_choice_value = $this->getGameStateValue("first_player_die_choice");
-            $die_value = $this->getGameStateValue("first_player_die_value");
-        } else {
-            $die_choice_value = $this->getGameStateValue("second_player_die_choice");
-            $die_value = $this->getGameStateValue("second_player_die_value");
-        }
-        
-        // ADD: Safety check for die choice value
-        if ($die_choice_value == 0) {
-            $this->trace("argRerollOption: WARNING - No die choice recorded, defaulting to red");
-            $die_choice_value = 1; // Default to red
-        }
-        
-        $die_type = $die_choice_value == 1 ? 'red' : 'blue';
-        
-        // GET: Current tokens safely
-        $current_tokens = $this->getUniqueValueFromDB("SELECT special_tokens FROM player WHERE player_id = $player_id");
-        if ($current_tokens === null) {
-            $current_tokens = 0;
-        }
-        
-        $this->trace("argRerollOption: Player $player_id, die_type=$die_type, value=$die_value, can_reroll=" . ($can_reroll ? 'YES' : 'NO'));
-        
-        return [
-            "can_reroll" => $can_reroll,
-            "die_type" => $die_type,
-            "die_value" => $die_value,
-            "current_tokens" => $current_tokens
-        ];
-    }
-    
+
+	public function argRerollOption(): array
+	{
+		$player_id = (int)$this->getActivePlayerId();
+		$state_name = $this->gamestate->state()['name'];
+		
+		$this->trace("=== DEBUG argRerollOption START ===");
+		$this->trace("Player ID: $player_id");
+		$this->trace("State name: $state_name");
+		
+		// Get all game state values for debugging
+		$first_die_choice = $this->getGameStateValue("first_player_die_choice");
+		$second_die_choice = $this->getGameStateValue("second_player_die_choice");
+		$first_die_value = $this->getGameStateValue("first_player_die_value");
+		$second_die_value = $this->getGameStateValue("second_player_die_value");
+		$first_player_id = $this->getGameStateValue("first_player_id");
+		$second_player_id = $this->getGameStateValue("second_player_id");
+		
+		$this->trace("All die state values:");
+		$this->trace("- first_player_die_choice: $first_die_choice");
+		$this->trace("- second_player_die_choice: $second_die_choice");
+		$this->trace("- first_player_die_value: $first_die_value");
+		$this->trace("- second_player_die_value: $second_die_value");
+		$this->trace("- first_player_id: $first_player_id");
+		$this->trace("- second_player_id: $second_player_id");
+		
+		// Determine which player and get their die choice and value
+		$die_choice_value = 0;
+		$die_value = 0;
+		
+		if ($state_name === 'firstPlayerRerollOption') {
+			$die_choice_value = $first_die_choice;
+			$die_value = $first_die_value;
+			$this->trace("Using first player data: choice=$die_choice_value, value=$die_value");
+		} else if ($state_name === 'secondPlayerRerollOption') {
+			$die_choice_value = $second_die_choice;
+			$die_value = $second_die_value;
+			$this->trace("Using second player data: choice=$die_choice_value, value=$die_value");
+		} else {
+			$this->trace("ERROR: Unexpected state name: $state_name");
+		}
+		
+		// Convert die choice value to string
+		$die_type = '';
+		if ($die_choice_value == 1) {
+			$die_type = 'red';
+		} else if ($die_choice_value == 2) {
+			$die_type = 'blue';
+		} else {
+			$this->trace("WARNING: Invalid die choice value: $die_choice_value");
+			$die_type = 'unknown'; // Changed from 'red' to 'unknown' for debugging
+		}
+		
+		// Get current player resources
+		$player_data = $this->getObjectFromDB("SELECT conditioning, special_tokens FROM player WHERE player_id = $player_id");
+		$current_tokens = $player_data ? (int)$player_data['special_tokens'] : 0;
+		$current_conditioning = $player_data ? (int)$player_data['conditioning'] : 0;
+		
+		$this->trace("Player resources: tokens=$current_tokens, conditioning=$current_conditioning");
+		
+		$result = [
+			"can_reroll" => $current_tokens >= 1,
+			"die_type" => $die_type,
+			"die_value" => $die_value,
+			"current_tokens" => $current_tokens,
+			"current_conditioning" => $current_conditioning
+		];
+		
+		$this->trace("Final result: " . json_encode($result));
+		$this->trace("=== DEBUG argRerollOption END ===");
+		
+		return $result;
+	}
     /**
      * Fixed actPlayCard - consistent use of global variables
      */
@@ -755,14 +828,14 @@ class Game extends \Table
     /**
      * Step 1: Adjust conditioning based on cards played - FIXED
      */
-	// 3. FIX: stAdjustConditioning method - cast player IDs to int
+	// 4. FIX: Update conditioning notification to include token updates
 	public function stAdjustConditioning(): void
 	{
 		// FIXED: Use global variables and cast to int
 		$first_card_id = $this->getGameStateValue("first_player_card");
 		$second_card_id = $this->getGameStateValue("second_player_card");
-		$first_player_id = (int)$this->getGameStateValue("first_player_id");  // CAST TO INT
-		$second_player_id = (int)$this->getGameStateValue("second_player_id"); // CAST TO INT
+		$first_player_id = (int)$this->getGameStateValue("first_player_id");
+		$second_player_id = (int)$this->getGameStateValue("second_player_id");
 
 		$this->trace("stAdjustConditioning: first_card=$first_card_id, second_card=$second_card_id, first_player=$first_player_id, second_player=$second_player_id");
 
@@ -785,8 +858,8 @@ class Game extends \Table
 		$this->DbQuery("UPDATE player SET conditioning = conditioning - $second_cost WHERE player_id = $second_player_id");
 
 		// Get updated conditioning values
-		$first_conditioning = $this->getUniqueValueFromDB("SELECT conditioning FROM player WHERE player_id = $first_player_id");
-		$second_conditioning = $this->getUniqueValueFromDB("SELECT conditioning FROM player WHERE player_id = $second_player_id");
+		$first_conditioning = (int)$this->getUniqueValueFromDB("SELECT conditioning FROM player WHERE player_id = $first_player_id");
+		$second_conditioning = (int)$this->getUniqueValueFromDB("SELECT conditioning FROM player WHERE player_id = $second_player_id");
 
 		$this->notifyAllPlayers("conditioningAdjusted", clienttranslate('Conditioning adjusted'), [
 			"updates" => [
@@ -1238,18 +1311,39 @@ class Game extends \Table
     /**
      * Apply dice costs and token rewards to player
      */
-	// 5. FIX: applyDiceCosts method - ensure proper typing  
+	/**
+	 * FIXED: Enhanced applyDiceCosts method with better logging
+	 */
 	private function applyDiceCosts(int $player_id, string $die_type): void
 	{
+		$this->trace("applyDiceCosts: START - Player $player_id chose $die_type die");
+		
+		// Get current values before applying costs
+		$before_conditioning = (int)$this->getUniqueValueFromDB("SELECT conditioning FROM player WHERE player_id = $player_id");
+		$before_tokens = (int)$this->getUniqueValueFromDB("SELECT special_tokens FROM player WHERE player_id = $player_id");
+		
 		if ($die_type === 'red') {
 			// Red die: costs 3 conditioning, gain 1 token
 			$this->DbQuery("UPDATE player SET conditioning = conditioning - 3, special_tokens = special_tokens + 1 WHERE player_id = $player_id");
-			$this->trace("applyDiceCosts: Player $player_id - Red die cost 3 conditioning, gained 1 token");
+			$conditioning_cost = 3;
+			$token_gain = 1;
 		} else if ($die_type === 'blue') {
 			// Blue die: costs 2 conditioning, gain 2 tokens
 			$this->DbQuery("UPDATE player SET conditioning = conditioning - 2, special_tokens = special_tokens + 2 WHERE player_id = $player_id");
-			$this->trace("applyDiceCosts: Player $player_id - Blue die cost 2 conditioning, gained 2 tokens");
+			$conditioning_cost = 2;
+			$token_gain = 2;
+		} else {
+			$this->trace("applyDiceCosts: ERROR - Invalid die type: $die_type");
+			return;
 		}
+		
+		// Get values after applying costs
+		$after_conditioning = (int)$this->getUniqueValueFromDB("SELECT conditioning FROM player WHERE player_id = $player_id");
+		$after_tokens = (int)$this->getUniqueValueFromDB("SELECT special_tokens FROM player WHERE player_id = $player_id");
+		
+		$this->trace("applyDiceCosts: Player $player_id - $die_type die");
+		$this->trace("applyDiceCosts: Conditioning: $before_conditioning -> $after_conditioning (cost: $conditioning_cost)");
+		$this->trace("applyDiceCosts: Tokens: $before_tokens -> $after_tokens (gain: $token_gain)");
 	}
 
     /**
@@ -1784,26 +1878,36 @@ class Game extends \Table
             // Get available wrestlers for selection
             $result["wrestlers"] = self::$WRESTLERS;
             
-            // Get game state info - with safety checks
-            $result["game_state"] = [
-                "current_period" => $this->getGameStateValue("current_period") ?? 1,
-                "current_round" => $this->getGameStateValue("current_round") ?? 1
-            ];
+			// Get game state info - with safety checks INCLUDING MOMENTUM
+			$result["game_state"] = [
+				"current_period" => $this->getGameStateValue("current_period") ?? 1,
+				"current_round" => $this->getGameStateValue("current_round") ?? 1,
+				"momentum_player" => $this->getGameStateValue("momentum_player") ?? 0,
+				"position_offense" => $this->getGameStateValue("position_offense") ?? 0,
+				"position_defense" => $this->getGameStateValue("position_defense") ?? 0
+			];
 
             $result["cardTypes"] = self::$CARD_TYPES;
             
-        } catch (Exception $e) {
-            $this->trace("getAllDatas: ERROR - " . $e->getMessage());
-            // Return minimal safe data
-            $result = [
-                "players" => [],
-                "wrestlers" => self::$WRESTLERS,
-                "game_state" => ["current_period" => 1, "current_round" => 1],
-                "cardTypes" => self::$CARD_TYPES
-            ];
-        }
+		} catch (Exception $e) {
+			$this->trace("getAllDatas: ERROR - " . $e->getMessage());
+			// Return minimal safe data
+			$result = [
+				"players" => [],
+				"wrestlers" => self::$WRESTLERS,
+				"game_state" => [
+					"current_period" => 1, 
+					"current_round" => 1,
+					"momentum_player" => 0,
+					"position_offense" => 0,
+					"position_defense" => 0
+				],
+				"cardTypes" => self::$CARD_TYPES
+			];
+		}
 
-        return $result;
+		return $result;
+			
     }
     
     /**
