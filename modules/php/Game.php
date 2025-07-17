@@ -438,10 +438,47 @@ class Game extends \Table
 	}
 
 
+
+
+
+
+	/**
+	 * Updated first player reroll state - goes back to die choice
+	 */
+	public function stFirstPlayerReroll(): void
+	{
+		$player_id = (int)$this->getActivePlayerId();
+		
+		$this->trace("stFirstPlayerReroll: Player $player_id going back to die choice after reroll");
+		
+		// Player goes back to choosing a die
+		$this->gamestate->nextState("rerolled");
+	}
+
+	/**
+	 * Updated second player reroll state - goes back to die choice  
+	 */
+	public function stSecondPlayerReroll(): void
+	{
+		$player_id = (int)$this->getActivePlayerId();
+		
+		$this->trace("stSecondPlayerReroll: Player $player_id going back to die choice after reroll");
+		
+		// Player goes back to choosing a die
+		$this->gamestate->nextState("rerolled");
+	}
+
+
+
+
+
+
+
+
     /**
      * First player reroll state - reroll their chosen die
      */
-    public function stFirstPlayerReroll(): void
+/*    public function stFirstPlayerReroll(): void
     {
         $player_id = (int)$this->getActivePlayerId();
         
@@ -483,10 +520,11 @@ class Game extends \Table
         
         $this->gamestate->nextState("rerolled");
     }
-
+*/
     /**
      * Second player reroll state - reroll their chosen die
      */
+/*
     public function stSecondPlayerReroll(): void
     {
         $player_id = (int)$this->getActivePlayerId();
@@ -529,114 +567,146 @@ class Game extends \Table
         
         $this->gamestate->nextState("rerolled");
     }
-    
+*/    
     /**
      * Updated reroll methods to use player's chosen die
      */
-    public function actRerollDice(): void
-    {
-        $player_id = (int)$this->getCurrentPlayerId();
-        $state_name = $this->gamestate->state()['name'];
-        
-        $this->trace("actRerollDice: Player $player_id wants to reroll in state $state_name");
+	/**
+	 * Enhanced actRerollDice - undoes previous die effects and goes back to choice
+	 */
+	public function actRerollDice(): void
+	{
+		$player_id = (int)$this->getCurrentPlayerId();
+		$state_name = $this->gamestate->state()['name'];
+		
+		$this->trace("actRerollDice: Player $player_id wants to reroll in state $state_name");
 
-        // Check if player can afford reroll
-        if (!$this->canPlayerReroll($player_id)) {
-            throw new \BgaUserException("You need at least 1 token to reroll");
-        }
+		// Check if player can afford reroll
+		if (!$this->canPlayerReroll($player_id)) {
+			throw new \BgaUserException("You need at least 1 token to reroll");
+		}
 
-        // Deduct 1 token for reroll
-        $this->DbQuery("UPDATE player SET special_tokens = special_tokens - 1 WHERE player_id = $player_id");
+		// Get the previous die choice and effects to undo them
+		$previous_die_choice = 0;
+		$previous_die_value = 0;
+		
+		if ($state_name === 'firstPlayerRerollOption') {
+			$previous_die_choice = $this->getGameStateValue("first_player_die_choice");
+			$previous_die_value = $this->getGameStateValue("first_player_die_value");
+		} else if ($state_name === 'secondPlayerRerollOption') {
+			$previous_die_choice = $this->getGameStateValue("second_player_die_choice");
+			$previous_die_value = $this->getGameStateValue("second_player_die_value");
+		}
+		
+		$previous_die_type = $previous_die_choice == 1 ? 'red' : 'blue';
+		
+		$this->trace("actRerollDice: Undoing previous $previous_die_type die (value: $previous_die_value)");
 
-        // Get player name
-        $player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = " . (int)$player_id);
-        if (!$player_name) {
-            $player_name = "Player $player_id";
-        }
+		// STEP 1: Deduct 1 token for the reroll cost
+		$this->DbQuery("UPDATE player SET special_tokens = special_tokens - 1 WHERE player_id = $player_id");
+		
+		// STEP 2: Undo the previous die's conditioning/token effects
+		$this->undoPreviousDieEffects($player_id, $previous_die_type);
+		
+		// STEP 3: Undo any offense adjustments from the previous die
+		if ($previous_die_value != 0) {
+			$this->DbQuery("UPDATE player SET offense = offense - $previous_die_value WHERE player_id = $player_id");
+			$this->trace("actRerollDice: Undid $previous_die_value offense adjustment");
+		}
+		
+		// STEP 4: Clear the previous die choice and value
+		if ($state_name === 'firstPlayerRerollOption') {
+			$this->setGameStateValue("first_player_die_choice", 0);
+			$this->setGameStateValue("first_player_die_value", 0);
+		} else if ($state_name === 'secondPlayerRerollOption') {
+			$this->setGameStateValue("second_player_die_choice", 0);
+			$this->setGameStateValue("second_player_die_value", 0);
+		}
 
-        $this->notifyAllPlayers("playerReroll", clienttranslate('${player_name} spends 1 token to reroll'), [
-            "player_id" => $player_id,
-            "player_name" => $player_name,
-        ]);
+		// Get updated resources for notification
+		$new_tokens = (int)$this->getUniqueValueFromDB("SELECT special_tokens FROM player WHERE player_id = $player_id");
+		$new_conditioning = (int)$this->getUniqueValueFromDB("SELECT conditioning FROM player WHERE player_id = $player_id");
+		$new_offense = (int)$this->getUniqueValueFromDB("SELECT offense FROM player WHERE player_id = $player_id");
+		
+		// Get player name
+		$player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = " . (int)$player_id);
+		if (!$player_name) {
+			$player_name = "Player $player_id";
+		}
 
-        $this->gamestate->nextState("reroll");
-    }
+		$this->notifyAllPlayers("playerRerollComplete", clienttranslate('${player_name} spent 1 token to reroll - all effects undone, choosing die again'), [
+			"player_id" => $player_id,
+			"player_name" => $player_name,
+			"previous_die_type" => $previous_die_type,
+			"previous_die_value" => $previous_die_value,
+			"new_tokens" => $new_tokens,
+			"new_conditioning" => $new_conditioning,
+			"new_offense" => $new_offense,
+			"reroll_cost" => 1
+		]);
+
+		$this->gamestate->nextState("reroll");
+	}
+
+	/**
+	 * NEW: Undo the conditioning and token effects of the previous die choice
+	 */
+	private function undoPreviousDieEffects(int $player_id, string $previous_die_type): void
+	{
+		$this->trace("undoPreviousDieEffects: Undoing $previous_die_type die effects for player $player_id");
+		
+		if ($previous_die_type === 'red') {
+			// Red die: originally cost 3 conditioning and gave 1 token
+			// So we need to: add back 3 conditioning, remove 1 token
+			$this->DbQuery("UPDATE player SET conditioning = conditioning + 3, special_tokens = special_tokens - 1 WHERE player_id = $player_id");
+			$this->trace("undoPreviousDieEffects: Undid red die - added 3 conditioning, removed 1 token");
+		} else if ($previous_die_type === 'blue') {
+			// Blue die: originally cost 2 conditioning and gave 2 tokens  
+			// So we need to: add back 2 conditioning, remove 2 tokens
+			$this->DbQuery("UPDATE player SET conditioning = conditioning + 2, special_tokens = special_tokens - 2 WHERE player_id = $player_id");
+			$this->trace("undoPreviousDieEffects: Undid blue die - added 2 conditioning, removed 2 tokens");
+		}
+	}
 
     /**
      * Updated reroll argument method - IMPROVED with error handling
      */
 
+	/**
+	 * Enhanced argRerollOption with reroll cost warning
+	 */
 	public function argRerollOption(): array
 	{
 		$player_id = (int)$this->getActivePlayerId();
 		$state_name = $this->gamestate->state()['name'];
 		
-		$this->trace("=== DEBUG argRerollOption START ===");
-		$this->trace("Player ID: $player_id");
-		$this->trace("State name: $state_name");
-		
-		// Get all game state values for debugging
-		$first_die_choice = $this->getGameStateValue("first_player_die_choice");
-		$second_die_choice = $this->getGameStateValue("second_player_die_choice");
-		$first_die_value = $this->getGameStateValue("first_player_die_value");
-		$second_die_value = $this->getGameStateValue("second_player_die_value");
-		$first_player_id = $this->getGameStateValue("first_player_id");
-		$second_player_id = $this->getGameStateValue("second_player_id");
-		
-		$this->trace("All die state values:");
-		$this->trace("- first_player_die_choice: $first_die_choice");
-		$this->trace("- second_player_die_choice: $second_die_choice");
-		$this->trace("- first_player_die_value: $first_die_value");
-		$this->trace("- second_player_die_value: $second_die_value");
-		$this->trace("- first_player_id: $first_player_id");
-		$this->trace("- second_player_id: $second_player_id");
-		
-		// Determine which player and get their die choice and value
+		// Get die choice and value data
 		$die_choice_value = 0;
 		$die_value = 0;
 		
 		if ($state_name === 'firstPlayerRerollOption') {
-			$die_choice_value = $first_die_choice;
-			$die_value = $first_die_value;
-			$this->trace("Using first player data: choice=$die_choice_value, value=$die_value");
+			$die_choice_value = $this->getGameStateValue("first_player_die_choice");
+			$die_value = $this->getGameStateValue("first_player_die_value");
 		} else if ($state_name === 'secondPlayerRerollOption') {
-			$die_choice_value = $second_die_choice;
-			$die_value = $second_die_value;
-			$this->trace("Using second player data: choice=$die_choice_value, value=$die_value");
-		} else {
-			$this->trace("ERROR: Unexpected state name: $state_name");
+			$die_choice_value = $this->getGameStateValue("second_player_die_choice");
+			$die_value = $this->getGameStateValue("second_player_die_value");
 		}
 		
-		// Convert die choice value to string
-		$die_type = '';
-		if ($die_choice_value == 1) {
-			$die_type = 'red';
-		} else if ($die_choice_value == 2) {
-			$die_type = 'blue';
-		} else {
-			$this->trace("WARNING: Invalid die choice value: $die_choice_value");
-			$die_type = 'unknown'; // Changed from 'red' to 'unknown' for debugging
-		}
+		$die_type = $die_choice_value == 1 ? 'red' : 'blue';
 		
 		// Get current player resources
 		$player_data = $this->getObjectFromDB("SELECT conditioning, special_tokens FROM player WHERE player_id = $player_id");
 		$current_tokens = $player_data ? (int)$player_data['special_tokens'] : 0;
 		$current_conditioning = $player_data ? (int)$player_data['conditioning'] : 0;
 		
-		$this->trace("Player resources: tokens=$current_tokens, conditioning=$current_conditioning");
-		
-		$result = [
+		return [
 			"can_reroll" => $current_tokens >= 1,
 			"die_type" => $die_type,
 			"die_value" => $die_value,
 			"current_tokens" => $current_tokens,
-			"current_conditioning" => $current_conditioning
+			"current_conditioning" => $current_conditioning,
+			"reroll_explanation" => "Reroll will undo all effects and let you choose a die again (costs 1 token)"
 		];
-		
-		$this->trace("Final result: " . json_encode($result));
-		$this->trace("=== DEBUG argRerollOption END ===");
-		
-		return $result;
 	}
     /**
      * Fixed actPlayCard - consistent use of global variables

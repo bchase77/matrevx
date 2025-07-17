@@ -245,21 +245,18 @@ setup: function( gamedatas )
 					case 'secondPlayerRerollOption':
 						console.log('Reroll state - args:', args);
 						
-						// Args are passed directly (not nested)
 						const canReroll = args.can_reroll;
 						const dieType = args.die_type;
 						const dieValue = args.die_value;
 						const currentTokens = args.current_tokens;
-						
-						console.log('Extracted values:', { canReroll, dieType, dieValue, currentTokens });
+						const rerollExplanation = args.reroll_explanation;
 						
 						// Always show keep button
 						this.addActionButton('btn-keep-dice', _('Keep Result'), () => this.onKeepDice(), null, null, 'gray');
 						
 						// Show reroll button only if player can afford it
 						if (canReroll && currentTokens >= 1) {
-							const dieLabel = dieType === 'red' ? 'Red Die (STRENGTH)' : 'Blue Die (SPEED)';
-							this.addActionButton('btn-reroll-dice', _('Reroll ' + dieLabel + ' (1 token)'), () => this.onRerollDice(), null, null, 'blue');
+							this.addActionButton('btn-reroll-dice', _('Reroll - Choose Die Again (1 token)'), () => this.onRerollDice(), null, null, 'blue');
 						} else {
 							// Show disabled reroll button
 							this.addActionButton('btn-reroll-disabled', _('Reroll (Need 1 token)'), null, null, null, 'gray');
@@ -270,7 +267,7 @@ setup: function( gamedatas )
 							}
 						}
 						
-						// Show current status with correct data
+						// Show current status with reroll explanation
 						const statusDiv = document.createElement('div');
 						statusDiv.style.cssText = 'margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #007bff;';
 						
@@ -280,7 +277,7 @@ setup: function( gamedatas )
 						
 						statusDiv.innerHTML = `
 							<div style="font-weight: bold; margin-bottom: 8px;">🎲 Your Die Roll Result</div>
-							<div style="display: flex; gap: 20px; align-items: center; justify-content: center;">
+							<div style="display: flex; gap: 20px; align-items: center; justify-content: center; margin-bottom: 15px;">
 								<div style="text-align: center; padding: 15px; background: ${dieBgColor}; border-radius: 8px; min-width: 120px;">
 									<div style="font-weight: bold; color: ${dieColor}; font-size: 14px;">${dieTypeDisplay} DIE</div>
 									<div style="font-size: 32px; font-weight: bold; color: ${dieColor}; margin: 5px 0;">${dieValue}</div>
@@ -296,6 +293,13 @@ setup: function( gamedatas )
 									</div>
 								</div>
 							</div>
+							<div style="background: #e7f3ff; padding: 10px; border-radius: 5px; border: 1px solid #b3d9ff;">
+								<div style="font-weight: bold; color: #0066cc; margin-bottom: 5px;">🔄 Reroll Option:</div>
+								<div style="font-size: 13px; color: #333; line-height: 1.4;">
+									${rerollExplanation || 'Reroll will undo all effects and let you choose a die again (costs 1 token)'}
+								</div>
+								${!canReroll ? '<div style="color: #d32f2f; font-size: 12px; margin-top: 5px;">⚠️ You need at least 1 token to reroll</div>' : ''}
+							</div>
 						`;
 						
 						const actionBar2 = document.getElementById('generalactions');
@@ -303,7 +307,8 @@ setup: function( gamedatas )
 							actionBar2.appendChild(statusDiv);
 						}
 						break;
-						
+
+
 					case 'scrambleResolution':
 						this.addActionButton('btn-resolve-scramble', _('Resolve Scramble Card'), () => this.onResolveScramble(), null, null, 'blue');
 						
