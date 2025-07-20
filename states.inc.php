@@ -117,7 +117,7 @@ $machinestates = array(
         "description" => '',
         "type" => "game",
         "action" => "stAdjustConditioning",
-        "transitions" => array("rollDice" => 22)
+        "transitions" => array("rollDice" => 30)
     ),
 
     // Set first player for dice rolling
@@ -166,7 +166,7 @@ $machinestates = array(
 		"type" => "activeplayer",
 		"args" => "argRerollOption",
 		"possibleactions" => array("actRerollDice", "actKeepDice"),
-		"transitions" => array("reroll" => 25, "keep" => 21)
+		"transitions" => array("reroll" => 25, "keep" => 31)
 	),
 
 	// First player reroll (state 25) - UPDATED: goes back to die choice
@@ -225,6 +225,18 @@ $machinestates = array(
 		"transitions" => array("resolved" => 18)  // Go to nextRound after resolution
 	),
 
+	// 2. ADD this new state 30 after the existing states:
+	30 => array(
+		"name" => "rollDiceBasedOnCards",
+		"description" => '',
+		"type" => "game",
+		"action" => "stRollDiceBasedOnCards",
+		"transitions" => array(
+			"firstPlayerReroll" => 24,
+			"secondPlayerReroll" => 26,
+			"noRerolls" => 15
+		)
+	),
 	// UPDATE state 28 (statComparison) transitions:
 	28 => array(
 		"name" => "statComparison", 
@@ -263,6 +275,17 @@ $machinestates = array(
     ),
 
     // Final state.
+ 
+    31 => array( 
+        "name" => "checkSecondPlayerReroll", 
+        "description" => "", 
+        "type" => "game", 
+        "action" => "stCheckSecondPlayerReroll", 
+        "transitions" => array( 
+            "secondPlayerReroll" => 26, 
+            "noSecondReroll" => 15 
+        ) 
+    ), 
     99 => array(
         "name" => "gameEnd",
         "description" => clienttranslate("End of game"),
