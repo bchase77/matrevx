@@ -870,39 +870,66 @@ setup: function( gamedatas )
             });        
         },    
 
-        ///////////////////////////////////////////////////
-        //// Reaction to cometD notifications
+		// Fix the duplicate and misplaced notification handlers in matrevx.js
+		// Place these at the END of your setupNotifications method, replacing the duplicates:
 
-        setupNotifications: function()
-        {
-            console.log( 'notifications subscriptions setup' );
-            
-            // Existing notifications
-            dojo.subscribe('wrestlerSelected', this, "notif_wrestlerSelected");
-            dojo.subscribe('startingPositionChoice', this, "notif_startingPositionChoice");
-            dojo.subscribe('positionSelected', this, "notif_positionSelected");
-            dojo.subscribe('firstCardPlayed', this, "notif_firstCardPlayed");
-            dojo.subscribe('secondCardPlayed', this, "notif_secondCardPlayed");
-            dojo.subscribe('cardsRevealed', this, "notif_cardsRevealed");
-            dojo.subscribe('conditioningAdjusted', this, "notif_conditioningAdjusted");
-            dojo.subscribe('effectsApplied', this, "notif_effectsApplied");
-            dojo.subscribe('tokensHandled', this, "notif_tokensHandled");
-            dojo.subscribe('scrambleDrawn', this, "notif_scrambleDrawn");
-            dojo.subscribe('newRound', this, "notif_newRound");
-            
-            // Die choice and reroll notifications
-            dojo.subscribe('playerChoseDie', this, "notif_playerChoseDie");
-            dojo.subscribe('playerReroll', this, "notif_playerReroll");
-            dojo.subscribe('playerKeepDice', this, "notif_playerKeepDice");
-            dojo.subscribe('diceRerolled', this, "notif_diceRerolled");
-            
-            // Stat comparison and scramble card notifications
-            dojo.subscribe('statComparison', this, "notif_statComparison");
-            dojo.subscribe('scrambleResolved', this, "notif_scrambleResolved");
-            
-            // NEW: Score update notification
-            dojo.subscribe('playerScoreUpdate', this, "notif_playerScoreUpdate");
-        },
+		setupNotifications: function()
+		{
+			console.log( 'notifications subscriptions setup' );
+			
+			// Existing notifications
+			dojo.subscribe('wrestlerSelected', this, "notif_wrestlerSelected");
+			dojo.subscribe('startingPositionChoice', this, "notif_startingPositionChoice");
+			dojo.subscribe('positionSelected', this, "notif_positionSelected");
+			dojo.subscribe('firstCardPlayed', this, "notif_firstCardPlayed");
+			dojo.subscribe('secondCardPlayed', this, "notif_secondCardPlayed");
+			dojo.subscribe('cardsRevealed', this, "notif_cardsRevealed");
+			dojo.subscribe('conditioningAdjusted', this, "notif_conditioningAdjusted");
+			dojo.subscribe('effectsApplied', this, "notif_effectsApplied");
+			dojo.subscribe('tokensHandled', this, "notif_tokensHandled");
+			dojo.subscribe('scrambleDrawn', this, "notif_scrambleDrawn");
+			dojo.subscribe('newRound', this, "notif_newRound");
+			
+			// Die choice and reroll notifications
+			dojo.subscribe('playerChoseDie', this, "notif_playerChoseDie");
+			dojo.subscribe('playerReroll', this, "notif_playerReroll");
+			dojo.subscribe('playerKeepDice', this, "notif_playerKeepDice");
+			dojo.subscribe('diceRerolled', this, "notif_diceRerolled");
+			dojo.subscribe('diceRolledAutomatically', this, "notif_diceRolledAutomatically"); 
+			dojo.subscribe('playerRerolledSameDie', this, "notif_playerRerolledSameDie"); 
+			
+			// Stat comparison and scramble card notifications
+			dojo.subscribe('statComparison', this, "notif_statComparison");
+			dojo.subscribe('scrambleResolved', this, "notif_scrambleResolved");
+			
+			// Score update notification
+			dojo.subscribe('playerScoreUpdate', this, "notif_playerScoreUpdate");
+		},
+
+		// REMOVE the duplicate notif_diceRolledAutomatically and notif_playerRerolledSameDie 
+		// functions that appear at the end of your file (lines after the main class closing brace)
+		// They should be INSIDE the class, not outside it.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
         // NEW NOTIFICATION HANDLERS:
 
@@ -1594,6 +1621,87 @@ setup: function( gamedatas )
             roundHTML += '</div>';
             
             gameInfo.innerHTML = roundHTML;
-        }
+        },
+		
+ 
+        notif_diceRolledAutomatically: function(notif) { 
+            console.log('notif_diceRolledAutomatically', notif); 
+ 
+            const gameInfo = document.getElementById('game-info'); 
+            if (!gameInfo) return; 
+ 
+            let diceHTML = '<div style="padding: 20px; background: #f0f8ff; border-radius: 8px; margin: 10px;">'; 
+            diceHTML += '<h3>🎲 Dice Rolled Based on Card Actions</h3>'; 
+ 
+            const diceResults = notif.args.dice_results; 
+ 
+            if (diceResults && diceResults.length > 0) { 
+                diceHTML += '<div style="display: flex; gap: 20px; justify-content: center; margin: 15px 0;">'; 
+ 
+                for (let i = 0; i < diceResults.length; i++) { 
+                    const result = diceResults[i]; 
+                    const dieColor = result.die_type === 'red' ? '#d32f2f' : '#1976d2'; 
+                    const dieBgColor = result.die_type === 'red' ? '#ffebee' : '#e3f2fd'; 
+ 
+                    diceHTML += '<div style="text-align: center; padding: 15px; background: ' + dieBgColor + '; border-radius: 8px; min-width: 150px;">'; 
+                    diceHTML += '<div style="font-weight: bold; margin-bottom: 5px;">' + result.player_name + '</div>'; 
+                    diceHTML += '<div style="font-size: 12px; margin-bottom: 8px;">Card: ' + result.card_action + '</div>'; 
+                    diceHTML += '<div style="font-weight: bold; color: ' + dieColor + ';">' + result.die_type.toUpperCase() + ' DIE</div>'; 
+                    diceHTML += '<div style="font-size: 36px; font-weight: bold; color: ' + dieColor + '; margin: 5px 0;">Face ' + result.die_face + '</div>'; 
+                    diceHTML += '<div style="font-size: 18px; font-weight: bold;">= Value ' + result.die_value + '</div>'; 
+                    diceHTML += '</div>'; 
+                } 
+ 
+                diceHTML += '</div>'; 
+            } 
+ 
+            if (!notif.args.first_player_rolled && !notif.args.second_player_rolled) { 
+                diceHTML += '<p style="text-align: center; font-style: italic;">No dice were rolled (cards had no dice actions)</p>'; 
+            } 
+ 
+            diceHTML += '</div>'; 
+ 
+            gameInfo.innerHTML = diceHTML; 
+ 
+            this.showMessage('Dice rolled automatically based on card actions', 'info'); 
+        }, 
+ 
+        notif_playerRerolledSameDie: function(notif) { 
+            console.log('notif_playerRerolledSameDie', notif); 
+ 
+            const playerId = notif.args.player_id; 
+ 
+            // Update player token count 
+            if (this.gamedatas.players[playerId]) { 
+                this.gamedatas.players[playerId].special_tokens = notif.args.new_tokens; 
+                this.gamedatas.players[playerId].conditioning = notif.args.new_conditioning; 
+            } 
+ 
+            // Update token display 
+            const tokenElement = document.getElementById(`player-tokens-${playerId}`); 
+            if (tokenElement) { 
+                tokenElement.textContent = `Tokens: ${notif.args.new_tokens}`; 
+                tokenElement.style.background = '#ff5722'; 
+                tokenElement.style.color = 'white'; 
+                setTimeout(() => { 
+                    tokenElement.style.background = ''; 
+                    tokenElement.style.color = ''; 
+                }, 1500); 
+            } 
+ 
+            // Update conditioning display 
+            const conditioningElement = document.getElementById(`conditioning-${playerId}`); 
+            if (conditioningElement) { 
+                conditioningElement.textContent = `Conditioning: ${notif.args.new_conditioning}`; 
+                conditioningElement.style.background = '#2196f3'; 
+                conditioningElement.style.color = 'white'; 
+                setTimeout(() => { 
+                    conditioningElement.style.background = ''; 
+                    conditioningElement.style.color = ''; 
+                }, 1500); 
+            } 
+ 
+            this.showMessage(notif.args.player_name + ' rerolled ' + notif.args.die_label + ': ' + notif.args.new_value, 'info'); 
+        }, 
    });             
 });

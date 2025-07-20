@@ -291,6 +291,8 @@ class Game extends \Table
 		$this->gamestate->nextState("resolved");
 	}
 
+
+
 	// 3. FIX: Add method to handle any other scoring situations
 	private function awardPoints(int $player_id, int $points, string $reason = ""): void
 	{
@@ -437,137 +439,157 @@ class Game extends \Table
 		$this->gamestate->nextState("diceChosen");
 	}
 
-
-
-
-
+	// Add this method to your Game.php file (around line 300, after actChooseDie)
 
 	/**
-	 * Updated first player reroll state - goes back to die choice
+	 * NEW: Automatically roll dice based on card actions
 	 */
-	public function stFirstPlayerReroll(): void
+	public function stRollDiceBasedOnCards(): void
 	{
-		$player_id = (int)$this->getActivePlayerId();
+		$this->trace("stRollDiceBasedOnCards: START - Rolling dice based on card actions");
 		
-		$this->trace("stFirstPlayerReroll: Player $player_id going back to die choice after reroll");
+		// Get the cards played
+		$first_card_id = $this->getGameStateValue("first_player_card");
+		$second_card_id = $this->getGameStateValue("second_player_card");
+		$first_player_id = (int)$this->getGameStateValue("first_player_id");
+		$second_player_id = (int)$this->getGameStateValue("second_player_id");
 		
-		// Player goes back to choosing a die
-		$this->gamestate->nextState("rerolled");
+		if (!$first_card_id || !$second_card_id || !$first_player_id || !$second_player_id) {
+			throw new \BgaSystemException("Missing card/player data in stRollDiceBasedOnCards");
+		}
+		
+		$first_card = self::$CARD_TYPES[$first_card_id];
+		$second_card = self::$CARD_TYPES[$second_card_id];
+		
+		$this->trace("stRollDiceBasedOnCards: First player card action: " . $first_card['action']);
+		$this->trace("stRollDiceBasedOnCards: Second player card action: " . $second_card['action']);
+		
+		// Determine and roll dice for each player
+		$first_player_results = $this->rollDieForCard($first_player_id, $first_card);
+		$second_player_results = $this->rollDieForCard($second_player_id, $second_card);
+		
+		// Store the results
+		if ($first_player_results) {
+			$this->setGameStateValue("first_player_die_choice", $first_player_results['die_choice']);
+			$this->setGameStateValue("first_player_die_value", $first_player_results['die_value']);
+		}
+		
+		if ($second_player_results) {
+			$this->setGameStateValue("second_player_die_choice", $second_player_results['die_choice']);
+			$this->setGameStateValue("second_player_die_value", $second_player_results['die_value']);
+		}
+		
+		// Notify about dice results
+		$this->notifyDiceResults($first_player_id, $first_player_results, $second_player_id, $second_player_results);
+		
+		// Check if any players need reroll options
+		$this->checkForRerollOptions($first_player_id, $first_player_results, $second_player_id, $second_player_results);
+	}
+
+	// Add these 3 helper methods to your Game.php file (after the stRollDiceBasedOnCards method)
+
+	/**
+	 * NEW: Roll die for a specific card action
+	 */
+	private function rollDieForCard(int $player_id, array $card): ?array
+	{
+		$action = $card['action'];
+		
+		if ($action === 'roll_speed') {
+			// Roll blue die
+			$die_value = $this->rollBlueDie();
+			$die_face = $this->getGameStateValue("blue_die");
+			$die_choice = 2; // blue
+			$die_type = 'blue';
+			
+			$this->trace("rollDieForCard: Player $player_id rolled blue die - face: $die_face, value: $die_value");
+			
+		} else if ($action === 'roll_strength') {
+			// Roll red die
+			$die_value = $this->rollRedDie();
+			$die_face = $this->getGameStateValue("red_die");
+			$die_choice = 1; // red
+			$die_type = 'red';
+			
+			$this->trace("rollDieForCard: Player $player_id rolled red die - face: $die_face, value: $die_value");
+			
+		} else {
+			// Card doesn't roll dice (stall, adrenaline, etc.)
+			$this->trace("rollDieForCard: Player $player_id card has no die roll action: $action");
+			return null;
+		}
+		
+		// Apply dice costs immediately
+		$this->applyDiceCosts($player_id, $die_type);
+		
+		return [
+			'die_choice' => $die_choice,
+			'die_value' => $die_value,
+			'die_face' => $die_face,
+			'die_type' => $die_type,
+			'card_action' => $action
+		];
 	}
 
 	/**
-	 * Updated second player reroll state - goes back to die choice  
+	 * NEW: Notify about dice roll results
 	 */
-	public function stSecondPlayerReroll(): void
+	private function notifyDiceResults(int $first_player_id, ?array $first_results, int $second_player_id, ?array $second_results): void
 	{
-		$player_id = (int)$this->getActivePlayerId();
+		$first_player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $first_player_id");
+		$second_player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $second_player_id");
 		
-		$this->trace("stSecondPlayerReroll: Player $player_id going back to die choice after reroll");
+		$dice_summary = [];
 		
-		// Player goes back to choosing a die
-		$this->gamestate->nextState("rerolled");
+		if ($first_results) {
+			$dice_summary[] = [
+				'player_id' => $first_player_id,
+				'player_name' => $first_player_name,
+				'die_type' => $first_results['die_type'],
+				'die_face' => $first_results['die_face'],
+				'die_value' => $first_results['die_value'],
+				'card_action' => $first_results['card_action']
+			];
+		}
+		
+		if ($second_results) {
+			$dice_summary[] = [
+				'player_id' => $second_player_id,
+				'player_name' => $second_player_name,
+				'die_type' => $second_results['die_type'],
+				'die_face' => $second_results['die_face'],
+				'die_value' => $second_results['die_value'],
+				'card_action' => $second_results['card_action']
+			];
+		}
+		
+		$this->notifyAllPlayers("diceRolledAutomatically", clienttranslate('Dice rolled based on card actions'), [
+			'dice_results' => $dice_summary,
+			'first_player_rolled' => $first_results !== null,
+			'second_player_rolled' => $second_results !== null
+		]);
+	}
+
+	/**
+	 * NEW: Check if players need reroll options
+	 */
+	private function checkForRerollOptions(int $first_player_id, ?array $first_results, int $second_player_id, ?array $second_results): void
+	{
+		// For now, go to first player reroll if they rolled a die
+		if ($first_results) {
+			$this->gamestate->changeActivePlayer($first_player_id);
+			$this->gamestate->nextState("firstPlayerReroll");
+		} else if ($second_results) {
+			$this->gamestate->changeActivePlayer($second_player_id);
+			$this->gamestate->nextState("secondPlayerReroll");
+		} else {
+			// Neither player rolled dice, skip reroll phase
+			$this->gamestate->nextState("noRerolls");
+		}
 	}
 
 
 
-
-
-
-
-
-    /**
-     * First player reroll state - reroll their chosen die
-     */
-/*    public function stFirstPlayerReroll(): void
-    {
-        $player_id = (int)$this->getActivePlayerId();
-        
-        $this->trace("stFirstPlayerReroll: Player $player_id rerolling their chosen die");
-        
-        // Get which die they originally chose
-        $die_choice_value = $this->getGameStateValue("first_player_die_choice");
-        $die_type = $die_choice_value == 1 ? 'red' : 'blue';
-        
-        // Reroll the same die they chose
-        if ($die_type === 'red') {
-            $die_value = $this->rollRedDie();
-            $die_face = $this->getGameStateValue("red_die");
-        } else {
-            $die_value = $this->rollBlueDie();
-            $die_face = $this->getGameStateValue("blue_die");
-        }
-        
-        // Update their stored die value
-        $this->setGameStateValue("first_player_die_value", $die_value);
-        
-        // Get player name
-        $player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = " . (int)$player_id);
-        if (!$player_name) {
-            $player_name = "Player $player_id";
-        }
-        
-        $die_label = $die_type === 'red' ? 'Red (STRENGTH)' : 'Blue (SPEED)';
-        
-        // Notify about the reroll result
-        $this->notifyAllPlayers("diceRerolled", clienttranslate('${player_name} rerolled ${die_label}: ${die_value}'), [
-            "player_id" => $player_id,
-            "player_name" => $player_name,
-            "die_choice" => $die_type,
-            "die_label" => $die_label,
-            "die_face" => $die_face,
-            "die_value" => $die_value,
-        ]);
-        
-        $this->gamestate->nextState("rerolled");
-    }
-*/
-    /**
-     * Second player reroll state - reroll their chosen die
-     */
-/*
-    public function stSecondPlayerReroll(): void
-    {
-        $player_id = (int)$this->getActivePlayerId();
-        
-        $this->trace("stSecondPlayerReroll: Player $player_id rerolling their chosen die");
-        
-        // Get which die they originally chose
-        $die_choice_value = $this->getGameStateValue("second_player_die_choice");
-        $die_type = $die_choice_value == 1 ? 'red' : 'blue';
-        
-        // Reroll the same die they chose
-        if ($die_type === 'red') {
-            $die_value = $this->rollRedDie();
-            $die_face = $this->getGameStateValue("red_die");
-        } else {
-            $die_value = $this->rollBlueDie();
-            $die_face = $this->getGameStateValue("blue_die");
-        }
-        
-        // Update their stored die value
-        $this->setGameStateValue("second_player_die_value", $die_value);
-        
-        // Get player name
-        $player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = " . (int)$player_id);
-        if (!$player_name) {
-            $player_name = "Player $player_id";
-        }
-        
-        $die_label = $die_type === 'red' ? 'Red (STRENGTH)' : 'Blue (SPEED)';
-        
-        // Notify about the reroll result
-        $this->notifyAllPlayers("diceRerolled", clienttranslate('${player_name} rerolled ${die_label}: ${die_value}'), [
-            "player_id" => $player_id,
-            "player_name" => $player_name,
-            "die_choice" => $die_type,
-            "die_label" => $die_label,
-            "die_face" => $die_face,
-            "die_value" => $die_value,
-        ]);
-        
-        $this->gamestate->nextState("rerolled");
-    }
-*/    
     /**
      * Updated reroll methods to use player's chosen die
      */
@@ -2114,5 +2136,44 @@ class Game extends \Table
     {
         return "matrevx";
     }
+    /** 
+     * NEW: Check if second player needs reroll option 
+     */ 
+    public function stCheckSecondPlayerReroll(): void 
+    { 
+        $this->trace("stCheckSecondPlayerReroll: START"); 
+ 
+        $second_player_id = (int)$this->getGameStateValue("second_player_id"); 
+        $second_die_choice = $this->getGameStateValue("second_player_die_choice"); 
+ 
+        if ($second_die_choice > 0) { 
+            $this->trace("stCheckSecondPlayerReroll: Second player $second_player_id gets reroll option"); 
+            $this->gamestate->changeActivePlayer($second_player_id); 
+            $this->gamestate->nextState("secondPlayerReroll"); 
+        } else { 
+            $this->trace("stCheckSecondPlayerReroll: Second player didn't roll, skipping to effects"); 
+            $this->gamestate->nextState("noSecondReroll"); 
+        } 
+    } 
+ 
+    /** 
+     * UPDATED: First player reroll now just continues flow 
+     */ 
+    public function stFirstPlayerReroll(): void 
+    { 
+        $player_id = (int)$this->getActivePlayerId(); 
+        $this->trace("stFirstPlayerReroll: Player $player_id reroll complete, checking second player"); 
+        $this->gamestate->nextState("rerolled"); 
+    } 
+ 
+    /** 
+     * UPDATED: Second player reroll now just continues flow 
+     */ 
+    public function stSecondPlayerReroll(): void 
+    { 
+        $player_id = (int)$this->getActivePlayerId(); 
+        $this->trace("stSecondPlayerReroll: Player $player_id reroll complete, moving to effects"); 
+        $this->gamestate->nextState("rerolled"); 
+    } 
 }
-?>
+?> 
