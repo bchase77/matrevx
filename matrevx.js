@@ -906,30 +906,6 @@ setup: function( gamedatas )
 			dojo.subscribe('playerScoreUpdate', this, "notif_playerScoreUpdate");
 		},
 
-		// REMOVE the duplicate notif_diceRolledAutomatically and notif_playerRerolledSameDie 
-		// functions that appear at the end of your file (lines after the main class closing brace)
-		// They should be INSIDE the class, not outside it.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
         // NEW NOTIFICATION HANDLERS:
 
