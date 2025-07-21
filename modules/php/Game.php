@@ -1,8 +1,9 @@
 <?php
+declare(strict_types=1);
 /**
  *------
  * BGA framework: Gregory Isabelli & Emmanuel Colin & BoardGameArena
- * matrevx implementation : © Mike McKeever, Jack McKeever, Bryan Chase <bryanchase@yahoo.com>
+ * matrevx implementation : Â© Mike McKeever, Jack McKeever, Bryan Chase <bryanchase@yahoo.com>
  *
  * This code has been produced on the BGA studio platform for use on http://boardgamearena.com.
  * See http://en.boardgamearena.com/#!doc/Studio for more information.
@@ -24,6 +25,7 @@ class Game extends \Table
 {
     private static array $CARD_TYPES;
     private static array $WRESTLERS;
+	private static array $SCRAMBLE_CARDS;
 
     /**
      * Your global variables labels:
@@ -51,6 +53,7 @@ class Game extends \Table
         "second_player_die_value" => 23,
         // NEW: Simple momentum tracking
         "momentum_player" => 24,           // Which player has momentum (0 = no momentum)
+        "current_scramble_card" => 25,  // ADD THIS LINE
         // Existing variants
         "my_first_game_variant" => 100,
         "my_second_game_variant" => 101,
@@ -60,6 +63,7 @@ class Game extends \Table
     $material = require(__DIR__ . '/material.inc.php');
     self::$CARD_TYPES = $material['cardTypes'];
     self::$WRESTLERS = $material['wrestlers'];
+    self::$SCRAMBLE_CARDS = $material['scrambleCards']; // ADD THIS LINE
 }
     /**
      * Get current position for a player - IMPROVED with debugging and error handling
@@ -221,75 +225,78 @@ class Game extends \Table
         }
     }
 
-	// 2. FIX: actResolveScramble method to send proper score update notifications
-	public function actResolveScramble(): void
-	{
-		$player_id = (int)$this->getCurrentPlayerId();
-		$this->trace("actResolveScramble: Player $player_id resolving scramble card");
-		
-		// Validate that this is the offense player
-		$offense_player_id = (int)$this->getGameStateValue("position_offense");
-		if ($player_id != $offense_player_id) {
-			throw new \BgaUserException("Only the offense player can resolve the scramble card");
-		}
-		
-		// Get player name
-		$player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $player_id");
-		if (!$player_name) {
-			$player_name = "Player $player_id";
-		}
-		
-		// Randomly determine scramble outcome (50/50 chance)
-		$scramble_success = bga_rand(1, 2) == 1; // 1 = success, 2 = failure
-		
-		if ($scramble_success) {
-			// Offense wins the scramble - gets 2 points
-			$this->trace("actResolveScramble: Offense wins scramble - awarding 2 points");
-			
-			$this->DbQuery("UPDATE player SET player_score = player_score + 2 WHERE player_id = $player_id");
-			
-			// GET UPDATED SCORE FOR NOTIFICATION
-			$new_score = (int)$this->getUniqueValueFromDB("SELECT player_score FROM player WHERE player_id = $player_id");
-			
-			$this->notifyAllPlayers("scrambleResolved", clienttranslate('${player_name} wins the scramble and scores 2 points!'), [
-				"player_id" => $player_id,
-				"player_name" => $player_name,
-				"outcome" => "success",
-				"points" => 2,
-				"new_score" => $new_score,  // ADD NEW SCORE
-				"description" => "Offense wins the scramble and gets 2 points"
-			]);
-			
-			// ALSO SEND SCORE UPDATE NOTIFICATION FOR ALL PLAYERS TO SEE
-			$this->notifyAllPlayers("playerScoreUpdate", clienttranslate('${player_name} score updated'), [
-				"player_id" => $player_id,
-				"player_name" => $player_name,
-				"new_score" => $new_score,
-				"points_gained" => 2
-			]);
-			
-		} else {
-			// Offense loses the scramble - gets 0 points, loses 1 offense, cannot score more this round
-			$this->trace("actResolveScramble: Offense loses scramble - penalty applied");
-			
-			$this->DbQuery("UPDATE player SET offense = offense - 1 WHERE player_id = $player_id");
-			
-			// Get updated offense value
-			$new_offense = (int)$this->getUniqueValueFromDB("SELECT offense FROM player WHERE player_id = $player_id");
-			
-			$this->notifyAllPlayers("scrambleResolved", clienttranslate('${player_name} loses the scramble! Offense reduced and cannot score again this round.'), [
-				"player_id" => $player_id,
-				"player_name" => $player_name,
-				"outcome" => "failure",
-				"points" => 0,
-				"offense_penalty" => 1,
-				"new_offense" => $new_offense,
-				"description" => "Offense loses the scramble, gets 0 points, offense reduced by 1, cannot score more this round"
-			]);
-		}
-		
-		$this->gamestate->nextState("resolved");
-	}
+/**
+ * Enhanced scramble resolution with dice rolling challenge
+ */
+public function actResolveScramble(): void
+{
+    $player_id = (int)$this->getCurrentPlayerId();
+    $this->trace("actResolveScramble: Player $player_id resolving dice challenge scramble card");
+    
+    // Validate that this is the offense player
+    $offense_player_id = (int)$this->getGameStateValue("position_offense");
+    if ($player_id != $offense_player_id) {
+        throw new \BgaUserException("Only the offense player can resolve the scramble card");
+    }
+    
+    // Get player name
+    $player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $player_id");
+    if (!$player_name) {
+        $player_name = "Player $player_id";
+    }
+    
+    // Execute the dice challenge
+    $challenge_result = $this->executeDiceChallenge($player_id);
+    
+    // Apply results based on outcome
+    if ($challenge_result['success']) {
+        $points = $challenge_result['points'];
+        $outcome_type = $challenge_result['outcome_type'];
+        
+        $this->DbQuery("UPDATE player SET player_score = player_score + $points WHERE player_id = $player_id");
+        
+        $new_score = (int)$this->getUniqueValueFromDB("SELECT player_score FROM player WHERE player_id = $player_id");
+        
+        $this->notifyAllPlayers("scrambleResolved", clienttranslate('${player_name} completes the dice challenge! ${outcome_description}'), [
+            "player_id" => $player_id,
+            "player_name" => $player_name,
+            "outcome" => "success",
+            "outcome_type" => $outcome_type,
+            "points" => $points,
+            "new_score" => $new_score,
+            "rounds_taken" => $challenge_result['rounds_taken'],
+            "final_roll" => $challenge_result['final_roll'],
+            "all_rolls" => $challenge_result['all_rolls'],
+            "outcome_description" => $challenge_result['description'],
+            "description" => "Dice challenge completed successfully"
+        ]);
+        
+        // Send score update notification
+        $this->notifyAllPlayers("playerScoreUpdate", clienttranslate('${player_name} score updated'), [
+            "player_id" => $player_id,
+            "player_name" => $player_name,
+            "new_score" => $new_score,
+            "points_gained" => $points
+        ]);
+        
+    } else {
+        // Challenge failed
+        $this->notifyAllPlayers("scrambleResolved", clienttranslate('${player_name} fails the dice challenge! No points scored.'), [
+            "player_id" => $player_id,
+            "player_name" => $player_name,
+            "outcome" => "failure",
+            "points" => 0,
+            "rounds_taken" => $challenge_result['rounds_taken'],
+            "all_rolls" => $challenge_result['all_rolls'],
+            "description" => "Failed to roll 18+ within 5 attempts"
+        ]);
+        
+        // Apply failure penalty (lose momentum)
+        $this->setGameStateValue("momentum_player", 0);
+    }
+    
+    $this->gamestate->nextState("resolved");
+}
 
 
 
@@ -314,6 +321,86 @@ class Game extends \Table
 			]);
 		}
 	}
+
+/**
+ * Execute the dice challenge for scramble card
+ */
+private function executeDiceChallenge(int $player_id): array
+{
+    $this->trace("executeDiceChallenge: Starting dice challenge for player $player_id");
+    
+    $max_attempts = 5;
+    $target = 18;
+    $all_rolls = [];
+    $rounds_taken = 0;
+    
+    for ($attempt = 1; $attempt <= $max_attempts; $attempt++) {
+        // Roll 2d10 + 2d12
+        $d10_1 = bga_rand(1, 10);
+        $d10_2 = bga_rand(1, 10);
+        $d12_1 = bga_rand(1, 12);
+        $d12_2 = bga_rand(1, 12);
+        
+        $total = $d10_1 + $d10_2 + $d12_1 + $d12_2;
+        $rounds_taken = $attempt;
+        
+        $roll_data = [
+            "attempt" => $attempt,
+            "d10_1" => $d10_1,
+            "d10_2" => $d10_2,
+            "d12_1" => $d12_1,
+            "d12_2" => $d12_2,
+            "total" => $total,
+            "success" => $total >= $target
+        ];
+        
+        $all_rolls[] = $roll_data;
+        
+        $this->trace("executeDiceChallenge: Attempt $attempt - d10: $d10_1+$d10_2, d12: $d12_1+$d12_2, total: $total");
+        
+        if ($total >= $target) {
+            // Success! Determine outcome based on rounds taken
+            if ($rounds_taken <= 2) {
+                // Critical success (1-2 rounds)
+                return [
+                    "success" => true,
+                    "outcome_type" => "critical_success",
+                    "points" => 4,
+                    "rounds_taken" => $rounds_taken,
+                    "final_roll" => $total,
+                    "all_rolls" => $all_rolls,
+                    "description" => "Critical success! Rolled $total in just $rounds_taken round(s)!"
+                ];
+            } else {
+                // Major success (3-5 rounds)
+                return [
+                    "success" => true,
+                    "outcome_type" => "major_success", 
+                    "points" => 3,
+                    "rounds_taken" => $rounds_taken,
+                    "final_roll" => $total,
+                    "all_rolls" => $all_rolls,
+                    "description" => "Major success! Rolled $total in $rounds_taken round(s)!"
+                ];
+            }
+        }
+    }
+    
+    // Failed to reach target in max attempts
+    return [
+        "success" => false,
+        "outcome_type" => "failure",
+        "points" => 0,
+        "rounds_taken" => $rounds_taken,
+        "final_roll" => 0,
+        "all_rolls" => $all_rolls,
+        "description" => "Failed to roll 18 or higher within 5 attempts"
+    ];
+}
+
+
+
+
     /**
      * Position selection action
      */
@@ -1980,6 +2067,8 @@ class Game extends \Table
 			];
 
             $result["cardTypes"] = self::$CARD_TYPES;
+			$result["scrambleCards"] = self::$SCRAMBLE_CARDS; // ADD THIS LINE
+
             
 		} catch (Exception $e) {
 			$this->trace("getAllDatas: ERROR - " . $e->getMessage());
@@ -1994,7 +2083,9 @@ class Game extends \Table
 					"position_offense" => 0,
 					"position_defense" => 0
 				],
-				"cardTypes" => self::$CARD_TYPES
+				"cardTypes" => self::$CARD_TYPES,
+				"scrambleCards" => self::$SCRAMBLE_CARDS // ADD THIS LINE TOO
+
 			];
 		}
 
@@ -2177,3 +2268,4 @@ class Game extends \Table
     } 
 }
 ?> 
+

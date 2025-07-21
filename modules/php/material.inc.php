@@ -288,4 +288,35 @@ return [
             "scoring" => false
         ],
     ],
+	'scrambleCards' => [
+		1 => [
+			"id" => 1,
+			"name" => "High Stakes Roll",
+			"description" => "Roll D10 and D12 together and add up the sum. Continue rolling until the sum is 18 or higher. Capped at 5 rolls.",
+			"type" => "dice_challenge",
+			"dice_type" => "d10_d12_combo",
+			"target_number" => 18,
+			"max_attempts" => 5,
+			"success_conditions" => [
+				"immediate" => [
+					"rounds" => "3-5",
+					"outcome" => "major_success",
+					"points" => 3,
+					"description" => "Roll 18 or higher in 3-5 rounds"
+				],
+				"quick" => [
+					"rounds" => "1-2", 
+					"outcome" => "critical_success",
+					"points" => 4,
+					"description" => "Roll 18 or higher in 1-2 rounds"
+				]
+			],
+			"failure_condition" => [
+				"outcome" => "failure",
+				"points" => 0,
+				"penalty" => "lose_momentum",
+				"description" => "Don't roll 18 or higher within 5 attempts"
+			]
+		]
+	],
 ];
