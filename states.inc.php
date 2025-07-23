@@ -1,8 +1,8 @@
-﻿<?php
+<?php
 /**
  *------
  * BGA framework: Gregory Isabelli & Emmanuel Colin & BoardGameArena
- * matrevx implementation : Â© Mike McKeever, Jack McKeever, Bryan Chase <bryanchase@yahoo.com>
+ * matrevx implementation : © Mike McKeever, Jack McKeever, Bryan Chase <bryanchase@yahoo.com>
  *
  * This code has been produced on the BGA studio platform for use on http://boardgamearena.com.
  * See http://en.boardgamearena.com/#!doc/Studio for more information.
@@ -117,7 +117,7 @@ $machinestates = array(
         "description" => '',
         "type" => "game",
         "action" => "stAdjustConditioning",
-        "transitions" => array("rollDice" => 30)
+        "transitions" => array("rollDice" => 32)
     ),
 
     // Set first player for dice rolling
@@ -127,6 +127,15 @@ $machinestates = array(
         "type" => "game",
         "action" => "stSetFirstPlayerForDice",
         "transitions" => array("firstPlayerDice" => 14)
+    ),
+
+    // Switch to second player for dice
+    21 => array(
+        "name" => "switchToSecondPlayerForDice",
+        "description" => '',
+        "type" => "game",
+        "action" => "stSwitchToSecondPlayerForDice",
+        "transitions" => array("secondPlayerDice" => 23)
     ),
 
     // First player chooses which die to roll
@@ -139,15 +148,6 @@ $machinestates = array(
         "transitions" => array("diceChosen" => 24)
     ),
 
-    // Switch to second player for dice
-    21 => array(
-        "name" => "switchToSecondPlayerForDice",
-        "description" => '',
-        "type" => "game",
-        "action" => "stSwitchToSecondPlayerForDice",
-        "transitions" => array("secondPlayerDice" => 23)
-    ),
-
     // Second player chooses which die to roll
     23 => array(
         "name" => "secondPlayerChooseDie", 
@@ -158,45 +158,90 @@ $machinestates = array(
         "transitions" => array("diceChosen" => 26)
     ),
 
-	// First player reroll option (state 24)
-	24 => array(
-		"name" => "firstPlayerRerollOption",
-		"description" => clienttranslate('${actplayer} may choose to reroll their die'),
-		"descriptionmyturn" => clienttranslate('${you} may reroll your die (costs 1 token, undoes all effects)'),
-		"type" => "activeplayer",
-		"args" => "argRerollOption",
-		"possibleactions" => array("actRerollDice", "actKeepDice"),
-		"transitions" => array("reroll" => 25, "keep" => 31)
-	),
+    // Roll dice based on cards automatically
+    30 => array(
+        "name" => "rollDiceBasedOnCards",
+        "description" => '',
+        "type" => "game",
+        "action" => "stRollDiceBasedOnCards",
+        "transitions" => array(
+            "firstPlayerReroll" => 24,
+            "secondPlayerReroll" => 26,
+            "noRerolls" => 15
+        )
+    ),
 
-	// First player reroll (state 25) - UPDATED: goes back to die choice
-	25 => array(
-		"name" => "firstPlayerReroll",
-		"description" => '',
-		"type" => "game",
-		"action" => "stFirstPlayerReroll",
-		"transitions" => array("rerolled" => 14)  // CHANGED: Goes back to firstPlayerChooseDie
-	),
+    // Check if second player needs reroll option 
+    31 => array( 
+        "name" => "checkSecondPlayerReroll", 
+        "description" => "", 
+        "type" => "game", 
+        "action" => "stCheckSecondPlayerReroll", 
+        "transitions" => array( 
+            "secondPlayerReroll" => 26, 
+            "noSecondReroll" => 15 
+        ) 
+    ),
 
-	// Second player reroll option (state 26)
-	26 => array(
-		"name" => "secondPlayerRerollOption",
-		"description" => clienttranslate('${actplayer} may choose to reroll their die'),
-		"descriptionmyturn" => clienttranslate('${you} may reroll your die (costs 1 token, undoes all effects)'),
-		"type" => "activeplayer",
-		"args" => "argRerollOption",
-		"possibleactions" => array("actRerollDice", "actKeepDice"),
-		"transitions" => array("reroll" => 27, "keep" => 15)
-	),
+    // First player manual dice roll
+    32 => array(
+        "name" => "firstPlayerRollDice",
+        "description" => clienttranslate('${actplayer} must roll their die'),
+        "descriptionmyturn" => clienttranslate('${you} must roll your die'),
+        "type" => "activeplayer",
+        "possibleactions" => array("actRollDice"),
+        "transitions" => array("diceRolled" => 33)
+    ),
 
-	// Second player reroll (state 27) - UPDATED: goes back to die choice
-	27 => array(
-		"name" => "secondPlayerReroll",
-		"description" => '',
-		"type" => "game",
-		"action" => "stSecondPlayerReroll",
-		"transitions" => array("rerolled" => 23)  // CHANGED: Goes back to secondPlayerChooseDie
-	),
+    // Second player manual dice roll
+    33 => array(
+        "name" => "secondPlayerRollDice",
+        "description" => clienttranslate('${actplayer} must roll their die'),
+        "descriptionmyturn" => clienttranslate('${you} must roll your die'),
+        "type" => "activeplayer",
+        "possibleactions" => array("actRollDice"),
+        "transitions" => array("diceRolled" => 30)
+    ),
+
+    // First player reroll option
+    24 => array(
+        "name" => "firstPlayerRerollOption",
+        "description" => clienttranslate('${actplayer} may choose to reroll their die'),
+        "descriptionmyturn" => clienttranslate('${you} may reroll your die (costs 1 token, undoes all effects)'),
+        "type" => "activeplayer",
+        "args" => "argRerollOption",
+        "possibleactions" => array("actRerollDice", "actKeepDice"),
+        "transitions" => array("reroll" => 25, "keep" => 31)
+    ),
+
+    // First player reroll - goes back to die choice
+    25 => array(
+        "name" => "firstPlayerReroll",
+        "description" => '',
+        "type" => "game",
+        "action" => "stFirstPlayerReroll",
+        "transitions" => array("rerolled" => 14)
+    ),
+
+    // Second player reroll option
+    26 => array(
+        "name" => "secondPlayerRerollOption",
+        "description" => clienttranslate('${actplayer} may choose to reroll their die'),
+        "descriptionmyturn" => clienttranslate('${you} may reroll your die (costs 1 token, undoes all effects)'),
+        "type" => "activeplayer",
+        "args" => "argRerollOption",
+        "possibleactions" => array("actRerollDice", "actKeepDice"),
+        "transitions" => array("reroll" => 27, "keep" => 15)
+    ),
+
+    // Second player reroll - goes back to die choice
+    27 => array(
+        "name" => "secondPlayerReroll",
+        "description" => '',
+        "type" => "game",
+        "action" => "stSecondPlayerReroll",
+        "transitions" => array("rerolled" => 23)
+    ),
 
     // Apply card effects and trademark moves
     15 => array(
@@ -213,38 +258,27 @@ $machinestates = array(
         "description" => '',
         "type" => "game",
         "action" => "stHandleTokens",
-        "transitions" => array("statComparison" => 28)  // CHANGED: Go to stat comparison
+        "transitions" => array("statComparison" => 28)
     ),
 
-	29 => array(
-		"name" => "scrambleResolution",
-		"description" => clienttranslate('${actplayer} must resolve the scramble card'),
-		"descriptionmyturn" => clienttranslate('${you} must resolve the scramble card'),
-		"type" => "activeplayer",
-		"possibleactions" => array("actResolveScramble"),
-		"transitions" => array("resolved" => 18)  // Go to nextRound after resolution
-	),
+    // Compare offensive and defensive stats
+    28 => array(
+        "name" => "statComparison", 
+        "description" => '',
+        "type" => "game",
+        "action" => "stStatComparison",
+        "transitions" => array("drawScramble" => 29, "nextRound" => 18)
+    ),
 
-	// 2. ADD this new state 30 after the existing states:
-	30 => array(
-		"name" => "rollDiceBasedOnCards",
-		"description" => '',
-		"type" => "game",
-		"action" => "stRollDiceBasedOnCards",
-		"transitions" => array(
-			"firstPlayerReroll" => 24,
-			"secondPlayerReroll" => 26,
-			"noRerolls" => 15
-		)
-	),
-	// UPDATE state 28 (statComparison) transitions:
-	28 => array(
-		"name" => "statComparison", 
-		"description" => '',
-		"type" => "game",
-		"action" => "stStatComparison",
-		"transitions" => array("drawScramble" => 29, "nextRound" => 18)  // CHANGED: Go to scrambleResolution instead of 17
-	),
+    // Scramble card resolution
+    29 => array(
+        "name" => "scrambleResolution",
+        "description" => clienttranslate('${actplayer} must resolve the scramble card'),
+        "descriptionmyturn" => clienttranslate('${you} must resolve the scramble card'),
+        "type" => "activeplayer",
+        "possibleactions" => array("actResolveScramble"),
+        "transitions" => array("resolved" => 18)
+    ),
 
     // Draw scramble card if applicable
     17 => array(
@@ -252,7 +286,7 @@ $machinestates = array(
         "description" => '',
         "type" => "game",
         "action" => "stDrawScramble",
-        "transitions" => array("nextRound" => 18)  // CHANGED: Always go to next round after scramble
+        "transitions" => array("nextRound" => 18)
     ),
 
     // Check for next round/period
@@ -274,18 +308,7 @@ $machinestates = array(
         "transitions" => array("nextPlayer" => 10)
     ),
 
-    // Final state.
- 
-    31 => array( 
-        "name" => "checkSecondPlayerReroll", 
-        "description" => "", 
-        "type" => "game", 
-        "action" => "stCheckSecondPlayerReroll", 
-        "transitions" => array( 
-            "secondPlayerReroll" => 26, 
-            "noSecondReroll" => 15 
-        ) 
-    ), 
+    // Final state
     99 => array(
         "name" => "gameEnd",
         "description" => clienttranslate("End of game"),
@@ -296,4 +319,3 @@ $machinestates = array(
 
 );
 ?>
-

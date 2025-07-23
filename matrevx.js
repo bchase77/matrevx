@@ -1,4 +1,4 @@
-/**
+﻿/**
  *------
  * BGA framework: Gregory Isabelli & Emmanuel Colin & BoardGameArena
  * matrevx implementation : © Mike McKeever, Jack McKeever, Bryan Chase <bryanchase@yahoo.com>
@@ -276,7 +276,7 @@ setup: function( gamedatas )
 						const dieBgColor = dieType === 'red' ? '#ffebee' : '#e3f2fd';
 						
 						statusDiv.innerHTML = `
-							<div style="font-weight: bold; margin-bottom: 8px;">🎲 Your Die Roll Result</div>
+							<div style="font-weight: bold; margin-bottom: 8px;">Your Die Roll Result</div>
 							<div style="display: flex; gap: 20px; align-items: center; justify-content: center; margin-bottom: 15px;">
 								<div style="text-align: center; padding: 15px; background: ${dieBgColor}; border-radius: 8px; min-width: 120px;">
 									<div style="font-weight: bold; color: ${dieColor}; font-size: 14px;">${dieTypeDisplay} DIE</div>
@@ -294,11 +294,11 @@ setup: function( gamedatas )
 								</div>
 							</div>
 							<div style="background: #e7f3ff; padding: 10px; border-radius: 5px; border: 1px solid #b3d9ff;">
-								<div style="font-weight: bold; color: #0066cc; margin-bottom: 5px;">🔄 Reroll Option:</div>
+								<div style="font-weight: bold; color: #0066cc; margin-bottom: 5px;">Reroll Option:</div>
 								<div style="font-size: 13px; color: #333; line-height: 1.4;">
 									${rerollExplanation || 'Reroll will undo all effects and let you choose a die again (costs 1 token)'}
 								</div>
-								${!canReroll ? '<div style="color: #d32f2f; font-size: 12px; margin-top: 5px;">⚠️ You need at least 1 token to reroll</div>' : ''}
+								${!canReroll ? '<div style="color: #d32f2f; font-size: 12px; margin-top: 5px;"> You need at least 1 token to reroll</div>' : ''}
 							</div>
 						`;
 						
@@ -316,7 +316,7 @@ setup: function( gamedatas )
 						const scrambleInfoDiv = document.createElement('div');
 						scrambleInfoDiv.style.cssText = 'margin: 15px 0; padding: 15px; background: linear-gradient(135deg, #ff6b6b, #feca57); border-radius: 8px; color: white; text-shadow: 1px 1px 2px rgba(0,0,0,0.3);';
 						scrambleInfoDiv.innerHTML = `
-							<div style="font-weight: bold; margin-bottom: 10px; font-size: 18px;">🎲 SCRAMBLE CARD DRAWN!</div>
+							<div style="font-weight: bold; margin-bottom: 10px; font-size: 18px;">SCRAMBLE CARD DRAWN!</div>
 							<div style="background: rgba(255,255,255,0.2); padding: 10px; border-radius: 5px; margin: 10px 0;">
 								<div style="font-size: 14px; line-height: 1.4;">
 									Your offense succeeded with a scoring card!<br>
@@ -331,7 +331,27 @@ setup: function( gamedatas )
 						const actionBar3 = document.getElementById('generalactions');
 						if (actionBar3) {
 							actionBar3.appendChild(scrambleInfoDiv);
+						}					case 'firstPlayerRollDice':
+					case 'secondPlayerRollDice':
+						this.addActionButton('btn-roll-dice', _('Roll Die'), () => this.onRollDice(), null, null, 'blue');
+						
+						// Show information about manual rolling
+						const rollInfoDiv = document.createElement('div');
+						rollInfoDiv.style.cssText = 'margin: 15px 0; padding: 15px; background: #fff3cd; border-radius: 8px; border-left: 4px solid #ffc107;';
+						rollInfoDiv.innerHTML = `
+							<div style="font-weight: bold; margin-bottom: 10px;">Roll Your Die</div>
+							<div style="font-size: 14px; line-height: 1.4;">
+								Click the button to roll the die for your card action.<br>
+								The system will automatically roll the correct die type.
+							</div>
+						`;
+						
+						const actionBar4 = document.getElementById('generalactions');
+						if (actionBar4) {
+							actionBar4.appendChild(rollInfoDiv);
 						}
+						break;
+
 						break;
 				}
 			}
@@ -705,7 +725,7 @@ setup: function( gamedatas )
                 cardHTML += '<div><strong>Conditioning:</strong> ' + (card.conditioning_cost || 0) + '</div>';
                 cardHTML += '<div><strong>Tokens:</strong> ' + (card.special_tokens || 0) + '</div>';
                 if (card.scoring) {
-                    cardHTML += '<div class="scoring-indicator" style="color: #ff6b35; font-weight: bold;">⭐ Scoring</div>';
+                    cardHTML += '<div class="scoring-indicator" style="color: #ff6b35; font-weight: bold;"> Scoring</div>';
                 }
                 cardHTML += '</div>';
                 
@@ -904,6 +924,9 @@ setup: function( gamedatas )
 			
 			// Score update notification
 			dojo.subscribe('playerScoreUpdate', this, "notif_playerScoreUpdate");
+
+			// Manual dice rolling notification
+			dojo.subscribe('diceRolled', this, "notif_diceRolled");
 		},
 
 
@@ -918,7 +941,7 @@ setup: function( gamedatas )
             
             // Create comparison result display
             let comparisonHTML = '<div style="padding: 20px; background: #f0f8ff; border-radius: 8px; margin: 10px; border-left: 5px solid #0066cc;">';
-            comparisonHTML += '<h3>🥊 Stat Comparison Results</h3>';
+            comparisonHTML += '<h3> Stat Comparison Results</h3>';
             
             // Show the comparison
             comparisonHTML += '<div style="display: flex; justify-content: center; align-items: center; gap: 20px; margin: 15px 0;">';
@@ -944,15 +967,15 @@ setup: function( gamedatas )
             switch(notif.args.comparison_type) {
                 case 'offense_wins':
                     resultColor = '#d32f2f';
-                    resultIcon = '🎯';
+                    resultIcon = 'icon';
                     break;
                 case 'tie':
                     resultColor = '#ff9800';
-                    resultIcon = '⚖️';
+                    resultIcon = 'icon';
                     break;
                 case 'defense_wins':
                     resultColor = '#1976d2';
-                    resultIcon = '🛡️';
+                    resultIcon = 'icon';
                     break;
             }
             
@@ -961,7 +984,7 @@ setup: function( gamedatas )
             
             if (notif.args.scoring_card_played && notif.args.comparison_type === 'offense_wins') {
                 comparisonHTML += '<div style="margin-top: 10px; padding: 10px; background: #fff3cd; border-radius: 5px; border: 1px solid #ffc107;">';
-                comparisonHTML += '<strong>⭐ SCORING OPPORTUNITY!</strong><br>Scramble card will be drawn...';
+                comparisonHTML += '<strong> SCORING OPPORTUNITY!</strong><br>Scramble card will be drawn...';
                 comparisonHTML += '</div>';
             }
             
@@ -1012,19 +1035,19 @@ setup: function( gamedatas )
             
             if (notif.args.outcome === 'success') {
                 resolvedHTML = resolvedHTML.replace('style="', 'style="background: linear-gradient(135deg, #4ecdc4, #45b7d1); ');
-                resolvedHTML += '<h3>🎯 SCRAMBLE SUCCESS!</h3>';
+                resolvedHTML += '<h3> SCRAMBLE SUCCESS!</h3>';
                 resolvedHTML += '<div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 5px; margin: 10px 0;">';
                 resolvedHTML += '<div style="font-size: 18px; font-weight: bold; margin-bottom: 10px;">' + notif.args.player_name + ' WINS THE SCRAMBLE!</div>';
-                resolvedHTML += '<div style="font-size: 16px;">✅ Scored ' + notif.args.points + ' points!</div>';
+                resolvedHTML += '<div style="font-size: 16px;"> Scored ' + notif.args.points + ' points!</div>';
                 resolvedHTML += '</div>';
             } else {
                 resolvedHTML = resolvedHTML.replace('style="', 'style="background: linear-gradient(135deg, #e74c3c, #c0392b); ');
-                resolvedHTML += '<h3>💥 SCRAMBLE FAILED!</h3>';
+                resolvedHTML += '<h3>SCRAMBLE FAILED!</h3>';
                 resolvedHTML += '<div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 5px; margin: 10px 0;">';
                 resolvedHTML += '<div style="font-size: 18px; font-weight: bold; margin-bottom: 10px;">' + notif.args.player_name + ' LOSES THE SCRAMBLE!</div>';
-                resolvedHTML += '<div style="font-size: 14px;">❌ No points scored</div>';
-                resolvedHTML += '<div style="font-size: 14px;">📉 Offense reduced by ' + notif.args.offense_penalty + ' (now ' + notif.args.new_offense + ')</div>';
-                resolvedHTML += '<div style="font-size: 14px;">🚫 Cannot score again this round</div>';
+                resolvedHTML += '<div style="font-size: 14px;"> No points scored</div>';
+                resolvedHTML += '<div style="font-size: 14px;"> Offense reduced by ' + notif.args.offense_penalty + ' (now ' + notif.args.new_offense + ')</div>';
+                resolvedHTML += '<div style="font-size: 14px;"> Cannot score again this round</div>';
                 resolvedHTML += '</div>';
             }
             
@@ -1191,7 +1214,7 @@ setup: function( gamedatas )
 				const bgColor = notif.args.die_choice === 'red' ? '#ffebee' : '#e3f2fd';
 				
 				let diceHTML = '<div style="padding: 20px; background: ' + bgColor + '; border-radius: 8px; margin: 10px;">';
-				diceHTML += '<h3>🎲 Die Choice & Roll Results</h3>';
+				diceHTML += '<h3>Die Choice & Roll Results</h3>';
 				diceHTML += '<p><strong>' + notif.args.player_name + '</strong> chose <strong style="color: ' + dieColor + ';">' + notif.args.die_label + '</strong></p>';
 				diceHTML += '<div style="display: flex; align-items: center; gap: 15px; margin: 15px 0; justify-content: center;">';
 				diceHTML += '<span style="font-size: 36px; font-weight: bold; color: ' + dieColor + '; border: 3px solid ' + dieColor + '; border-radius: 8px; padding: 15px; background: white;">Face ' + notif.args.die_face + '</span>';
@@ -1334,6 +1357,19 @@ setup: function( gamedatas )
             gameInfo.innerHTML = diceHTML;
             
             this.showMessage('Dice rolling complete: Red ' + notif.args.red_die + ', Blue ' + notif.args.blue_die, 'info');
+        },
+        notif_diceRolled: function(notif) {
+            console.log('notif_diceRolled', notif);
+            
+            // Show the dice result
+            const gameInfo = document.getElementById('game-info');
+            if (gameInfo) {
+                const diceHTML = '<div style="padding: 20px; background: #d1ecf1; border-radius: 8px; margin: 10px;">' +
+                    '<h3>Dice Rolled</h3>' +
+                    '<p><strong>' + notif.args.player_name + '</strong> rolled <strong>' + notif.args.die_label + '</strong>: ' + notif.args.die_value + '</p>' +
+                    '</div>';
+                gameInfo.innerHTML = diceHTML;
+            }
         },
         
         notif_wrestlerSelected: function(notif) {
@@ -1607,7 +1643,7 @@ setup: function( gamedatas )
             if (!gameInfo) return; 
  
             let diceHTML = '<div style="padding: 20px; background: #f0f8ff; border-radius: 8px; margin: 10px;">'; 
-            diceHTML += '<h3>🎲 Dice Rolled Based on Card Actions</h3>'; 
+            diceHTML += '<h3>Dice Rolled Based on Card Actions</h3>'; 
  
             const diceResults = notif.args.dice_results; 
  
@@ -1681,3 +1717,4 @@ setup: function( gamedatas )
         }, 
    });             
 });
+

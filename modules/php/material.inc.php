@@ -72,7 +72,7 @@ return [
     'cardTypes' => [
         // OFFENSE CARDS (6 cards)
         1 => [
-            "card_name" => clienttranslate('Single Leg'),
+            "card_name" => 'Single Leg',
             "position" => "offense",
             "conditioning_cost" => 4,
             "special_tokens" => 0,
@@ -80,7 +80,7 @@ return [
             "scoring" => true
         ],
         2 => [
-            "card_name" => clienttranslate('Double Leg'),
+            "card_name" => 'Double Leg',
             "position" => "offense",
             "conditioning_cost" => 6,
             "special_tokens" => 1,
@@ -88,7 +88,7 @@ return [
             "scoring" => true
         ],
         3 => [
-            "card_name" => clienttranslate('Hand Fight'),
+            "card_name" => 'Hand Fight',
             "position" => "offense", 
             "conditioning_cost" => 2,
             "special_tokens" => 1,
@@ -96,7 +96,7 @@ return [
             "scoring" => false
         ],
         4 => [
-            "card_name" => clienttranslate('Snap Down'),
+            "card_name" => 'Snap Down',
             "position" => "offense",
             "conditioning_cost" => 3,
             "special_tokens" => 0,
@@ -104,7 +104,7 @@ return [
             "scoring" => false
         ],
         5 => [
-            "card_name" => clienttranslate('Underhook'),
+            "card_name" => 'Underhook',
             "position" => "offense",
             "conditioning_cost" => 5,
             "special_tokens" => 0,
@@ -112,7 +112,7 @@ return [
             "scoring" => true
         ],
         6 => [
-            "card_name" => clienttranslate('Collar Tie'),
+            "card_name" => 'Collar Tie',
             "position" => "offense",
             "conditioning_cost" => 1,
             "special_tokens" => 0,
@@ -122,7 +122,7 @@ return [
         
         // DEFENSE CARDS (6 cards)
         7 => [
-            "card_name" => clienttranslate('Sprawl'),
+            "card_name" => 'Sprawl',
             "position" => "defense",
             "conditioning_cost" => 3,
             "special_tokens" => 0,
@@ -130,7 +130,7 @@ return [
             "scoring" => false
         ],
         8 => [
-            "card_name" => clienttranslate('Down Block'),
+            "card_name" => 'Down Block',
             "position" => "defense",
             "conditioning_cost" => 2,
             "special_tokens" => 1,
@@ -138,7 +138,7 @@ return [
             "scoring" => false
         ],
         9 => [
-            "card_name" => clienttranslate('Counter Attack'),
+            "card_name" => 'Counter Attack',
             "position" => "defense",
             "conditioning_cost" => 4,
             "special_tokens" => 1,
@@ -146,7 +146,7 @@ return [
             "scoring" => true
         ],
         10 => [
-            "card_name" => clienttranslate('Circle Away'),
+            "card_name" => 'Circle Away',
             "position" => "defense",
             "conditioning_cost" => 1,
             "special_tokens" => 0,
@@ -154,7 +154,7 @@ return [
             "scoring" => false
         ],
         11 => [
-            "card_name" => clienttranslate('Defensive Shot'),
+            "card_name" => 'Defensive Shot',
             "position" => "defense",
             "conditioning_cost" => 5,
             "special_tokens" => 0,
@@ -162,7 +162,7 @@ return [
             "scoring" => true
         ],
         12 => [
-            "card_name" => clienttranslate('Tie Up'),
+            "card_name" => 'Tie Up',
             "position" => "defense",
             "conditioning_cost" => 2,
             "special_tokens" => 0,
@@ -172,7 +172,7 @@ return [
         
         // TOP CARDS (7 cards)
         13 => [
-            "card_name" => clienttranslate('Half Nelson'),
+            "card_name" => 'Half Nelson',
             "position" => "top",
             "conditioning_cost" => 5,
             "special_tokens" => 0,
@@ -180,7 +180,7 @@ return [
             "scoring" => true
         ],
         14 => [
-            "card_name" => clienttranslate('Break Down'),
+            "card_name" => 'Break Down',
             "position" => "top",
             "conditioning_cost" => 3,
             "special_tokens" => 1,
@@ -188,7 +188,7 @@ return [
             "scoring" => false
         ],
         15 => [
-            "card_name" => clienttranslate('Crossface'),
+            "card_name" => 'Crossface',
             "position" => "top",
             "conditioning_cost" => 4,
             "special_tokens" => 0,
@@ -196,7 +196,7 @@ return [
             "scoring" => false
         ],
         16 => [
-            "card_name" => clienttranslate('Tilt'),
+            "card_name" => 'Tilt',
             "position" => "top",
             "conditioning_cost" => 6,
             "special_tokens" => 1,
@@ -204,7 +204,7 @@ return [
             "scoring" => true
         ],
         17 => [
-            "card_name" => clienttranslate('Arm Bar'),
+            "card_name" => 'Arm Bar',
             "position" => "top",
             "conditioning_cost" => 4,
             "special_tokens" => 0,
@@ -212,7 +212,7 @@ return [
             "scoring" => true
         ],
         18 => [
-            "card_name" => clienttranslate('Ride'),
+            "card_name" => 'Ride',
             "position" => "top",
             "conditioning_cost" => 2,
             "special_tokens" => 0,
@@ -220,7 +220,7 @@ return [
             "scoring" => false
         ],
         19 => [
-            "card_name" => clienttranslate('Pin Attempt'),
+            "card_name" => 'Pin Attempt',
             "position" => "top",
             "conditioning_cost" => 7,
             "special_tokens" => 2,
@@ -230,7 +230,7 @@ return [
         
         // BOTTOM CARDS (5 cards)
         20 => [
-            "card_name" => clienttranslate('Stand Up'),
+            "card_name" => 'Stand Up',
             "position" => "bottom",
             "conditioning_cost" => 4,
             "special_tokens" => 0,
@@ -238,7 +238,7 @@ return [
             "scoring" => true
         ],
         21 => [
-            "card_name" => clienttranslate('Sit Out'),
+            "card_name" => 'Sit Out',
             "position" => "bottom",
             "conditioning_cost" => 3,
             "special_tokens" => 0,
@@ -246,7 +246,7 @@ return [
             "scoring" => true
         ],
         22 => [
-            "card_name" => clienttranslate('Switch'),
+            "card_name" => 'Switch',
             "position" => "bottom",
             "conditioning_cost" => 5,
             "special_tokens" => 1,
@@ -254,7 +254,7 @@ return [
             "scoring" => true
         ],
         23 => [
-            "card_name" => clienttranslate('Roll'),
+            "card_name" => 'Roll',
             "position" => "bottom",
             "conditioning_cost" => 2,
             "special_tokens" => 0,
@@ -262,7 +262,7 @@ return [
             "scoring" => false
         ],
         24 => [
-            "card_name" => clienttranslate('Hip Heist'),
+            "card_name" => 'Hip Heist',
             "position" => "bottom",
             "conditioning_cost" => 6,
             "special_tokens" => 1,
@@ -272,7 +272,7 @@ return [
         
         // ANY POSITION CARDS (2 cards)
         25 => [
-            "card_name" => clienttranslate('Stall'),
+            "card_name" => 'Stall',
             "position" => "any",
             "conditioning_cost" => 0,
             "special_tokens" => 0,
@@ -280,7 +280,7 @@ return [
             "scoring" => false
         ],
         26 => [
-            "card_name" => clienttranslate('Adrenaline Rush'),
+            "card_name" => 'Adrenaline Rush',
             "position" => "any",
             "conditioning_cost" => 3,
             "special_tokens" => 1,

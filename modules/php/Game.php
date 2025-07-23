@@ -3,7 +3,7 @@ declare(strict_types=1);
 /**
  *------
  * BGA framework: Gregory Isabelli & Emmanuel Colin & BoardGameArena
- * matrevx implementation : Â© Mike McKeever, Jack McKeever, Bryan Chase <bryanchase@yahoo.com>
+ * matrevx implementation : � Mike McKeever, Jack McKeever, Bryan Chase <bryanchase@yahoo.com>
  *
  * This code has been produced on the BGA studio platform for use on http://boardgamearena.com.
  * See http://en.boardgamearena.com/#!doc/Studio for more information.
@@ -15,7 +15,6 @@ declare(strict_types=1);
  *
  * In this PHP file, you are going to defines the rules of the game.
  */
-declare(strict_types=1);
 
 namespace Bga\Games\matrevx;
 
@@ -297,6 +296,138 @@ public function actResolveScramble(): void
     
     $this->gamestate->nextState("resolved");
 }
+    /**
+     * NEW: Manual dice rolling action
+     */
+    public function actRollDice(): void
+    {
+        $player_id = (int)$this->getCurrentPlayerId();
+        $state_name = $this->gamestate->state()['name'];
+        
+        $this->trace("actRollDice: Player $player_id rolling dice in state $state_name");
+        
+        // Get the card played by this player to determine die type
+        $first_player_id = (int)$this->getGameStateValue("first_player_id");
+        $second_player_id = (int)$this->getGameStateValue("second_player_id");
+        $first_card_id = $this->getGameStateValue("first_player_card");
+        $second_card_id = $this->getGameStateValue("second_player_card");
+        
+        $card_id = null;
+        $die_choice_slot = null;
+        $die_value_slot = null;
+        
+        if ($player_id == $first_player_id) {
+            $card_id = $first_card_id;
+            $die_choice_slot = "first_player_die_choice";
+            $die_value_slot = "first_player_die_value";
+        } else if ($player_id == $second_player_id) {
+            $card_id = $second_card_id;
+            $die_choice_slot = "second_player_die_choice";
+            $die_value_slot = "second_player_die_value";
+        }
+        
+        if (!$card_id) {
+            throw new \BgaUserException("Could not determine player's card");
+        }
+        
+        $card = self::$CARD_TYPES[$card_id];
+        $action = $card['action'];
+        
+        // Determine die type from card action
+        $die_type = null;
+        $die_choice_numeric = 0;
+        
+        if ($action === 'roll_speed') {
+            $die_type = 'blue';
+            $die_choice_numeric = 2;
+        } else if ($action === 'roll_strength') {
+            $die_type = 'red';
+            $die_choice_numeric = 1;
+        } else {
+            throw new \BgaUserException("This card does not require a die roll");
+        }
+        
+        // Roll the die
+        $die_value = 0;
+        $die_face = 0;
+        
+        if ($die_type === 'red') {
+            $die_value = $this->rollRedDie();
+            $die_face = $this->getGameStateValue("red_die");
+        } else {
+            $die_value = $this->rollBlueDie();
+            $die_face = $this->getGameStateValue("blue_die");
+        }
+        
+        // Store the results
+        $this->setGameStateValue($die_choice_slot, $die_choice_numeric);
+        $this->setGameStateValue($die_value_slot, $die_value);
+        
+        // Apply dice costs
+        $this->applyDiceCosts($player_id, $die_type);
+        
+        // Get updated resources
+        $new_tokens = (int)$this->getUniqueValueFromDB("SELECT special_tokens FROM player WHERE player_id = $player_id");
+        $new_conditioning = (int)$this->getUniqueValueFromDB("SELECT conditioning FROM player WHERE player_id = $player_id");
+        
+        // Get player name
+        $player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $player_id");
+        if (!$player_name) {
+            $player_name = "Player $player_id";
+        }
+        
+        $die_label = $die_type === 'red' ? 'Red (STRENGTH)' : 'Blue (SPEED)';
+        
+        // Notify about the roll
+        $this->notifyAllPlayers("diceRolled", clienttranslate('${player_name} rolled ${die_label}: ${die_value}'), [
+            "player_id" => $player_id,
+            "player_name" => $player_name,
+            "die_choice" => $die_type,
+            "die_label" => $die_label,
+            "die_face" => $die_face,
+            "die_value" => $die_value,
+            "new_tokens" => $new_tokens,
+            "new_conditioning" => $new_conditioning
+        ]);
+        
+        $this->gamestate->nextState("diceRolled");
+    }
+
+    /**
+     * NEW: Set first player for manual dice rolling
+     */
+    public function stFirstPlayerRollDice(): void
+    {
+        $this->trace("stFirstPlayerRollDice: START");
+        
+        $first_player_id = (int)$this->getGameStateValue("first_player_id");
+        
+        if (!$first_player_id) {
+            throw new \BgaSystemException("No first player set for dice rolling");
+        }
+        
+        $this->gamestate->changeActivePlayer($first_player_id);
+        
+        $this->trace("stFirstPlayerRollDice: Set first player $first_player_id as active");
+    }
+
+    /**
+     * NEW: Set second player for manual dice rolling
+     */
+    public function stSecondPlayerRollDice(): void
+    {
+        $this->trace("stSecondPlayerRollDice: START");
+        
+        $second_player_id = (int)$this->getGameStateValue("second_player_id");
+        
+        if (!$second_player_id) {
+            throw new \BgaSystemException("No second player set for dice rolling");
+        }
+        
+        $this->gamestate->changeActivePlayer($second_player_id);
+        
+        $this->trace("stSecondPlayerRollDice: Set second player $second_player_id as active");
+    }
 
 
 
@@ -2268,4 +2399,5 @@ private function executeDiceChallenge(int $player_id): array
     } 
 }
 ?> 
+
 
