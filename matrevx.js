@@ -725,7 +725,7 @@ setup: function( gamedatas )
                 cardHTML += '<div><strong>Conditioning:</strong> ' + (card.conditioning_cost || 0) + '</div>';
                 cardHTML += '<div><strong>Tokens:</strong> ' + (card.special_tokens || 0) + '</div>';
                 if (card.scoring) {
-                    cardHTML += '<div class="scoring-indicator" style="color: #ff6b35; font-weight: bold;"> Scoring</div>';
+                    cardHTML += '<div class="scoring-indicator" style="color: #ff6b35; font-weight: bold;">Scoring</div>';
                 }
                 cardHTML += '</div>';
                 

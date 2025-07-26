@@ -192,7 +192,7 @@ class Game extends \Table
         }
         
         // Notify all players
-        $this->notifyAllPlayers("wrestlerSelected", clienttranslate('${player_name} selected ${wrestler_name}'), [
+        $this->notifyAllPlayers("wrestlerSelected", '${player_name} selected ${wrestler_name}', [
             "player_id" => $player_id,
             "player_name" => $player_name,
             "wrestler_id" => $wrestler_id,
@@ -256,7 +256,7 @@ public function actResolveScramble(): void
         
         $new_score = (int)$this->getUniqueValueFromDB("SELECT player_score FROM player WHERE player_id = $player_id");
         
-        $this->notifyAllPlayers("scrambleResolved", clienttranslate('${player_name} completes the dice challenge! ${outcome_description}'), [
+        $this->notifyAllPlayers("scrambleResolved", '${player_name} completes the dice challenge! ${outcome_description}', [
             "player_id" => $player_id,
             "player_name" => $player_name,
             "outcome" => "success",
@@ -271,7 +271,7 @@ public function actResolveScramble(): void
         ]);
         
         // Send score update notification
-        $this->notifyAllPlayers("playerScoreUpdate", clienttranslate('${player_name} score updated'), [
+        $this->notifyAllPlayers("playerScoreUpdate", '${player_name} score updated', [
             "player_id" => $player_id,
             "player_name" => $player_name,
             "new_score" => $new_score,
@@ -280,7 +280,7 @@ public function actResolveScramble(): void
         
     } else {
         // Challenge failed
-        $this->notifyAllPlayers("scrambleResolved", clienttranslate('${player_name} fails the dice challenge! No points scored.'), [
+        $this->notifyAllPlayers("scrambleResolved", '${player_name} fails the dice challenge! No points scored.', [
             "player_id" => $player_id,
             "player_name" => $player_name,
             "outcome" => "failure",
@@ -379,7 +379,7 @@ public function actResolveScramble(): void
         $die_label = $die_type === 'red' ? 'Red (STRENGTH)' : 'Blue (SPEED)';
         
         // Notify about the roll
-        $this->notifyAllPlayers("diceRolled", clienttranslate('${player_name} rolled ${die_label}: ${die_value}'), [
+        $this->notifyAllPlayers("diceRolled", '${player_name} rolled ${die_label}: ${die_value}', [
             "player_id" => $player_id,
             "player_name" => $player_name,
             "die_choice" => $die_type,
@@ -443,7 +443,7 @@ public function actResolveScramble(): void
 			$player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $player_id");
 			
 			// Notify all players about score update
-			$this->notifyAllPlayers("playerScoreUpdate", clienttranslate('${player_name} scores ${points} points'), [
+			$this->notifyAllPlayers("playerScoreUpdate", '${player_name} scores ${points} points', [
 				"player_id" => $player_id,
 				"player_name" => $player_name,
 				"new_score" => $new_score,
@@ -565,7 +565,7 @@ private function executeDiceChallenge(int $player_id): array
         $this->setGameStateValue("position_defense", $defense_player_id);
 
         // Notify all players about position selection
-        $this->notifyAllPlayers("positionSelected", clienttranslate('${player_name} chooses ${position}. Match begins!'), [
+        $this->notifyAllPlayers("positionSelected", '${player_name} chooses ${position}. Match begins!', [
             "player_id" => $player_id,
             "player_name" => $player_name,
             "position" => ucfirst($position),
@@ -643,7 +643,7 @@ private function executeDiceChallenge(int $player_id): array
 
 		$die_label = $die_choice === 'red' ? 'Red (STRENGTH)' : 'Blue (SPEED)';
 		
-		$this->notifyAllPlayers("playerChoseDie", clienttranslate('${player_name} chose ${die_label} and rolled: ${die_value}'), [
+		$this->notifyAllPlayers("playerChoseDie", '${player_name} chose ${die_label} and rolled: ${die_value}', [
 			"player_id" => $player_id,
 			"player_name" => $player_name,
 			"die_choice" => $die_choice,
@@ -781,7 +781,7 @@ private function executeDiceChallenge(int $player_id): array
 			];
 		}
 		
-		$this->notifyAllPlayers("diceRolledAutomatically", clienttranslate('Dice rolled based on card actions'), [
+		$this->notifyAllPlayers("diceRolledAutomatically", 'Dice rolled based on card actions', [
 			'dice_results' => $dice_summary,
 			'first_player_rolled' => $first_results !== null,
 			'second_player_rolled' => $second_results !== null
@@ -874,7 +874,7 @@ private function executeDiceChallenge(int $player_id): array
 			$player_name = "Player $player_id";
 		}
 
-		$this->notifyAllPlayers("playerRerollComplete", clienttranslate('${player_name} spent 1 token to reroll - all effects undone, choosing die again'), [
+		$this->notifyAllPlayers("playerRerollComplete", '${player_name} spent 1 token to reroll - all effects undone, choosing die again', [
 			"player_id" => $player_id,
 			"player_name" => $player_name,
 			"previous_die_type" => $previous_die_type,
@@ -999,7 +999,7 @@ private function executeDiceChallenge(int $player_id): array
             $this->trace("actPlayCard: Stored first player card, transitioning to second player");
             
             // Notify that first player played (but don't reveal the card)
-            $this->notifyAllPlayers("firstCardPlayed", clienttranslate('${player_name} has played a card'), [
+            $this->notifyAllPlayers("firstCardPlayed", '${player_name} has played a card', [
                 "player_id" => $player_id,
                 "player_name" => $player_name,
             ]);
@@ -1014,7 +1014,7 @@ private function executeDiceChallenge(int $player_id): array
             $this->trace("actPlayCard: Stored second player card, transitioning to reveal");
             
             // Notify that second player played (but don't reveal yet)
-            $this->notifyAllPlayers("secondCardPlayed", clienttranslate('${player_name} has played a card'), [
+            $this->notifyAllPlayers("secondCardPlayed", '${player_name} has played a card', [
                 "player_id" => $player_id,
                 "player_name" => $player_name,
             ]);
@@ -1042,7 +1042,7 @@ private function executeDiceChallenge(int $player_id): array
             $player_name = "Player $player_id";
         }
 
-        $this->notifyAllPlayers("playerKeepDice", clienttranslate('${player_name} keeps their dice result'), [
+        $this->notifyAllPlayers("playerKeepDice", '${player_name} keeps their dice result', [
             "player_id" => $player_id,
             "player_name" => $player_name,
         ]);
@@ -1118,7 +1118,7 @@ private function executeDiceChallenge(int $player_id): array
 		$this->trace("stRevealCards: Revealing cards - $first_player_name played $first_card_name, $second_player_name played $second_card_name");
 
 		// Reveal both cards
-		$this->notifyAllPlayers("cardsRevealed", clienttranslate('Cards revealed: ${first_player_name} played ${first_card_name}, ${second_player_name} played ${second_card_name}'), [
+		$this->notifyAllPlayers("cardsRevealed", 'Cards revealed: ${first_player_name} played ${first_card_name}, ${second_player_name} played ${second_card_name}', [
 			"first_player_id" => $first_player_id,
 			"first_player_name" => $first_player_name,
 			"first_card_id" => $first_card,
@@ -1171,7 +1171,7 @@ private function executeDiceChallenge(int $player_id): array
 		$first_conditioning = (int)$this->getUniqueValueFromDB("SELECT conditioning FROM player WHERE player_id = $first_player_id");
 		$second_conditioning = (int)$this->getUniqueValueFromDB("SELECT conditioning FROM player WHERE player_id = $second_player_id");
 
-		$this->notifyAllPlayers("conditioningAdjusted", clienttranslate('Conditioning adjusted'), [
+		$this->notifyAllPlayers("conditioningAdjusted", 'Conditioning adjusted', [
 			"updates" => [
 				$first_player_id => ["conditioning" => $first_conditioning, "cost" => $first_cost],
 				$second_player_id => ["conditioning" => $second_conditioning, "cost" => $second_cost]
@@ -1265,7 +1265,7 @@ private function executeDiceChallenge(int $player_id): array
 
 		$this->trace("stApplyEffects: Effects applied: " . implode(', ', $effects_applied));
 
-		$this->notifyAllPlayers("effectsApplied", clienttranslate('Card and dice effects applied'), [
+		$this->notifyAllPlayers("effectsApplied", 'Card and dice effects applied', [
 			"effects" => $effects_applied,
 			"first_die_choice" => $first_die_type,
 			"second_die_choice" => $second_die_type,
@@ -1381,7 +1381,7 @@ private function executeDiceChallenge(int $player_id): array
 		}
 		
 		// Notify all players of the comparison result
-		$this->notifyAllPlayers("statComparison", clienttranslate('${result}'), [
+		$this->notifyAllPlayers("statComparison", '${result}', [
 			"result" => $comparison_result,
 			"offense_value" => $offense_value,
 			"defense_value" => $defense_value,
@@ -1492,7 +1492,7 @@ private function executeDiceChallenge(int $player_id): array
 		}
 		
 		// Notify about scramble card effects
-		$this->notifyAllPlayers("scrambleCardResolved", clienttranslate('Scramble card resolved: ${effects}'), [
+		$this->notifyAllPlayers("scrambleCardResolved", 'Scramble card resolved: ${effects}', [
 			"effects" => $effects_applied,
 			"card_name" => $scramble_card['name']
 		]);
@@ -1571,7 +1571,7 @@ private function executeDiceChallenge(int $player_id): array
 		$first_tokens = $this->getUniqueValueFromDB("SELECT special_tokens FROM player WHERE player_id = $first_player_id");
 		$second_tokens = $this->getUniqueValueFromDB("SELECT special_tokens FROM player WHERE player_id = $second_player_id");
 
-		$this->notifyAllPlayers("tokensHandled", clienttranslate('Special tokens updated'), [
+		$this->notifyAllPlayers("tokensHandled", 'Special tokens updated', [
 			"updates" => [
 				$first_player_id => ["special_tokens" => $first_tokens, "cost" => $first_token_cost],
 				$second_player_id => ["special_tokens" => $second_tokens, "cost" => $second_token_cost]
@@ -1738,7 +1738,7 @@ private function executeDiceChallenge(int $player_id): array
 			$momentum_info = " ({$momentum_player_name} has momentum)";
 		}
 
-		$this->notifyAllPlayers("newRound", clienttranslate('Period ${period}, Round ${round}${momentum_info}'), [
+		$this->notifyAllPlayers("newRound", 'Period ${period}, Round ${round}${momentum_info}', [
 			"period" => $current_period,
 			"round" => $current_round,
 			"momentum_info" => $momentum_info,
@@ -1937,7 +1937,7 @@ private function executeDiceChallenge(int $player_id): array
             $player_name = "Player $player_id"; // Fallback if name not found
         }
 
-        $this->notifyAllPlayers("pass", clienttranslate('${player_name} passes'), [
+        $this->notifyAllPlayers("pass", '${player_name} passes', [
             "player_id" => $player_id,
             "player_name" => $player_name,
         ]);
@@ -2120,7 +2120,7 @@ private function executeDiceChallenge(int $player_id): array
         // Notify about who gets to choose starting position
         $first_player = $players[$first_player_id];
         $this->notifyAllPlayers("startingPositionChoice", 
-            clienttranslate('${player_name} has higher conditioning (${conditioning}) and chooses starting position'), [
+            '${player_name} has higher conditioning (${conditioning}) and chooses starting position', [
             "player_name" => $first_player['player_name'],
             "conditioning" => $first_player['conditioning']
         ]);
@@ -2328,7 +2328,7 @@ private function executeDiceChallenge(int $player_id): array
                         $player_name = "Player $active_player";
                     }                    
                     
-                    $this->notifyAllPlayers("wrestlerSelected", clienttranslate('${player_name} selected ${wrestler_name}'), [
+                    $this->notifyAllPlayers("wrestlerSelected", '${player_name} selected ${wrestler_name}', [
                         "player_id" => $active_player,
                         "player_name" => $player_name,
                         "wrestler_id" => $first_wrestler_id,
