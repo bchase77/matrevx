@@ -69,13 +69,13 @@ class Game extends \Table
      */
     private function getPlayerPosition(int $player_id): string
     {
-        $offense_player = $this->getGameStateValue("position_offense");
-        $defense_player = $this->getGameStateValue("position_defense");
+        $offense_player = (int)$this->getGameStateValue("position_offense");
+        $defense_player = (int)$this->getGameStateValue("position_defense");
         
         $this->trace("getPlayerPosition: Player $player_id, offense_player=$offense_player, defense_player=$defense_player");
         
         // ADD: Check if positions are set
-        if ($offense_player == 0 || $defense_player == 0) {
+        if ($offense_player === 0 || $defense_player === 0) {
             $this->trace("getPlayerPosition: WARNING - Positions not set yet, defaulting to offense");
             return "offense";
         }
@@ -126,19 +126,19 @@ class Game extends \Table
         
         // Get player's current resources
         $player_data = $this->getObjectFromDB(
-            "SELECT conditioning, special_tokens FROM player WHERE player_id = $player_id"
+            "SELECT conditioning, special_tokens FROM player WHERE player_id = " . (int)$player_id"
         );
         
-        if (!$player_data) {
+        if ($player_data === null) {
             $this->trace("canAffordCard: Could not find player data for $player_id");
             return false;
         }
         
         // Ensure we have valid values
-        $conditioning = intval($player_data['conditioning']);
-        $tokens = intval($player_data['special_tokens']);
-        $card_conditioning_cost = intval($card['conditioning_cost']);
-        $card_token_cost = intval($card['special_tokens']);
+        $conditioning = (int)$player_data['conditioning'];
+        $tokens = (int)$player_data['special_tokens'];
+        $card_conditioning_cost = (int)$card['conditioning_cost'];
+        $card_token_cost = (int)$card['special_tokens'];
         
         // Check if player has enough conditioning and special tokens
         return ($conditioning >= $card_conditioning_cost) && 
@@ -160,13 +160,13 @@ class Game extends \Table
         }
 
         // Check if player already has a wrestler
-        $current_wrestler = $this->getUniqueValueFromDB("SELECT wrestler_id FROM player WHERE player_id = $player_id");
-        if ($current_wrestler !== null && intval($current_wrestler) > 0) {
+        $current_wrestler = $this->getUniqueValueFromDB("SELECT wrestler_id FROM player WHERE player_id = " . (int)$player_id");
+        if ($current_wrestler !== null && (int)$current_wrestler > 0) {
             throw new \BgaUserException('You have already selected a wrestler');
         }
 
         // Check if wrestler already taken by another player
-        $existing_player = $this->getUniqueValueFromDB("SELECT player_id FROM player WHERE wrestler_id = $wrestler_id AND player_id != $player_id");
+        $existing_player = $this->getUniqueValueFromDB("SELECT player_id FROM player WHERE wrestler_id = " . (int)$wrestler_id . " AND player_id != $player_id");
         if ($existing_player) {
             throw new \BgaUserException('Wrestler already selected by another player');
         }
@@ -175,24 +175,24 @@ class Game extends \Table
         $wrestler = self::$WRESTLERS[$wrestler_id];
         
         $this->trace("actSelectWrestler: Updating player $player_id with wrestler data");
-        $this->DbQuery("UPDATE player SET wrestler_id = $wrestler_id WHERE player_id = $player_id");
-        $this->DbQuery("UPDATE player SET conditioning = {$wrestler['conditioning_p1']} WHERE player_id = $player_id");
-        $this->DbQuery("UPDATE player SET offense = {$wrestler['offense']} WHERE player_id = $player_id");
-        $this->DbQuery("UPDATE player SET defense = {$wrestler['defense']} WHERE player_id = $player_id");
-        $this->DbQuery("UPDATE player SET top = {$wrestler['top']} WHERE player_id = $player_id");
-        $this->DbQuery("UPDATE player SET bottom = {$wrestler['bottom']} WHERE player_id = $player_id");
-        $this->DbQuery("UPDATE player SET special_tokens = {$wrestler['special_tokens']} WHERE player_id = $player_id");
+        $this->DbQuery("UPDATE player SET wrestler_id = " . (int)$wrestler_id . " WHERE player_id = " . (int)$player_id");
+        $this->DbQuery("UPDATE player SET conditioning = " . (int)($wrestler['conditioning_p1'] ?? 0) . " WHERE player_id = " . (int)$player_id");
+        $this->DbQuery("UPDATE player SET offense = " . (int)($wrestler['offense'] ?? 0) . " WHERE player_id = " . (int)$player_id");
+        $this->DbQuery("UPDATE player SET defense = " . (int)($wrestler['defense'] ?? 0) . " WHERE player_id = " . (int)$player_id");
+        $this->DbQuery("UPDATE player SET top = " . (int)($wrestler['top'] ?? 0) . " WHERE player_id = " . (int)$player_id");
+        $this->DbQuery("UPDATE player SET bottom = " . (int)($wrestler['bottom'] ?? 0) . " WHERE player_id = " . (int)$player_id");
+        $this->DbQuery("UPDATE player SET special_tokens = " . (int)($wrestler['special_tokens'] ?? 0) . " WHERE player_id = " . (int)$player_id");
 
         $this->trace("actSelectWrestler: Successfully updated player $player_id with wrestler $wrestler_id");
 
         // Get player name from database for notification
-        $player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $player_id");
-        if (!$player_name) {
-            $player_name = "Player $player_id"; // Fallback if name not found
+        $player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = " . (int)$player_id);
+            if ($player_name === null) {
+                $player_name = "Player $player_id"; // Fallback if name not found
         }
         
         // Notify all players
-        $this->notifyAllPlayers("wrestlerSelected", clienttranslate('${player_name} selected ${wrestler_name}'), [
+        $this->notifyAllPlayers("wrestlerSelected", '${player_name} selected ${wrestler_name}', [
             "player_id" => $player_id,
             "player_name" => $player_name,
             "wrestler_id" => $wrestler_id,
@@ -204,8 +204,10 @@ class Game extends \Table
         $this->trace("actSelectWrestler: Set player $player_id as non-multiactive");
         
         // Better query to count players with wrestlers
-        $players_with_wrestlers = $this->getUniqueValueFromDB("SELECT COUNT(*) FROM player WHERE wrestler_id >= 1");     
-        $total_players = $this->getUniqueValueFromDB("SELECT COUNT(*) FROM player");
+        $players_with_wrestlers_result = $this->getUniqueValueFromDB("SELECT COUNT(*) FROM player WHERE wrestler_id >= 1");
+            $players_with_wrestlers = $players_with_wrestlers_result !== null ? (int)$players_with_wrestlers_result : 0;     
+        $total_players_result = $this->getUniqueValueFromDB("SELECT COUNT(*) FROM player");
+            $total_players = $total_players_result !== null ? (int)$total_players_result : 0;
         
         $this->trace("actSelectWrestler: Progress - $players_with_wrestlers / $total_players players have selected");
 
@@ -213,7 +215,7 @@ class Game extends \Table
         if ($players_with_wrestlers >= $total_players) {
             $this->trace("actSelectWrestler: All players selected - checking if transition needed");
             $current_state = $this->gamestate->state_id();
-            if ($current_state == 2) { // Only transition if still in wrestler selection state
+            if ($current_state === 2) { // Only transition if still in wrestler selection state
                 $this->trace("actSelectWrestler: Transitioning to next state");
                 $this->gamestate->nextState('allSelected');
             } else {
@@ -239,9 +241,9 @@ public function actResolveScramble(): void
     }
     
     // Get player name
-    $player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $player_id");
-    if (!$player_name) {
-        $player_name = "Player $player_id";
+    $player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = " . (int)$player_id);
+            if ($player_name === null) {
+                $player_name = "Player $player_id";
     }
     
     // Execute the dice challenge
@@ -252,11 +254,11 @@ public function actResolveScramble(): void
         $points = $challenge_result['points'];
         $outcome_type = $challenge_result['outcome_type'];
         
-        $this->DbQuery("UPDATE player SET player_score = player_score + $points WHERE player_id = $player_id");
+        $this->DbQuery("UPDATE player SET player_score = player_score + (int)$points WHERE player_id = " . (int)$player_id");
         
-        $new_score = (int)$this->getUniqueValueFromDB("SELECT player_score FROM player WHERE player_id = $player_id");
+        $new_score = (int)$this->getUniqueValueFromDB("SELECT player_score FROM player WHERE player_id = " . (int)$player_id");
         
-        $this->notifyAllPlayers("scrambleResolved", clienttranslate('${player_name} completes the dice challenge! ${outcome_description}'), [
+        $this->notifyAllPlayers("scrambleResolved", '${player_name} completes the dice challenge! ${outcome_description}', [
             "player_id" => $player_id,
             "player_name" => $player_name,
             "outcome" => "success",
@@ -271,7 +273,7 @@ public function actResolveScramble(): void
         ]);
         
         // Send score update notification
-        $this->notifyAllPlayers("playerScoreUpdate", clienttranslate('${player_name} score updated'), [
+        $this->notifyAllPlayers("playerScoreUpdate", '${player_name} score updated', [
             "player_id" => $player_id,
             "player_name" => $player_name,
             "new_score" => $new_score,
@@ -280,7 +282,7 @@ public function actResolveScramble(): void
         
     } else {
         // Challenge failed
-        $this->notifyAllPlayers("scrambleResolved", clienttranslate('${player_name} fails the dice challenge! No points scored.'), [
+        $this->notifyAllPlayers("scrambleResolved", '${player_name} fails the dice challenge! No points scored.', [
             "player_id" => $player_id,
             "player_name" => $player_name,
             "outcome" => "failure",
@@ -316,11 +318,11 @@ public function actResolveScramble(): void
         $die_choice_slot = null;
         $die_value_slot = null;
         
-        if ($player_id == $first_player_id) {
+        if ($player_id === $first_player_id) {
             $card_id = $first_card_id;
             $die_choice_slot = "first_player_die_choice";
             $die_value_slot = "first_player_die_value";
-        } else if ($player_id == $second_player_id) {
+        } else if ($player_id === $second_player_id) {
             $card_id = $second_card_id;
             $die_choice_slot = "second_player_die_choice";
             $die_value_slot = "second_player_die_value";
@@ -367,19 +369,19 @@ public function actResolveScramble(): void
         $this->applyDiceCosts($player_id, $die_type);
         
         // Get updated resources
-        $new_tokens = (int)$this->getUniqueValueFromDB("SELECT special_tokens FROM player WHERE player_id = $player_id");
-        $new_conditioning = (int)$this->getUniqueValueFromDB("SELECT conditioning FROM player WHERE player_id = $player_id");
+        $new_tokens = (int)$this->getUniqueValueFromDB("SELECT special_tokens FROM player WHERE player_id = " . (int)$player_id");
+        $new_conditioning = (int)$this->getUniqueValueFromDB("SELECT conditioning FROM player WHERE player_id = " . (int)$player_id");
         
         // Get player name
-        $player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $player_id");
-        if (!$player_name) {
-            $player_name = "Player $player_id";
+        $player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = " . (int)$player_id);
+            if ($player_name === null) {
+                $player_name = "Player $player_id";
         }
         
         $die_label = $die_type === 'red' ? 'Red (STRENGTH)' : 'Blue (SPEED)';
         
         // Notify about the roll
-        $this->notifyAllPlayers("diceRolled", clienttranslate('${player_name} rolled ${die_label}: ${die_value}'), [
+        $this->notifyAllPlayers("diceRolled", '${player_name} rolled ${die_label}: ${die_value}', [
             "player_id" => $player_id,
             "player_name" => $player_name,
             "die_choice" => $die_type,
@@ -436,14 +438,14 @@ public function actResolveScramble(): void
 	{
 		$this->trace("awardPoints: Awarding $points points to player $player_id for: $reason");
 		
-		if ($points > 0) {
-			$this->DbQuery("UPDATE player SET player_score = player_score + $points WHERE player_id = $player_id");
+		if ((int)$1 > 0) {
+			$this->DbQuery("UPDATE player SET player_score = player_score + (int)$points WHERE player_id = " . (int)$player_id");
 			
-			$new_score = (int)$this->getUniqueValueFromDB("SELECT player_score FROM player WHERE player_id = $player_id");
-			$player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $player_id");
+			$new_score = (int)$this->getUniqueValueFromDB("SELECT player_score FROM player WHERE player_id = " . (int)$player_id");
+			$player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = " . (int)$player_id");
 			
 			// Notify all players about score update
-			$this->notifyAllPlayers("playerScoreUpdate", clienttranslate('${player_name} scores ${points} points'), [
+			$this->notifyAllPlayers("playerScoreUpdate", '${player_name} scores ${points} points', [
 				"player_id" => $player_id,
 				"player_name" => $player_name,
 				"new_score" => $new_score,
@@ -555,7 +557,7 @@ private function executeDiceChallenge(int $player_id): array
         }
 
         // Get current player name
-        $player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $player_id");
+        $player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = " . (int)$player_id");
 
         // Set positions
         $offense_player_id = $position === 'offense' ? $player_id : $other_player_id;
@@ -565,7 +567,7 @@ private function executeDiceChallenge(int $player_id): array
         $this->setGameStateValue("position_defense", $defense_player_id);
 
         // Notify all players about position selection
-        $this->notifyAllPlayers("positionSelected", clienttranslate('${player_name} chooses ${position}. Match begins!'), [
+        $this->notifyAllPlayers("positionSelected", '${player_name} chooses ${position}. Match begins!', [
             "player_id" => $player_id,
             "player_name" => $player_name,
             "position" => ucfirst($position),
@@ -630,8 +632,8 @@ private function executeDiceChallenge(int $player_id): array
 		$this->applyDiceCosts($player_id, $die_choice);
 		
 		// FIXED: Get updated token count after applying costs
-		$new_tokens = (int)$this->getUniqueValueFromDB("SELECT special_tokens FROM player WHERE player_id = $player_id");
-		$new_conditioning = (int)$this->getUniqueValueFromDB("SELECT conditioning FROM player WHERE player_id = $player_id");
+		$new_tokens = (int)$this->getUniqueValueFromDB("SELECT special_tokens FROM player WHERE player_id = " . (int)$player_id");
+		$new_conditioning = (int)$this->getUniqueValueFromDB("SELECT conditioning FROM player WHERE player_id = " . (int)$player_id");
 		
 		$this->trace("actChooseDie: After costs - tokens=$new_tokens, conditioning=$new_conditioning");
 
@@ -643,7 +645,7 @@ private function executeDiceChallenge(int $player_id): array
 
 		$die_label = $die_choice === 'red' ? 'Red (STRENGTH)' : 'Blue (SPEED)';
 		
-		$this->notifyAllPlayers("playerChoseDie", clienttranslate('${player_name} chose ${die_label} and rolled: ${die_value}'), [
+		$this->notifyAllPlayers("playerChoseDie", '${player_name} chose ${die_label} and rolled: ${die_value}', [
 			"player_id" => $player_id,
 			"player_name" => $player_name,
 			"die_choice" => $die_choice,
@@ -754,8 +756,8 @@ private function executeDiceChallenge(int $player_id): array
 	 */
 	private function notifyDiceResults(int $first_player_id, ?array $first_results, int $second_player_id, ?array $second_results): void
 	{
-		$first_player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $first_player_id");
-		$second_player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $second_player_id");
+		$first_player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = " . (int)$first_player_id");
+		$second_player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = " . (int)$second_player_id");
 		
 		$dice_summary = [];
 		
@@ -781,7 +783,7 @@ private function executeDiceChallenge(int $player_id): array
 			];
 		}
 		
-		$this->notifyAllPlayers("diceRolledAutomatically", clienttranslate('Dice rolled based on card actions'), [
+		$this->notifyAllPlayers("diceRolledAutomatically", 'Dice rolled based on card actions', [
 			'dice_results' => $dice_summary,
 			'first_player_rolled' => $first_results !== null,
 			'second_player_rolled' => $second_results !== null
@@ -843,14 +845,14 @@ private function executeDiceChallenge(int $player_id): array
 		$this->trace("actRerollDice: Undoing previous $previous_die_type die (value: $previous_die_value)");
 
 		// STEP 1: Deduct 1 token for the reroll cost
-		$this->DbQuery("UPDATE player SET special_tokens = special_tokens - 1 WHERE player_id = $player_id");
+		$this->DbQuery("UPDATE player SET special_tokens = special_tokens - 1 WHERE player_id = " . (int)$player_id");
 		
 		// STEP 2: Undo the previous die's conditioning/token effects
 		$this->undoPreviousDieEffects($player_id, $previous_die_type);
 		
 		// STEP 3: Undo any offense adjustments from the previous die
 		if ($previous_die_value != 0) {
-			$this->DbQuery("UPDATE player SET offense = offense - $previous_die_value WHERE player_id = $player_id");
+			$this->DbQuery("UPDATE player SET offense = offense - $previous_die_value WHERE player_id = " . (int)$player_id");
 			$this->trace("actRerollDice: Undid $previous_die_value offense adjustment");
 		}
 		
@@ -864,9 +866,9 @@ private function executeDiceChallenge(int $player_id): array
 		}
 
 		// Get updated resources for notification
-		$new_tokens = (int)$this->getUniqueValueFromDB("SELECT special_tokens FROM player WHERE player_id = $player_id");
-		$new_conditioning = (int)$this->getUniqueValueFromDB("SELECT conditioning FROM player WHERE player_id = $player_id");
-		$new_offense = (int)$this->getUniqueValueFromDB("SELECT offense FROM player WHERE player_id = $player_id");
+		$new_tokens = (int)$this->getUniqueValueFromDB("SELECT special_tokens FROM player WHERE player_id = " . (int)$player_id");
+		$new_conditioning = (int)$this->getUniqueValueFromDB("SELECT conditioning FROM player WHERE player_id = " . (int)$player_id");
+		$new_offense = (int)$this->getUniqueValueFromDB("SELECT offense FROM player WHERE player_id = " . (int)$player_id");
 		
 		// Get player name
 		$player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = " . (int)$player_id);
@@ -874,7 +876,7 @@ private function executeDiceChallenge(int $player_id): array
 			$player_name = "Player $player_id";
 		}
 
-		$this->notifyAllPlayers("playerRerollComplete", clienttranslate('${player_name} spent 1 token to reroll - all effects undone, choosing die again'), [
+		$this->notifyAllPlayers("playerRerollComplete", '${player_name} spent 1 token to reroll - all effects undone, choosing die again', [
 			"player_id" => $player_id,
 			"player_name" => $player_name,
 			"previous_die_type" => $previous_die_type,
@@ -898,12 +900,12 @@ private function executeDiceChallenge(int $player_id): array
 		if ($previous_die_type === 'red') {
 			// Red die: originally cost 3 conditioning and gave 1 token
 			// So we need to: add back 3 conditioning, remove 1 token
-			$this->DbQuery("UPDATE player SET conditioning = conditioning + 3, special_tokens = special_tokens - 1 WHERE player_id = $player_id");
+			$this->DbQuery("UPDATE player SET conditioning = conditioning + 3, special_tokens = special_tokens - 1 WHERE player_id = " . (int)$player_id");
 			$this->trace("undoPreviousDieEffects: Undid red die - added 3 conditioning, removed 1 token");
 		} else if ($previous_die_type === 'blue') {
 			// Blue die: originally cost 2 conditioning and gave 2 tokens  
 			// So we need to: add back 2 conditioning, remove 2 tokens
-			$this->DbQuery("UPDATE player SET conditioning = conditioning + 2, special_tokens = special_tokens - 2 WHERE player_id = $player_id");
+			$this->DbQuery("UPDATE player SET conditioning = conditioning + 2, special_tokens = special_tokens - 2 WHERE player_id = " . (int)$player_id");
 			$this->trace("undoPreviousDieEffects: Undid blue die - added 2 conditioning, removed 2 tokens");
 		}
 	}
@@ -935,7 +937,7 @@ private function executeDiceChallenge(int $player_id): array
 		$die_type = $die_choice_value == 1 ? 'red' : 'blue';
 		
 		// Get current player resources
-		$player_data = $this->getObjectFromDB("SELECT conditioning, special_tokens FROM player WHERE player_id = $player_id");
+		$player_data = $this->getObjectFromDB("SELECT conditioning, special_tokens FROM player WHERE player_id = " . (int)$player_id");
 		$current_tokens = $player_data ? (int)$player_data['special_tokens'] : 0;
 		$current_conditioning = $player_data ? (int)$player_data['conditioning'] : 0;
 		
@@ -999,7 +1001,7 @@ private function executeDiceChallenge(int $player_id): array
             $this->trace("actPlayCard: Stored first player card, transitioning to second player");
             
             // Notify that first player played (but don't reveal the card)
-            $this->notifyAllPlayers("firstCardPlayed", clienttranslate('${player_name} has played a card'), [
+            $this->notifyAllPlayers("firstCardPlayed", '${player_name} has played a card', [
                 "player_id" => $player_id,
                 "player_name" => $player_name,
             ]);
@@ -1014,7 +1016,7 @@ private function executeDiceChallenge(int $player_id): array
             $this->trace("actPlayCard: Stored second player card, transitioning to reveal");
             
             // Notify that second player played (but don't reveal yet)
-            $this->notifyAllPlayers("secondCardPlayed", clienttranslate('${player_name} has played a card'), [
+            $this->notifyAllPlayers("secondCardPlayed", '${player_name} has played a card', [
                 "player_id" => $player_id,
                 "player_name" => $player_name,
             ]);
@@ -1042,7 +1044,7 @@ private function executeDiceChallenge(int $player_id): array
             $player_name = "Player $player_id";
         }
 
-        $this->notifyAllPlayers("playerKeepDice", clienttranslate('${player_name} keeps their dice result'), [
+        $this->notifyAllPlayers("playerKeepDice", '${player_name} keeps their dice result', [
             "player_id" => $player_id,
             "player_name" => $player_name,
         ]);
@@ -1070,9 +1072,9 @@ private function executeDiceChallenge(int $player_id): array
                     (wrestler_id, wrestler_name, conditioning_p1, conditioning_p2, conditioning_p3, 
                      offense, defense, top, bottom, special_tokens, trademark, special_cards) 
                     VALUES 
-                    ($wrestler_id, '$name', {$wrestler['conditioning_p1']}, {$wrestler['conditioning_p2']}, {$wrestler['conditioning_p3']}, 
-                     {$wrestler['offense']}, {$wrestler['defense']}, {$wrestler['top']}, {$wrestler['bottom']}, 
-                     {$wrestler['special_tokens']}, '$trademark', '$special_cards')";
+                    ($wrestler_id, '$name', {($wrestler['conditioning_p1'] ?? 0)}, {$wrestler['conditioning_p2']}, {$wrestler['conditioning_p3']}, 
+                     {($wrestler['offense'] ?? 0)}, {($wrestler['defense'] ?? 0)}, {($wrestler['top'] ?? 0)}, {($wrestler['bottom'] ?? 0)}, 
+                     {($wrestler['special_tokens'] ?? 0)}, '$trademark', '$special_cards')";
             
             $this->DbQuery($sql);
             $this->trace("populateWrestlersTable: Inserted wrestler $wrestler_id - {$wrestler['name']}");
@@ -1118,7 +1120,7 @@ private function executeDiceChallenge(int $player_id): array
 		$this->trace("stRevealCards: Revealing cards - $first_player_name played $first_card_name, $second_player_name played $second_card_name");
 
 		// Reveal both cards
-		$this->notifyAllPlayers("cardsRevealed", clienttranslate('Cards revealed: ${first_player_name} played ${first_card_name}, ${second_player_name} played ${second_card_name}'), [
+		$this->notifyAllPlayers("cardsRevealed", 'Cards revealed: ${first_player_name} played ${first_card_name}, ${second_player_name} played ${second_card_name}', [
 			"first_player_id" => $first_player_id,
 			"first_player_name" => $first_player_name,
 			"first_card_id" => $first_card,
@@ -1164,14 +1166,14 @@ private function executeDiceChallenge(int $player_id): array
 
 		$this->trace("stAdjustConditioning: Deducting conditioning - Player $first_player_id: $first_cost, Player $second_player_id: $second_cost");
 
-		$this->DbQuery("UPDATE player SET conditioning = conditioning - $first_cost WHERE player_id = $first_player_id");
-		$this->DbQuery("UPDATE player SET conditioning = conditioning - $second_cost WHERE player_id = $second_player_id");
+		$this->DbQuery("UPDATE player SET conditioning = conditioning - (int)$1 WHERE player_id = " . (int)$first_player_id");
+		$this->DbQuery("UPDATE player SET conditioning = conditioning - (int)$1 WHERE player_id = " . (int)$second_player_id");
 
 		// Get updated conditioning values
-		$first_conditioning = (int)$this->getUniqueValueFromDB("SELECT conditioning FROM player WHERE player_id = $first_player_id");
-		$second_conditioning = (int)$this->getUniqueValueFromDB("SELECT conditioning FROM player WHERE player_id = $second_player_id");
+		$first_conditioning = (int)$this->getUniqueValueFromDB("SELECT conditioning FROM player WHERE player_id = " . (int)$first_player_id");
+		$second_conditioning = (int)$this->getUniqueValueFromDB("SELECT conditioning FROM player WHERE player_id = " . (int)$second_player_id");
 
-		$this->notifyAllPlayers("conditioningAdjusted", clienttranslate('Conditioning adjusted'), [
+		$this->notifyAllPlayers("conditioningAdjusted", 'Conditioning adjusted', [
 			"updates" => [
 				$first_player_id => ["conditioning" => $first_conditioning, "cost" => $first_cost],
 				$second_player_id => ["conditioning" => $second_conditioning, "cost" => $second_cost]
@@ -1228,8 +1230,8 @@ private function executeDiceChallenge(int $player_id): array
 		$this->applyDiceToOffense($second_player_id, (int)$second_die_value);
 
 		// Get updated offense values for notification
-		$first_new_offense = $this->getUniqueValueFromDB("SELECT offense FROM player WHERE player_id = $first_player_id");
-		$second_new_offense = $this->getUniqueValueFromDB("SELECT offense FROM player WHERE player_id = $second_player_id");
+		$first_new_offense = $this->getUniqueValueFromDB("SELECT offense FROM player WHERE player_id = " . (int)$first_player_id");
+		$second_new_offense = $this->getUniqueValueFromDB("SELECT offense FROM player WHERE player_id = " . (int)$second_player_id");
 
 		// Build effects description
 		$effects_applied = [];
@@ -1265,7 +1267,7 @@ private function executeDiceChallenge(int $player_id): array
 
 		$this->trace("stApplyEffects: Effects applied: " . implode(', ', $effects_applied));
 
-		$this->notifyAllPlayers("effectsApplied", clienttranslate('Card and dice effects applied'), [
+		$this->notifyAllPlayers("effectsApplied", 'Card and dice effects applied', [
 			"effects" => $effects_applied,
 			"first_die_choice" => $first_die_type,
 			"second_die_choice" => $second_die_type,
@@ -1300,8 +1302,8 @@ private function executeDiceChallenge(int $player_id): array
 		$this->trace("stStatComparison: Offense player: $offense_player_id, Defense player: $defense_player_id");
 		
 		// Get current stats for both players
-		$offense_stats = $this->getObjectFromDB("SELECT offense, defense FROM player WHERE player_id = $offense_player_id");
-		$defense_stats = $this->getObjectFromDB("SELECT offense, defense FROM player WHERE player_id = $defense_player_id");
+		$offense_stats = $this->getObjectFromDB("SELECT offense, defense FROM player WHERE player_id = " . (int)$offense_player_id");
+		$defense_stats = $this->getObjectFromDB("SELECT offense, defense FROM player WHERE player_id = " . (int)$defense_player_id");
 		
 		if (!$offense_stats || !$defense_stats) {
 			throw new \BgaSystemException("Could not retrieve player stats for comparison");
@@ -1329,8 +1331,8 @@ private function executeDiceChallenge(int $player_id): array
 		}
 		
 		// Get player names for notifications
-		$offense_player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $offense_player_id");
-		$defense_player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $defense_player_id");
+		$offense_player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = " . (int)$offense_player_id");
+		$defense_player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = " . (int)$defense_player_id");
 		
 		// Perform the stat comparison and handle momentum
 		$comparison_result = '';
@@ -1360,7 +1362,7 @@ private function executeDiceChallenge(int $player_id): array
 			// Tie - second player gains momentum
 			$this->trace("stStatComparison: Stats tied ($offense_value = $defense_value) - second player gains momentum");
 			
-			$second_player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $second_player_id");
+			$second_player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = " . (int)$second_player_id");
 			
 			$comparison_result = "Stats tied! {$offense_player_name}'s offense ({$offense_value}) equals {$defense_player_name}'s defense ({$defense_value}). {$second_player_name} gains momentum for next round!";
 			
@@ -1381,7 +1383,7 @@ private function executeDiceChallenge(int $player_id): array
 		}
 		
 		// Notify all players of the comparison result
-		$this->notifyAllPlayers("statComparison", clienttranslate('${result}'), [
+		$this->notifyAllPlayers("statComparison", '${result}', [
 			"result" => $comparison_result,
 			"offense_value" => $offense_value,
 			"defense_value" => $defense_value,
@@ -1463,7 +1465,7 @@ private function executeDiceChallenge(int $player_id): array
 		switch ($scramble_card['effect']) {
 			case 'score_points':
 				// Award points to the player
-				$this->DbQuery("UPDATE player SET player_score = player_score + {$scramble_card['points']} WHERE player_id = $player_id");
+				$this->DbQuery("UPDATE player SET player_score = player_score + {$scramble_card['points']} WHERE player_id = " . (int)$player_id");
 				$effects_applied[] = "Scored {$scramble_card['points']} points";
 				break;
 				
@@ -1471,10 +1473,10 @@ private function executeDiceChallenge(int $player_id): array
 				// Award points to opponent
 				$offense_player_id = (int)$this->getGameStateValue("position_offense");
 				$defense_player_id = (int)$this->getGameStateValue("position_defense");
-				$opponent_id = $player_id == $offense_player_id ? $defense_player_id : $offense_player_id;
+				$opponent_id = $player_id === $offense_player_id ? $defense_player_id : $offense_player_id;
 				
 				$this->DbQuery("UPDATE player SET player_score = player_score + {$scramble_card['points']} WHERE player_id = $opponent_id");
-				$opponent_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $opponent_id");
+				$opponent_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = " . (int)$1");
 				$effects_applied[] = "{$opponent_name} scored {$scramble_card['points']} points due to penalty";
 				break;
 				
@@ -1492,7 +1494,7 @@ private function executeDiceChallenge(int $player_id): array
 		}
 		
 		// Notify about scramble card effects
-		$this->notifyAllPlayers("scrambleCardResolved", clienttranslate('Scramble card resolved: ${effects}'), [
+		$this->notifyAllPlayers("scrambleCardResolved", 'Scramble card resolved: ${effects}', [
 			"effects" => $effects_applied,
 			"card_name" => $scramble_card['name']
 		]);
@@ -1508,7 +1510,7 @@ private function executeDiceChallenge(int $player_id): array
 			case 'top':
 				// Player goes to top, opponent to bottom
 				$this->setGameStateValue("position_top", $player_id);
-				$this->setGameStateValue("position_bottom", $player_id == $offense_player_id ? $defense_player_id : $offense_player_id);
+				$this->setGameStateValue("position_bottom", $player_id === $offense_player_id ? $defense_player_id : $offense_player_id);
 				return "Position changed to top/bottom";
 				
 			case 'neutral':
@@ -1559,19 +1561,19 @@ private function executeDiceChallenge(int $player_id): array
 
 		$this->trace("stHandleTokens: Token costs - Player $first_player_id: $first_token_cost, Player $second_player_id: $second_token_cost");
 
-		if ($first_token_cost > 0) {
-			$this->DbQuery("UPDATE player SET special_tokens = special_tokens - $first_token_cost WHERE player_id = $first_player_id");
+		if ((int)$1 > 0) {
+			$this->DbQuery("UPDATE player SET special_tokens = special_tokens - (int)$1 WHERE player_id = " . (int)$first_player_id");
 		}
 
-		if ($second_token_cost > 0) {
-			$this->DbQuery("UPDATE player SET special_tokens = special_tokens - $second_token_cost WHERE player_id = $second_player_id");
+		if ((int)$1 > 0) {
+			$this->DbQuery("UPDATE player SET special_tokens = special_tokens - (int)$1 WHERE player_id = " . (int)$second_player_id");
 		}
 
 		// Get updated token values
-		$first_tokens = $this->getUniqueValueFromDB("SELECT special_tokens FROM player WHERE player_id = $first_player_id");
-		$second_tokens = $this->getUniqueValueFromDB("SELECT special_tokens FROM player WHERE player_id = $second_player_id");
+		$first_tokens = $this->getUniqueValueFromDB("SELECT special_tokens FROM player WHERE player_id = " . (int)$first_player_id");
+		$second_tokens = $this->getUniqueValueFromDB("SELECT special_tokens FROM player WHERE player_id = " . (int)$second_player_id");
 
-		$this->notifyAllPlayers("tokensHandled", clienttranslate('Special tokens updated'), [
+		$this->notifyAllPlayers("tokensHandled", 'Special tokens updated', [
 			"updates" => [
 				$first_player_id => ["special_tokens" => $first_tokens, "cost" => $first_token_cost],
 				$second_player_id => ["special_tokens" => $second_tokens, "cost" => $second_token_cost]
@@ -1629,17 +1631,17 @@ private function executeDiceChallenge(int $player_id): array
 		$this->trace("applyDiceCosts: START - Player $player_id chose $die_type die");
 		
 		// Get current values before applying costs
-		$before_conditioning = (int)$this->getUniqueValueFromDB("SELECT conditioning FROM player WHERE player_id = $player_id");
-		$before_tokens = (int)$this->getUniqueValueFromDB("SELECT special_tokens FROM player WHERE player_id = $player_id");
+		$before_conditioning = (int)$this->getUniqueValueFromDB("SELECT conditioning FROM player WHERE player_id = " . (int)$player_id");
+		$before_tokens = (int)$this->getUniqueValueFromDB("SELECT special_tokens FROM player WHERE player_id = " . (int)$player_id");
 		
 		if ($die_type === 'red') {
 			// Red die: costs 3 conditioning, gain 1 token
-			$this->DbQuery("UPDATE player SET conditioning = conditioning - 3, special_tokens = special_tokens + 1 WHERE player_id = $player_id");
+			$this->DbQuery("UPDATE player SET conditioning = conditioning - 3, special_tokens = special_tokens + 1 WHERE player_id = " . (int)$player_id");
 			$conditioning_cost = 3;
 			$token_gain = 1;
 		} else if ($die_type === 'blue') {
 			// Blue die: costs 2 conditioning, gain 2 tokens
-			$this->DbQuery("UPDATE player SET conditioning = conditioning - 2, special_tokens = special_tokens + 2 WHERE player_id = $player_id");
+			$this->DbQuery("UPDATE player SET conditioning = conditioning - 2, special_tokens = special_tokens + 2 WHERE player_id = " . (int)$player_id");
 			$conditioning_cost = 2;
 			$token_gain = 2;
 		} else {
@@ -1648,8 +1650,8 @@ private function executeDiceChallenge(int $player_id): array
 		}
 		
 		// Get values after applying costs
-		$after_conditioning = (int)$this->getUniqueValueFromDB("SELECT conditioning FROM player WHERE player_id = $player_id");
-		$after_tokens = (int)$this->getUniqueValueFromDB("SELECT special_tokens FROM player WHERE player_id = $player_id");
+		$after_conditioning = (int)$this->getUniqueValueFromDB("SELECT conditioning FROM player WHERE player_id = " . (int)$player_id");
+		$after_tokens = (int)$this->getUniqueValueFromDB("SELECT special_tokens FROM player WHERE player_id = " . (int)$player_id");
 		
 		$this->trace("applyDiceCosts: Player $player_id - $die_type die");
 		$this->trace("applyDiceCosts: Conditioning: $before_conditioning -> $after_conditioning (cost: $conditioning_cost)");
@@ -1665,10 +1667,10 @@ private function executeDiceChallenge(int $player_id): array
 		$this->trace("applyDiceToOffense: Player $player_id getting $dice_total offense adjustment");
 		
 		if ($dice_total != 0) {
-			$this->DbQuery("UPDATE player SET offense = offense + $dice_total WHERE player_id = $player_id");
+			$this->DbQuery("UPDATE player SET offense = offense + $dice_total WHERE player_id = " . (int)$player_id");
 			
 			// Get updated offense value
-			$new_offense = $this->getUniqueValueFromDB("SELECT offense FROM player WHERE player_id = $player_id");
+			$new_offense = $this->getUniqueValueFromDB("SELECT offense FROM player WHERE player_id = " . (int)$player_id");
 			$this->trace("applyDiceToOffense: Player $player_id new offense: $new_offense");
 		}
 	}
@@ -1680,7 +1682,7 @@ private function executeDiceChallenge(int $player_id): array
 	// 6. FIX: canPlayerReroll method - ensure proper typing
 	private function canPlayerReroll(int $player_id): bool
 	{
-		$tokens = (int)$this->getUniqueValueFromDB("SELECT special_tokens FROM player WHERE player_id = $player_id");
+		$tokens = (int)$this->getUniqueValueFromDB("SELECT special_tokens FROM player WHERE player_id = " . (int)$player_id");
 		return $tokens >= 1;
 	}
 
@@ -1733,12 +1735,12 @@ private function executeDiceChallenge(int $player_id): array
 
 		// Include momentum info in notification
 		$momentum_info = '';
-		if ($momentum_player > 0) {
-			$momentum_player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $momentum_player");
+		if ((int)$1 > 0) {
+			$momentum_player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = " . (int)$1");
 			$momentum_info = " ({$momentum_player_name} has momentum)";
 		}
 
-		$this->notifyAllPlayers("newRound", clienttranslate('Period ${period}, Round ${round}${momentum_info}'), [
+		$this->notifyAllPlayers("newRound", 'Period ${period}, Round ${round}${momentum_info}', [
 			"period" => $current_period,
 			"round" => $current_round,
 			"momentum_info" => $momentum_info,
@@ -1759,7 +1761,7 @@ private function executeDiceChallenge(int $player_id): array
 		// Check if anyone has momentum
 		$momentum_player = (int)$this->getGameStateValue("momentum_player");
 		
-		if ($momentum_player > 0) {
+		if ((int)$1 > 0) {
 			// Player with momentum goes first
 			$this->trace("stSetFirstPlayer: Player $momentum_player has momentum and goes first");
 			$this->gamestate->changeActivePlayer($momentum_player);
@@ -1773,7 +1775,7 @@ private function executeDiceChallenge(int $player_id): array
 			
 			$this->trace("stSetFirstPlayer: No momentum, offense player $offense_player_id goes first");
 			
-			if ($offense_player_id == 0) {
+			if ($1 === 0) {
 				throw new \BgaSystemException("No offense player set in stSetFirstPlayer");
 			}
 			
@@ -1891,7 +1893,7 @@ private function executeDiceChallenge(int $player_id): array
 		// Check if anyone has momentum
 		$momentum_player = (int)$this->getGameStateValue("momentum_player");
 		
-		if ($momentum_player > 0) {
+		if ((int)$1 > 0) {
 			// Player with momentum goes first
 			$this->trace("stSetNextPlayer: Player $momentum_player has momentum and goes first");
 			$this->gamestate->changeActivePlayer($momentum_player);
@@ -1932,12 +1934,12 @@ private function executeDiceChallenge(int $player_id): array
     public function actPass(): void
     {
         $player_id = (int)$this->getActivePlayerId();
-        $player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $player_id");
-        if (!$player_name) {
-            $player_name = "Player $player_id"; // Fallback if name not found
+        $player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = " . (int)$player_id);
+            if ($player_name === null) {
+                $player_name = "Player $player_id"; // Fallback if name not found
         }
 
-        $this->notifyAllPlayers("pass", clienttranslate('${player_name} passes'), [
+        $this->notifyAllPlayers("pass", '${player_name} passes', [
             "player_id" => $player_id,
             "player_name" => $player_name,
         ]);
@@ -1999,10 +2001,10 @@ private function executeDiceChallenge(int $player_id): array
         
         // Get player resources for debugging
         $player_data = $this->getObjectFromDB(
-            "SELECT conditioning, special_tokens FROM player WHERE player_id = $player_id"
+            "SELECT conditioning, special_tokens FROM player WHERE player_id = " . (int)$player_id"
         );
         
-        if (!$player_data) {
+        if ($player_data === null) {
             $this->trace("argPlayerTurn: ERROR - Could not find player data for player $player_id");
             // Return safe defaults instead of throwing exception
             return [
@@ -2054,7 +2056,7 @@ private function executeDiceChallenge(int $player_id): array
         // For first player turn, use offense player
         if ($state_name === 'firstPlayerTurn') {
             $offense_player = (int)$this->getGameStateValue("position_offense");
-            if ($offense_player > 0) {
+            if ((int)$1 > 0) {
                 $this->trace("getTurnPlayerId: First player turn, using offense player: $offense_player");
                 return $offense_player;
             }
@@ -2063,27 +2065,27 @@ private function executeDiceChallenge(int $player_id): array
         // For second player turn, use defense player
         if ($state_name === 'secondPlayerTurn') {
             $defense_player = (int)$this->getGameStateValue("position_defense");
-            if ($defense_player > 0) {
+            if ((int)$1 > 0) {
                 $this->trace("getTurnPlayerId: Second player turn, using defense player: $defense_player");
                 return $defense_player;
             }
         }
         
         // Fallback to active player if valid
-        if ($active_player > 0) {
+        if ((int)$1 > 0) {
             $this->trace("getTurnPlayerId: Using active player: $active_player");
             return $active_player;
         }
         
         // Final fallback to current player
-        if ($current_player > 0) {
+        if ((int)$1 > 0) {
             $this->trace("getTurnPlayerId: Using current player: $current_player");
             return $current_player;
         }
         
         // LAST RESORT: Get first player from database
         $first_player = (int)$this->getUniqueValueFromDB("SELECT player_id FROM player LIMIT 1");
-        if ($first_player > 0) {
+        if ((int)$1 > 0) {
             $this->trace("getTurnPlayerId: EMERGENCY fallback to first player: $first_player");
             return $first_player;
         }
@@ -2120,7 +2122,7 @@ private function executeDiceChallenge(int $player_id): array
         // Notify about who gets to choose starting position
         $first_player = $players[$first_player_id];
         $this->notifyAllPlayers("startingPositionChoice", 
-            clienttranslate('${player_name} has higher conditioning (${conditioning}) and chooses starting position'), [
+            '${player_name} has higher conditioning (${conditioning}) and chooses starting position', [
             "player_name" => $first_player['player_name'],
             "conditioning" => $first_player['conditioning']
         ]);
@@ -2147,7 +2149,7 @@ private function executeDiceChallenge(int $player_id): array
         if ($period == 3) $completed_rounds += $round; // Current period 3
         else if ($period <= 2) $completed_rounds += $round; // Current period 1 or 2
 
-        return min(100, intval($completed_rounds * 100 / $total_rounds));
+        return min(100, (int)$completed_rounds * 100 / $total_rounds);
     }
 
     /**
@@ -2316,19 +2318,19 @@ private function executeDiceChallenge(int $player_id): array
                     
                     $wrestler = $available[$first_wrestler_id];
                     $this->DbQuery("UPDATE player SET wrestler_id = $first_wrestler_id WHERE player_id = $active_player");
-                    $this->DbQuery("UPDATE player SET conditioning = {$wrestler['conditioning_p1']} WHERE player_id = $active_player");
-                    $this->DbQuery("UPDATE player SET offense = {$wrestler['offense']} WHERE player_id = $active_player");
-                    $this->DbQuery("UPDATE player SET defense = {$wrestler['defense']} WHERE player_id = $active_player");
-                    $this->DbQuery("UPDATE player SET top = {$wrestler['top']} WHERE player_id = $active_player");
-                    $this->DbQuery("UPDATE player SET bottom = {$wrestler['bottom']} WHERE player_id = $active_player");
-                    $this->DbQuery("UPDATE player SET special_tokens = {$wrestler['special_tokens']} WHERE player_id = $active_player");
+                    $this->DbQuery("UPDATE player SET conditioning = " . (int)($wrestler['conditioning_p1'] ?? 0) . " WHERE player_id = $active_player");
+                    $this->DbQuery("UPDATE player SET offense = " . (int)($wrestler['offense'] ?? 0) . " WHERE player_id = $active_player");
+                    $this->DbQuery("UPDATE player SET defense = " . (int)($wrestler['defense'] ?? 0) . " WHERE player_id = $active_player");
+                    $this->DbQuery("UPDATE player SET top = " . (int)($wrestler['top'] ?? 0) . " WHERE player_id = $active_player");
+                    $this->DbQuery("UPDATE player SET bottom = " . (int)($wrestler['bottom'] ?? 0) . " WHERE player_id = $active_player");
+                    $this->DbQuery("UPDATE player SET special_tokens = " . (int)($wrestler['special_tokens'] ?? 0) . " WHERE player_id = $active_player");
                     
-                    $player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $active_player");
+                    $player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = " . (int)$1");
                     if (!$player_name) {
                         $player_name = "Player $active_player";
                     }                    
                     
-                    $this->notifyAllPlayers("wrestlerSelected", clienttranslate('${player_name} selected ${wrestler_name}'), [
+                    $this->notifyAllPlayers("wrestlerSelected", '${player_name} selected ${wrestler_name}', [
                         "player_id" => $active_player,
                         "player_name" => $player_name,
                         "wrestler_id" => $first_wrestler_id,
@@ -2368,7 +2370,7 @@ private function executeDiceChallenge(int $player_id): array
         $second_player_id = (int)$this->getGameStateValue("second_player_id"); 
         $second_die_choice = $this->getGameStateValue("second_player_die_choice"); 
  
-        if ($second_die_choice > 0) { 
+        if ((int)$1 > 0) { 
             $this->trace("stCheckSecondPlayerReroll: Second player $second_player_id gets reroll option"); 
             $this->gamestate->changeActivePlayer($second_player_id); 
             $this->gamestate->nextState("secondPlayerReroll"); 
@@ -2396,8 +2398,92 @@ private function executeDiceChallenge(int $player_id): array
         $player_id = (int)$this->getActivePlayerId(); 
         $this->trace("stSecondPlayerReroll: Player $player_id reroll complete, moving to effects"); 
         $this->gamestate->nextState("rerolled"); 
-    } 
+    }
+    /**
+     * NEW: Check if player has already played a card this round
+     */
+    private function hasPlayerPlayedCard(int $player_id): bool
+    {
+        $first_player_id = (int)$this->getGameStateValue("first_player_id");
+        $second_player_id = (int)$this->getGameStateValue("second_player_id");
+        
+        return ($player_id === $first_player_id && $this->getGameStateValue("first_player_card") > 0) ||
+               ($player_id === $second_player_id && $this->getGameStateValue("second_player_card") > 0);
+    }
+
+    /**
+     * NEW: Store player's card choice
+     */
+    private function storePlayerCard(int $player_id, int $card_id): void
+    {
+        $offense_player_id = (int)$this->getGameStateValue("position_offense");
+        
+        if ($player_id === $offense_player_id) {
+            $this->setGameStateValue("first_player_id", $player_id);
+            $this->setGameStateValue("first_player_card", $card_id);
+        } else {
+            $this->setGameStateValue("second_player_id", $player_id);
+            $this->setGameStateValue("second_player_card", $card_id);
+        }
+    }
+
+    /**
+     * NEW: Check if all players have selected cards
+     */
+    private function checkAllPlayersReady(): bool
+    {
+        $first_card = $this->getGameStateValue("first_player_card");
+        $second_card = $this->getGameStateValue("second_player_card");
+        
+        return ($first_card > 0) && ($second_card > 0);
+    }
+
+    /**
+     * NEW: Arguments for simultaneous card selection
+     */
+    public function argCardSelection(): array
+    {
+        $result = [
+            "playableCardsIds" => [],
+            "positions" => []
+        ];
+        
+        $players = $this->getCollectionFromDB("SELECT player_id FROM player");
+        
+        foreach ($players as $player_id => $player_data) {
+            $current_position = $this->getPlayerPosition($player_id);
+            $available_cards = $this->getAvailableCardsForPosition($current_position);
+            
+            $playable_cards = [];
+            foreach ($available_cards as $card_id) {
+                if ($this->canAffordCard($player_id, $card_id)) {
+                    $playable_cards[] = $card_id;
+                }
+            }
+            
+            if (empty($playable_cards)) {
+                $playable_cards[] = 25; // Stall card
+            }
+            
+            $result["playableCardsIds"][$player_id] = $playable_cards;
+            $result["positions"][$player_id] = $current_position;
+        }
+        
+        return $result;
+    }
+ 
 }
 ?> 
+
+
+
+
+
+
+
+
+
+
+
 
 

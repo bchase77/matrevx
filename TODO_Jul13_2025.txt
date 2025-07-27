@@ -1,0 +1,575 @@
+TODO:
+
+CHANGE OUT THIS CODE in various files.
+
+// UI FIXES FOR matrevx.js
+
+// 1. FIX: Update setup() method to include player scores in panels
+setup: function( gamedatas )
+{
+    console.log( "Starting game setup" );
+    console.log( "Game data:", gamedatas );
+
+    // Set up main game area
+    var gameAreaHTML = '';
+    gameAreaHTML += '<div id="wrestler-selection-area" style="display: none;">';
+    gameAreaHTML += '<h3>Select Your Wrestler</h3>';
+    gameAreaHTML += '<div id="available-wrestlers"></div>';
+    gameAreaHTML += '</div>';
+    gameAreaHTML += '<div id="wrestling-mat" style="display: none;">';
+    gameAreaHTML += '<div id="player-stats"></div>';
+    gameAreaHTML += '<div id="game-info"></div>';
+    gameAreaHTML += '</div>';
+    gameAreaHTML += '<div id="player-hand-area" style="display: none; margin-top: 20px; padding: 15px; background: #f9f9f9; border-radius: 8px;">';
+    gameAreaHTML += '<h3>Your Hand</h3>';
+    gameAreaHTML += '<div id="player-hand" style="display: flex; gap: 10px; flex-wrap: wrap;"></div>';
+    gameAreaHTML += '</div>';
+    
+    document.getElementById('game_play_area').insertAdjacentHTML('beforeend', gameAreaHTML);
+    
+    // Setting up player boards with wrestler info INCLUDING SCORES AND TOKENS
+    var players = Object.values ? Object.values(gamedatas.players) : Object.keys(gamedatas.players).map(function(k) { return gamedatas.players[k]; });
+    
+    for (var i = 0; i < players.length; i++) {
+        var player = players[i];
+        var wrestlerName = player.wrestler ? player.wrestler.name : 'No wrestler selected';
+        var conditioning = player.conditioning || 0;
+        var offense = player.offense || 0;
+        var defense = player.defense || 0;
+        var top = player.top || 0;
+        var bottom = player.bottom || 0;
+        var score = player.score || 0;  // ADD SCORE
+        var tokens = player.special_tokens || 0;  // ADD TOKENS
+        
+        var playerInfoHTML = '';
+        playerInfoHTML += '<div id="player-wrestler-info-' + player.id + '">';
+        playerInfoHTML += '<div id="wrestler-name-' + player.id + '">' + wrestlerName + '</div>';
+        // ADD SCORE DISPLAY
+        playerInfoHTML += '<div id="player-score-' + player.id + '" class="score-display" style="font-weight: bold; color: #2e7d32;">Score: ' + score + '</div>';
+        playerInfoHTML += '<div id="conditioning-' + player.id + '" class="stat-display">Conditioning: ' + conditioning + '</div>';
+        // ADD TOKEN DISPLAY
+        playerInfoHTML += '<div id="player-tokens-' + player.id + '" class="stat-display">Tokens: ' + tokens + '</div>';
+        playerInfoHTML += '<div class="wrestler-stats-compact">O:' + offense + ' D:' + defense + ' T:' + top + ' B:' + bottom + '</div>';
+        playerInfoHTML += '</div>';
+        
+        this.getPlayerPanelElement(player.id).insertAdjacentHTML('beforeend', playerInfoHTML);
+    }
+
+    // Store game data
+    this.gamedatas = gamedatas;
+    
+    // Setup game notifications
+    this.setupNotifications();
+
+    console.log( "Ending game setup" );
+},
+
+// 2. FIX: Update argRerollOption in onUpdateActionButtons to show correct die type and tokens
+onUpdateActionButtons: function( stateName, args )
+{
+    console.log( 'onUpdateActionButtons: '+stateName, args );
+                  
+    if( this.isCurrentPlayerActive() )
+    {            
+        switch( stateName )
+        {
+            // ... existing cases ...
+            
+            // FIXED: Reroll option states with correct die display and token count
+            case 'firstPlayerRerollOption':
+            case 'secondPlayerRerollOption':
+                const rerollArgs = args && args.args;
+                const canReroll = rerollArgs && rerollArgs.can_reroll;
+                const dieType = rerollArgs && rerollArgs.die_type;
+                const dieValue = rerollArgs && rerollArgs.die_value;
+                const currentTokens = (rerollArgs && rerollArgs.current_tokens) || 0;
+                
+                console.log('Reroll options:', { canReroll, dieType, dieValue, currentTokens });
+                
+                // Always show keep button
+                this.addActionButton('btn-keep-dice', _('Keep Result'), () => this.onKeepDice(), null, null, 'gray');
+                
+                // Show reroll button only if player can afford it
+                if (canReroll && dieType) {
+                    const dieLabel = dieType === 'red' ? 'Red Die (STRENGTH)' : 'Blue Die (SPEED)';
+                    this.addActionButton('btn-reroll-dice', _('Reroll ' + dieLabel + ' (1 token)'), () => this.onRerollDice(), null, null, 'blue');
+                } else {
+                    // Show disabled reroll button with explanation
+                    const disabledBtn = this.addActionButton('btn-reroll-disabled', _('Reroll (Need 1 token)'), null, null, null, 'gray');
+                    const buttonElement = document.getElementById('btn-reroll-disabled');
+                    if (buttonElement) {
+                        buttonElement.disabled = true;
+                        buttonElement.style.opacity = '0.5';
+                    }
+                }
+                
+                // FIXED: Show current status with correct die type and result
+                const statusDiv = document.createElement('div');
+                statusDiv.style.cssText = 'margin: 10px 0; padding: 10px; background: #f0f0f0; border-radius: 5px;';
+                statusDiv.innerHTML = `
+                    <div><strong>Your ${(dieType || 'unknown').toUpperCase()} die result:</strong> ${dieValue || '?'}</div>
+                    <div><strong>Your tokens:</strong> ${currentTokens}</div>
+                `;
+                
+                const actionBar2 = document.getElementById('generalactions');
+                if (actionBar2) {
+                    actionBar2.appendChild(statusDiv);
+                }
+                break;
+                
+            // ... other existing cases ...
+        }
+    }
+},
+
+// 3. FIX: Update scrambleResolved notification to update player scores
+notif_scrambleResolved: function(notif) {
+    console.log('notif_scrambleResolved', notif);
+    
+    // UPDATE PLAYER SCORE IN LOCAL DATA AND UI
+    if (notif.args.points > 0) {
+        const playerId = notif.args.player_id;
+        
+        // Update local game data
+        if (this.gamedatas.players[playerId]) {
+            this.gamedatas.players[playerId].score = (this.gamedatas.players[playerId].score || 0) + notif.args.points;
+        }
+        
+        // Update score display in player panel
+        const scoreElement = document.getElementById(`player-score-${playerId}`);
+        if (scoreElement) {
+            const newScore = (this.gamedatas.players[playerId] && this.gamedatas.players[playerId].score) || notif.args.points;
+            scoreElement.textContent = `Score: ${newScore}`;
+            
+            // Add visual highlight for score change
+            scoreElement.style.background = '#4caf50';
+            scoreElement.style.color = 'white';
+            scoreElement.style.transition = 'all 0.5s ease';
+            setTimeout(() => {
+                scoreElement.style.background = '';
+                scoreElement.style.color = '#2e7d32';
+            }, 2000);
+        }
+    }
+    
+    const gameInfo = document.getElementById('game-info');
+    if (!gameInfo) return;
+    
+    // Create scramble resolution display
+    let resolvedHTML = '<div style="padding: 20px; border-radius: 8px; margin: 10px; color: white; text-shadow: 1px 1px 2px rgba(0,0,0,0.3);">';
+    
+    if (notif.args.outcome === 'success') {
+        resolvedHTML = resolvedHTML.replace('style="', 'style="background: linear-gradient(135deg, #4ecdc4, #45b7d1); ');
+        resolvedHTML += '<h3>🎯 SCRAMBLE SUCCESS!</h3>';
+        resolvedHTML += '<div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 5px; margin: 10px 0;">';
+        resolvedHTML += '<div style="font-size: 18px; font-weight: bold; margin-bottom: 10px;">' + notif.args.player_name + ' WINS THE SCRAMBLE!</div>';
+        resolvedHTML += '<div style="font-size: 16px;">✅ Scored ' + notif.args.points + ' points!</div>';
+        resolvedHTML += '</div>';
+    } else {
+        resolvedHTML = resolvedHTML.replace('style="', 'style="background: linear-gradient(135deg, #e74c3c, #c0392b); ');
+        resolvedHTML += '<h3>💥 SCRAMBLE FAILED!</h3>';
+        resolvedHTML += '<div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 5px; margin: 10px 0;">';
+        resolvedHTML += '<div style="font-size: 18px; font-weight: bold; margin-bottom: 10px;">' + notif.args.player_name + ' LOSES THE SCRAMBLE!</div>';
+        resolvedHTML += '<div style="font-size: 14px;">❌ No points scored</div>';
+        resolvedHTML += '<div style="font-size: 14px;">📉 Offense reduced by ' + notif.args.offense_penalty + ' (now ' + notif.args.new_offense + ')</div>';
+        resolvedHTML += '<div style="font-size: 14px;">🚫 Cannot score again this round</div>';
+        resolvedHTML += '</div>';
+    }
+    
+    resolvedHTML += '<div style="text-align: center; font-weight: bold;">Round complete!</div>';
+    resolvedHTML += '</div>';
+    
+    gameInfo.innerHTML = resolvedHTML;
+    
+    // Update player panel stats if offense was reduced
+    if (notif.args.outcome === 'failure') {
+        const statsElement = document.querySelector(`#player-wrestler-info-${notif.args.player_id} .wrestler-stats-compact`);
+        if (statsElement && this.gamedatas.players[notif.args.player_id]) {
+            const player = this.gamedatas.players[notif.args.player_id];
+            
+            // Update local data
+            this.gamedatas.players[notif.args.player_id].offense = notif.args.new_offense;
+            
+            // Update display
+            statsElement.textContent = `O:${notif.args.new_offense} D:${player.defense || 0} T:${player.top || 0} B:${player.bottom || 0}`;
+            
+            // Add visual highlight
+            statsElement.style.background = '#ff6b6b';
+            statsElement.style.transition = 'background 2s ease';
+            setTimeout(() => {
+                statsElement.style.background = '';
+            }, 2000);
+        }
+    }
+    
+    // Show message
+    this.showMessage(notif.args.description, notif.args.outcome === 'success' ? 'info' : 'error');
+},
+
+// 4. FIX: Update playerChoseDie notification to update token count in UI
+notif_playerChoseDie: function(notif) {
+    console.log('notif_playerChoseDie', notif);
+    
+    const playerId = notif.args.player_id;
+    
+    // UPDATE TOKEN COUNT IN PLAYER PANEL AFTER DIE CHOICE
+    if (this.gamedatas.players[playerId]) {
+        // Calculate new token count based on die choice
+        let tokenChange = 0;
+        if (notif.args.die_choice === 'red') {
+            tokenChange = 1; // Red die gains 1 token
+        } else if (notif.args.die_choice === 'blue') {
+            tokenChange = 2; // Blue die gains 2 tokens
+        }
+        
+        // Update local data
+        this.gamedatas.players[playerId].special_tokens = (this.gamedatas.players[playerId].special_tokens || 0) + tokenChange;
+        
+        // Update token display
+        const tokenElement = document.getElementById(`player-tokens-${playerId}`);
+        if (tokenElement) {
+            tokenElement.textContent = `Tokens: ${this.gamedatas.players[playerId].special_tokens}`;
+            
+            // Add visual highlight for token gain
+            tokenElement.style.background = '#2196f3';
+            tokenElement.style.color = 'white';
+            tokenElement.style.transition = 'all 0.5s ease';
+            setTimeout(() => {
+                tokenElement.style.background = '';
+                tokenElement.style.color = '';
+            }, 1500);
+        }
+    }
+    
+    // Show die choice and result in game info
+    const gameInfo = document.getElementById('game-info');
+    const dieColor = notif.args.die_choice === 'red' ? '#d32f2f' : '#1976d2';
+    const bgColor = notif.args.die_choice === 'red' ? '#ffebee' : '#e3f2fd';
+    
+    let diceHTML = '<div style="padding: 20px; background: ' + bgColor + '; border-radius: 8px; margin: 10px;">';
+    diceHTML += '<h3>Die Choice & Roll</h3>';
+    diceHTML += '<p><strong>' + notif.args.player_name + '</strong> chose <strong style="color: ' + dieColor + ';">' + notif.args.die_label + '</strong></p>';
+    diceHTML += '<div style="display: flex; align-items: center; gap: 15px; margin: 15px 0; justify-content: center;">';
+    diceHTML += '<span style="font-size: 36px; font-weight: bold; color: ' + dieColor + '; border: 3px solid ' + dieColor + '; border-radius: 8px; padding: 15px; background: white;">Face ' + notif.args.die_face + '</span>';
+    diceHTML += '<span style="font-size: 24px; font-weight: bold;">= Value ' + notif.args.die_value + '</span>';
+    diceHTML += '</div>';
+    
+    // Show costs/gains
+    if (notif.args.die_choice === 'red') {
+        diceHTML += '<p><em>Cost: 3 conditioning, Gained: 1 token</em></p>';
+    } else {
+        diceHTML += '<p><em>Cost: 2 conditioning, Gained: 2 tokens</em></p>';
+    }
+    
+    // Check if this is the second player
+    const currentHTML = gameInfo.innerHTML;
+    if (currentHTML.includes('Die Choice & Roll')) {
+        // This is the second player, show both results
+        diceHTML = currentHTML + diceHTML;
+        diceHTML += '<div style="margin-top: 15px; padding: 10px; background: rgba(255,255,255,0.8); border-radius: 5px; text-align: center;"><strong>Both players have rolled - results will be applied to offense stats</strong></div>';
+    } else {
+        diceHTML += '<p style="text-align: center; margin-top: 10px;"><em>Waiting for second player...</em></p>';
+    }
+    
+    diceHTML += '</div>';
+    gameInfo.innerHTML = diceHTML;
+},
+
+// 5. FIX: Update diceRerolled notification to update token count after reroll
+notif_diceRerolled: function(notif) {
+    console.log('notif_diceRerolled', notif);
+    
+    const playerId = notif.args.player_id;
+    
+    // UPDATE TOKEN COUNT AFTER REROLL (subtract 1 token)
+    if (this.gamedatas.players[playerId]) {
+        this.gamedatas.players[playerId].special_tokens = Math.max(0, (this.gamedatas.players[playerId].special_tokens || 0) - 1);
+        
+        // Update token display
+        const tokenElement = document.getElementById(`player-tokens-${playerId}`);
+        if (tokenElement) {
+            tokenElement.textContent = `Tokens: ${this.gamedatas.players[playerId].special_tokens}`;
+            
+            // Add visual highlight for token loss
+            tokenElement.style.background = '#ff5722';
+            tokenElement.style.color = 'white';
+            tokenElement.style.transition = 'all 0.5s ease';
+            setTimeout(() => {
+                tokenElement.style.background = '';
+                tokenElement.style.color = '';
+            }, 1500);
+        }
+    }
+    
+    this.showMessage(
+        notif.args.player_name + ' rerolled ' + notif.args.die_label + ': ' + notif.args.die_value, 
+        'info'
+    );
+    
+    // Update the game info display if it exists
+    const gameInfo = document.getElementById('game-info');
+    if (gameInfo && gameInfo.innerHTML.includes('Die Choice & Roll')) {
+        // Find and update the appropriate player's die display
+        const playerName = notif.args.player_name;
+        const regex = new RegExp('(<p><strong>' + playerName + '</strong>.*?Face )\\d+', 's');
+        gameInfo.innerHTML = gameInfo.innerHTML.replace(regex, '$1' + notif.args.die_face);
+        
+        const valueRegex = new RegExp('(' + playerName + '.*?= Value )\\d+', 's');
+        gameInfo.innerHTML = gameInfo.innerHTML.replace(valueRegex, '$1' + notif.args.die_value);
+    }
+}
+
+
+
+
+<?php
+// PHP FIXES FOR Game.php - Token and Score Updates
+
+// 1. FIX: argRerollOption method to provide accurate token count
+public function argRerollOption(): array
+{
+    $player_id = (int)$this->getActivePlayerId();
+    $can_reroll = $this->canPlayerReroll($player_id);
+    
+    $state_name = $this->gamestate->state()['name'];
+    
+    // Determine which player and get their die choice and value
+    $die_choice_value = 0;
+    $die_value = 0;
+    
+    if (str_contains($state_name, 'first')) {
+        $die_choice_value = $this->getGameStateValue("first_player_die_choice");
+        $die_value = $this->getGameStateValue("first_player_die_value");
+    } else {
+        $die_choice_value = $this->getGameStateValue("second_player_die_choice");
+        $die_value = $this->getGameStateValue("second_player_die_value");
+    }
+    
+    // ADD: Safety check for die choice value
+    if ($die_choice_value == 0) {
+        $this->trace("argRerollOption: WARNING - No die choice recorded, defaulting to red");
+        $die_choice_value = 1; // Default to red
+    }
+    
+    $die_type = $die_choice_value == 1 ? 'red' : 'blue';
+    
+    // GET: Current tokens safely - ENSURE FRESH DATA FROM DATABASE
+    $current_tokens = (int)$this->getUniqueValueFromDB("SELECT special_tokens FROM player WHERE player_id = $player_id");
+    if ($current_tokens === null) {
+        $current_tokens = 0;
+    }
+    
+    $this->trace("argRerollOption: Player $player_id, die_type=$die_type, value=$die_value, tokens=$current_tokens, can_reroll=" . ($can_reroll ? 'YES' : 'NO'));
+    
+    return [
+        "can_reroll" => $can_reroll,
+        "die_type" => $die_type,
+        "die_value" => $die_value,
+        "current_tokens" => $current_tokens
+    ];
+}
+
+// 2. FIX: actResolveScramble method to send proper score update notifications
+public function actResolveScramble(): void
+{
+    $player_id = (int)$this->getCurrentPlayerId();
+    $this->trace("actResolveScramble: Player $player_id resolving scramble card");
+    
+    // Validate that this is the offense player
+    $offense_player_id = (int)$this->getGameStateValue("position_offense");
+    if ($player_id != $offense_player_id) {
+        throw new \BgaUserException("Only the offense player can resolve the scramble card");
+    }
+    
+    // Get player name
+    $player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $player_id");
+    if (!$player_name) {
+        $player_name = "Player $player_id";
+    }
+    
+    // Randomly determine scramble outcome (50/50 chance)
+    $scramble_success = bga_rand(1, 2) == 1; // 1 = success, 2 = failure
+    
+    if ($scramble_success) {
+        // Offense wins the scramble - gets 2 points
+        $this->trace("actResolveScramble: Offense wins scramble - awarding 2 points");
+        
+        $this->DbQuery("UPDATE player SET player_score = player_score + 2 WHERE player_id = $player_id");
+        
+        // GET UPDATED SCORE FOR NOTIFICATION
+        $new_score = (int)$this->getUniqueValueFromDB("SELECT player_score FROM player WHERE player_id = $player_id");
+        
+        $this->notifyAllPlayers("scrambleResolved", clienttranslate('${player_name} wins the scramble and scores 2 points!'), [
+            "player_id" => $player_id,
+            "player_name" => $player_name,
+            "outcome" => "success",
+            "points" => 2,
+            "new_score" => $new_score,  // ADD NEW SCORE
+            "description" => "Offense wins the scramble and gets 2 points"
+        ]);
+        
+        // ALSO SEND SCORE UPDATE NOTIFICATION FOR ALL PLAYERS TO SEE
+        $this->notifyAllPlayers("playerScoreUpdate", clienttranslate('${player_name} score updated'), [
+            "player_id" => $player_id,
+            "player_name" => $player_name,
+            "new_score" => $new_score,
+            "points_gained" => 2
+        ]);
+        
+    } else {
+        // Offense loses the scramble - gets 0 points, loses 1 offense, cannot score more this round
+        $this->trace("actResolveScramble: Offense loses scramble - penalty applied");
+        
+        $this->DbQuery("UPDATE player SET offense = offense - 1 WHERE player_id = $player_id");
+        
+        // Get updated offense value
+        $new_offense = (int)$this->getUniqueValueFromDB("SELECT offense FROM player WHERE player_id = $player_id");
+        
+        $this->notifyAllPlayers("scrambleResolved", clienttranslate('${player_name} loses the scramble! Offense reduced and cannot score again this round.'), [
+            "player_id" => $player_id,
+            "player_name" => $player_name,
+            "outcome" => "failure",
+            "points" => 0,
+            "offense_penalty" => 1,
+            "new_offense" => $new_offense,
+            "description" => "Offense loses the scramble, gets 0 points, offense reduced by 1, cannot score more this round"
+        ]);
+    }
+    
+    $this->gamestate->nextState("resolved");
+}
+
+// 3. FIX: Add method to handle any other scoring situations
+private function awardPoints(int $player_id, int $points, string $reason = ""): void
+{
+    $this->trace("awardPoints: Awarding $points points to player $player_id for: $reason");
+    
+    if ($points > 0) {
+        $this->DbQuery("UPDATE player SET player_score = player_score + $points WHERE player_id = $player_id");
+        
+        $new_score = (int)$this->getUniqueValueFromDB("SELECT player_score FROM player WHERE player_id = $player_id");
+        $player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $player_id");
+        
+        // Notify all players about score update
+        $this->notifyAllPlayers("playerScoreUpdate", clienttranslate('${player_name} scores ${points} points'), [
+            "player_id" => $player_id,
+            "player_name" => $player_name,
+            "new_score" => $new_score,
+            "points_gained" => $points,
+            "reason" => $reason
+        ]);
+    }
+}
+
+// 4. FIX: Update conditioning notification to include token updates
+public function stAdjustConditioning(): void
+{
+    // FIXED: Use global variables and cast to int
+    $first_card_id = $this->getGameStateValue("first_player_card");
+    $second_card_id = $this->getGameStateValue("second_player_card");
+    $first_player_id = (int)$this->getGameStateValue("first_player_id");
+    $second_player_id = (int)$this->getGameStateValue("second_player_id");
+
+    $this->trace("stAdjustConditioning: first_card=$first_card_id, second_card=$second_card_id, first_player=$first_player_id, second_player=$second_player_id");
+
+    // Validate we have the data
+    if (!$first_card_id || !$second_card_id || !$first_player_id || !$second_player_id) {
+        $this->trace("stAdjustConditioning: ERROR - Missing round state data");
+        throw new \BgaSystemException("Missing round state data in stAdjustConditioning");
+    }
+
+    $first_card = self::$CARD_TYPES[$first_card_id];
+    $second_card = self::$CARD_TYPES[$second_card_id];
+
+    // Deduct conditioning costs
+    $first_cost = $first_card['conditioning_cost'];
+    $second_cost = $second_card['conditioning_cost'];
+
+    $this->trace("stAdjustConditioning: Deducting conditioning - Player $first_player_id: $first_cost, Player $second_player_id: $second_cost");
+
+    $this->DbQuery("UPDATE player SET conditioning = conditioning - $first_cost WHERE player_id = $first_player_id");
+    $this->DbQuery("UPDATE player SET conditioning = conditioning - $second_cost WHERE player_id = $second_player_id");
+
+    // Get updated conditioning values
+    $first_conditioning = (int)$this->getUniqueValueFromDB("SELECT conditioning FROM player WHERE player_id = $first_player_id");
+    $second_conditioning = (int)$this->getUniqueValueFromDB("SELECT conditioning FROM player WHERE player_id = $second_player_id");
+
+    $this->notifyAllPlayers("conditioningAdjusted", clienttranslate('Conditioning adjusted'), [
+        "updates" => [
+            $first_player_id => ["conditioning" => $first_conditioning, "cost" => $first_cost],
+            $second_player_id => ["conditioning" => $second_conditioning, "cost" => $second_cost]
+        ]
+    ]);
+
+    $this->gamestate->nextState("rollDice");
+}
+
+// 5. FIX: Update getAllDatas to include current scores
+protected function getAllDatas(): array
+{
+    $result = [];
+    $current_player_id = (int) $this->getCurrentPlayerId();
+
+    try {
+        // Get player information including wrestler data AND CURRENT SCORES
+        $result["players"] = $this->getCollectionFromDb(
+            "SELECT 
+                player_id id, 
+                player_score score, 
+                player_name name,
+                wrestler_id,
+                conditioning,
+                offense,
+                defense,
+                top,
+                bottom,
+                special_tokens,
+                stall_count 
+            FROM player"
+        );
+
+        // Add wrestler details - with safety checks
+        foreach ($result["players"] as &$player) {
+            if ($player['wrestler_id'] && isset(self::$WRESTLERS[$player['wrestler_id']])) {
+                $player['wrestler'] = self::$WRESTLERS[$player['wrestler_id']];
+            } else {
+                $player['wrestler'] = null;
+            }
+        }
+
+        // Get available wrestlers for selection
+        $result["wrestlers"] = self::$WRESTLERS;
+        
+        // Get game state info - with safety checks INCLUDING MOMENTUM
+        $result["game_state"] = [
+            "current_period" => $this->getGameStateValue("current_period") ?? 1,
+            "current_round" => $this->getGameStateValue("current_round") ?? 1,
+            "momentum_player" => $this->getGameStateValue("momentum_player") ?? 0,
+            "position_offense" => $this->getGameStateValue("position_offense") ?? 0,
+            "position_defense" => $this->getGameStateValue("position_defense") ?? 0
+        ];
+
+        $result["cardTypes"] = self::$CARD_TYPES;
+        
+    } catch (Exception $e) {
+        $this->trace("getAllDatas: ERROR - " . $e->getMessage());
+        // Return minimal safe data
+        $result = [
+            "players" => [],
+            "wrestlers" => self::$WRESTLERS,
+            "game_state" => [
+                "current_period" => 1, 
+                "current_round" => 1,
+                "momentum_player" => 0,
+                "position_offense" => 0,
+                "position_defense" => 0
+            ],
+            "cardTypes" => self::$CARD_TYPES
+        ];
+    }
+
+    return $result;
+}
+?>
+
+
