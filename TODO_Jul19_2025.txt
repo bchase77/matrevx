@@ -1,0 +1,63 @@
+https://studio.boardgamearena.com/1/matrevx?table=748721
+
+https://studio.boardgamearena.com/1/matrevx?table=746591&testuser=2333743
+
+
+https://github.com/bchase77/matrevx/issues
+
+Prompt for PS script:
+
+"Create a PowerShell script to modify these files. Use simple regex patterns and avoid complex string interpolation. Make small incremental changes rather than replacing large code blocks."
+
+More Details:
+---
+1. Avoid Complex String Interpolation. Don't Do This: '$replacement = "some text with $variable and ${complex} stuff"'
+2. Escape Variables in Regex Carefully. Don't Do This: '$content = $content -replace "pattern with $variable", "replacement with $1"'
+3. Use Simple Regex Patterns. Do this: '$content -replace 'name" => "firstPlayerTurn"', 'name" => "cardSelection"'
+4. Test Here-Strings Carefully.
+5. Use Incremental Replacements.
+
+"Use simple regex patterns only"
+"Avoid complex variable interpolation"
+"Make incremental changes rather than large block replacements"
+"Test each here-string syntax carefully"
+"Use string concatenation instead of interpolation when mixing variables and literal text"
+
+---
+
+
+
+
+
+Bad Characters:
+
+
+Searched:
+«
+‰
+“
+…
+œ
+¥
+Ÿ
+„
+’
+”
+ð
+²
+Ž
+š
+â
+Š
+›
+¯
+¡
+¸
+ï
+¸
+ 
+
+­
+
+
+
