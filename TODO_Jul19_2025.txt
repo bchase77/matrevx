@@ -7,15 +7,19 @@ https://github.com/bchase77/matrevx/issues
 
 Prompt for PS script:
 
-"Create a PowerShell script to modify these files. Use simple regex patterns and avoid complex string interpolation. Make small incremental changes rather than replacing large code blocks."
+Help me improve this wrestling game on BGA. I will tell you specifically what I want to work on. The files Game.php and material.inc.php are in subdirectory modules\php. The others are in the top.
 
-More Details:
----
+When you make changes, ensure you don't introduce syntax errors. Be careful and precise.
+
+For changes, create a safe PowerShell script to modify files. Use simple regex patterns and avoid complex string interpolation. Make small incremental changes rather than replacing large code blocks.
+
+For example:
 1. Avoid Complex String Interpolation. Don't Do This: '$replacement = "some text with $variable and ${complex} stuff"'
 2. Escape Variables in Regex Carefully. Don't Do This: '$content = $content -replace "pattern with $variable", "replacement with $1"'
 3. Use Simple Regex Patterns. Do this: '$content -replace 'name" => "firstPlayerTurn"', 'name" => "cardSelection"'
 4. Test Here-Strings Carefully.
 5. Use Incremental Replacements.
+6. Use only UTF-8 without BOM
 
 "Use simple regex patterns only"
 "Avoid complex variable interpolation"
