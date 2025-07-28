@@ -1,9 +1,8 @@
-<?php
-declare(strict_types=1);
+<?php declare(strict_types=1);
 /**
  *------
  * BGA framework: Gregory Isabelli & Emmanuel Colin & BoardGameArena
- * matrevx implementation : © Mike McKeever, Jack McKeever, Bryan Chase <bryanchase@yahoo.com>
+ * matrevx implementation : Copyright Mike McKeever, Jack McKeever, Bryan Chase <bryanchase@yahoo.com>
  *
  * This code has been produced on the BGA studio platform for use on http://boardgamearena.com.
  * See http://en.boardgamearena.com/#!doc/Studio for more information.
@@ -53,6 +52,9 @@ class Game extends \Table
         // NEW: Simple momentum tracking
         "momentum_player" => 24,           // Which player has momentum (0 = no momentum)
         "current_scramble_card" => 25,  // ADD THIS LINE
+        // NEW: Separate die results for each player
+        "first_player_die_face" => 26,
+        "second_player_die_face" => 27,
         // Existing variants
         "my_first_game_variant" => 100,
         "my_second_game_variant" => 101,
@@ -660,7 +662,7 @@ private function executeDiceChallenge(int $player_id): array
 	// Add this method to your Game.php file (around line 300, after actChooseDie)
 
 	/**
-	 * NEW: Automatically roll dice based on card actions
+	 * FIXED: Automatically roll dice based on card actions
 	 */
 	public function stRollDiceBasedOnCards(): void
 	{
@@ -690,24 +692,24 @@ private function executeDiceChallenge(int $player_id): array
 		if ($first_player_results) {
 			$this->setGameStateValue("first_player_die_choice", $first_player_results['die_choice']);
 			$this->setGameStateValue("first_player_die_value", $first_player_results['die_value']);
+			$this->setGameStateValue("first_player_die_face", $first_player_results['die_face']);
 		}
 		
 		if ($second_player_results) {
 			$this->setGameStateValue("second_player_die_choice", $second_player_results['die_choice']);
 			$this->setGameStateValue("second_player_die_value", $second_player_results['die_value']);
+			$this->setGameStateValue("second_player_die_face", $second_player_results['die_face']);
 		}
 		
 		// Notify about dice results
 		$this->notifyDiceResults($first_player_id, $first_player_results, $second_player_id, $second_player_results);
 		
-		// Check if any players need reroll options
+		// FIXED: Check if both players need reroll options
 		$this->checkForRerollOptions($first_player_id, $first_player_results, $second_player_id, $second_player_results);
 	}
 
-	// Add these 3 helper methods to your Game.php file (after the stRollDiceBasedOnCards method)
-
 	/**
-	 * NEW: Roll die for a specific card action
+	 * FIXED: Roll die for a specific card action with separate die face storage
 	 */
 	private function rollDieForCard(int $player_id, array $card): ?array
 	{
@@ -789,19 +791,27 @@ private function executeDiceChallenge(int $player_id): array
 	}
 
 	/**
-	 * NEW: Check if players need reroll options
+	 * FIXED: Check if players need reroll options - handle both players properly
 	 */
 	private function checkForRerollOptions(int $first_player_id, ?array $first_results, int $second_player_id, ?array $second_results): void
 	{
-		// For now, go to first player reroll if they rolled a die
-		if ($first_results) {
+		// Both players rolled - first player gets reroll option first
+		if ($first_results && $second_results) {
 			$this->gamestate->changeActivePlayer($first_player_id);
 			$this->gamestate->nextState("firstPlayerReroll");
-		} else if ($second_results) {
+		}
+		// Only first player rolled
+		else if ($first_results) {
+			$this->gamestate->changeActivePlayer($first_player_id);
+			$this->gamestate->nextState("firstPlayerReroll");
+		}
+		// Only second player rolled
+		else if ($second_results) {
 			$this->gamestate->changeActivePlayer($second_player_id);
 			$this->gamestate->nextState("secondPlayerReroll");
-		} else {
-			// Neither player rolled dice, skip reroll phase
+		}
+		// Neither player rolled dice, skip reroll phase
+		else {
 			$this->gamestate->nextState("noRerolls");
 		}
 	}
@@ -1396,142 +1406,6 @@ private function executeDiceChallenge(int $player_id): array
 		
 		$this->gamestate->nextState($next_state);
 	}
-
-
-
-	// 4. NEW: Method to draw a scramble card
-	private function drawScrambleCard(): array
-	{
-		// Define scramble cards (you can move this to material.inc.php later)
-		$scramble_cards = [
-			1 => [
-				"name" => "Takedown",
-				"description" => "Score 2 points and switch to top position",
-				"effect" => "score_points",
-				"points" => 2,
-				"position_change" => "top"
-			],
-			2 => [
-				"name" => "Escape",
-				"description" => "Score 1 point and switch to neutral",
-				"effect" => "score_points", 
-				"points" => 1,
-				"position_change" => "neutral"
-			],
-			3 => [
-				"name" => "Reversal",
-				"description" => "Score 2 points and reverse positions",
-				"effect" => "score_points",
-				"points" => 2,
-				"position_change" => "reverse"
-			],
-			4 => [
-				"name" => "Near Fall",
-				"description" => "Score 2 points and maintain top position",
-				"effect" => "score_points",
-				"points" => 2,
-				"position_change" => "maintain"
-			],
-			5 => [
-				"name" => "Stalemate",
-				"description" => "No points scored, return to neutral",
-				"effect" => "no_score",
-				"points" => 0,
-				"position_change" => "neutral"
-			],
-			6 => [
-				"name" => "Penalty",
-				"description" => "Opponent scores 1 point due to penalty",
-				"effect" => "opponent_score",
-				"points" => 1,
-				"position_change" => "maintain"
-			]
-		];
-		
-		// Randomly select a scramble card
-		$card_id = bga_rand(1, count($scramble_cards));
-		return $scramble_cards[$card_id];
-	}
-
-	// 5. NEW: Method to apply scramble card effects
-	private function applyScrambleCardEffects(array $scramble_card, int $player_id): void
-	{
-		$this->trace("applyScrambleCardEffects: Applying {$scramble_card['name']} for player $player_id");
-		
-		$effects_applied = [];
-		
-		switch ($scramble_card['effect']) {
-			case 'score_points':
-				// Award points to the player
-				$this->DbQuery("UPDATE player SET player_score = player_score + {$scramble_card['points']} WHERE player_id = $player_id");
-				$effects_applied[] = "Scored {$scramble_card['points']} points";
-				break;
-				
-			case 'opponent_score':
-				// Award points to opponent
-				$offense_player_id = (int)$this->getGameStateValue("position_offense");
-				$defense_player_id = (int)$this->getGameStateValue("position_defense");
-				$opponent_id = $player_id == $offense_player_id ? $defense_player_id : $offense_player_id;
-				
-				$this->DbQuery("UPDATE player SET player_score = player_score + {$scramble_card['points']} WHERE player_id = $opponent_id");
-				$opponent_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $opponent_id");
-				$effects_applied[] = "{$opponent_name} scored {$scramble_card['points']} points due to penalty";
-				break;
-				
-			case 'no_score':
-				$effects_applied[] = "No points scored";
-				break;
-		}
-		
-		// Handle position changes
-		if (isset($scramble_card['position_change'])) {
-			$position_effect = $this->applyPositionChange($scramble_card['position_change'], $player_id);
-			if ($position_effect) {
-				$effects_applied[] = $position_effect;
-			}
-		}
-		
-		// Notify about scramble card effects
-		$this->notifyAllPlayers("scrambleCardResolved", clienttranslate('Scramble card resolved: ${effects}'), [
-			"effects" => $effects_applied,
-			"card_name" => $scramble_card['name']
-		]);
-	}
-
-	// 6. NEW: Method to handle position changes from scramble cards
-	private function applyPositionChange(string $position_change, int $player_id): ?string
-	{
-		$offense_player_id = (int)$this->getGameStateValue("position_offense");
-		$defense_player_id = (int)$this->getGameStateValue("position_defense");
-		
-		switch ($position_change) {
-			case 'top':
-				// Player goes to top, opponent to bottom
-				$this->setGameStateValue("position_top", $player_id);
-				$this->setGameStateValue("position_bottom", $player_id == $offense_player_id ? $defense_player_id : $offense_player_id);
-				return "Position changed to top/bottom";
-				
-			case 'neutral':
-				// Both players return to neutral (offense/defense)
-				return "Returned to neutral position";
-				
-			case 'reverse':
-				// Reverse current positions
-				$this->setGameStateValue("position_offense", $defense_player_id);
-				$this->setGameStateValue("position_defense", $offense_player_id);
-				return "Positions reversed";
-				
-			case 'maintain':
-				// Keep current positions
-				return "Positions maintained";
-				
-			default:
-				return null;
-		}
-	}
-
-
-
 
 	// 2. FIX: stHandleTokens method - cast player IDs to int
 	public function stHandleTokens(): void
@@ -2198,7 +2072,7 @@ private function executeDiceChallenge(int $player_id): array
 			];
 
             $result["cardTypes"] = self::$CARD_TYPES;
-			$result["scrambleCards"] = self::$SCRAMBLE_CARDS; // ADD THIS LINE
+			$result["scrambleCards"] = self::$SCRAMBLE_CARDS;
 
             
 		} catch (Exception $e) {
@@ -2215,8 +2089,7 @@ private function executeDiceChallenge(int $player_id): array
 					"position_defense" => 0
 				],
 				"cardTypes" => self::$CARD_TYPES,
-				"scrambleCards" => self::$SCRAMBLE_CARDS // ADD THIS LINE TOO
-
+				"scrambleCards" => self::$SCRAMBLE_CARDS
 			];
 		}
 
@@ -2359,7 +2232,7 @@ private function executeDiceChallenge(int $player_id): array
         return "matrevx";
     }
     /** 
-     * NEW: Check if second player needs reroll option 
+     * FIXED: Check if second player needs reroll option 
      */ 
     public function stCheckSecondPlayerReroll(): void 
     { 
@@ -2396,8 +2269,6 @@ private function executeDiceChallenge(int $player_id): array
         $player_id = (int)$this->getActivePlayerId(); 
         $this->trace("stSecondPlayerReroll: Player $player_id reroll complete, moving to effects"); 
         $this->gamestate->nextState("rerolled"); 
-    } 
+    }
 }
-?> 
-
-
+?>

@@ -99,7 +99,7 @@ $machinestates = array(
         "possibleactions" => array(
             "actPlayCard"
         ),
-        "transitions" => array("cardPlayed" => 12)
+        "transitions" => array("cardPlayed" => 30)
     ),
 
     // Reveal both cards and start resolution
@@ -117,45 +117,7 @@ $machinestates = array(
         "description" => '',
         "type" => "game",
         "action" => "stAdjustConditioning",
-        "transitions" => array("rollDice" => 32)
-    ),
-
-    // Set first player for dice rolling
-    22 => array(
-        "name" => "setFirstPlayerForDice",
-        "description" => '',
-        "type" => "game",
-        "action" => "stSetFirstPlayerForDice",
-        "transitions" => array("firstPlayerDice" => 14)
-    ),
-
-    // Switch to second player for dice
-    21 => array(
-        "name" => "switchToSecondPlayerForDice",
-        "description" => '',
-        "type" => "game",
-        "action" => "stSwitchToSecondPlayerForDice",
-        "transitions" => array("secondPlayerDice" => 23)
-    ),
-
-    // First player chooses which die to roll
-    14 => array(
-        "name" => "firstPlayerChooseDie",
-        "description" => clienttranslate('${actplayer} must choose which die to roll'),
-        "descriptionmyturn" => clienttranslate('${you} must choose: Red die (STRENGTH) or Blue die (SPEED)'),
-        "type" => "activeplayer",
-        "possibleactions" => array("actChooseDie"),
-        "transitions" => array("diceChosen" => 24)
-    ),
-
-    // Second player chooses which die to roll
-    23 => array(
-        "name" => "secondPlayerChooseDie", 
-        "description" => clienttranslate('${actplayer} must choose which die to roll'),
-        "descriptionmyturn" => clienttranslate('${you} must choose: Red die (STRENGTH) or Blue die (SPEED)'),
-        "type" => "activeplayer",
-        "possibleactions" => array("actChooseDie"),
-        "transitions" => array("diceChosen" => 26)
+        "transitions" => array("rollDice" => 30)
     ),
 
     // Roll dice based on cards automatically
@@ -169,38 +131,6 @@ $machinestates = array(
             "secondPlayerReroll" => 26,
             "noRerolls" => 15
         )
-    ),
-
-    // Check if second player needs reroll option 
-    31 => array( 
-        "name" => "checkSecondPlayerReroll", 
-        "description" => "", 
-        "type" => "game", 
-        "action" => "stCheckSecondPlayerReroll", 
-        "transitions" => array( 
-            "secondPlayerReroll" => 26, 
-            "noSecondReroll" => 15 
-        ) 
-    ),
-
-    // First player manual dice roll
-    32 => array(
-        "name" => "firstPlayerRollDice",
-        "description" => clienttranslate('${actplayer} must roll their die'),
-        "descriptionmyturn" => clienttranslate('${you} must roll your die'),
-        "type" => "activeplayer",
-        "possibleactions" => array("actRollDice"),
-        "transitions" => array("diceRolled" => 33)
-    ),
-
-    // Second player manual dice roll
-    33 => array(
-        "name" => "secondPlayerRollDice",
-        "description" => clienttranslate('${actplayer} must roll their die'),
-        "descriptionmyturn" => clienttranslate('${you} must roll your die'),
-        "type" => "activeplayer",
-        "possibleactions" => array("actRollDice"),
-        "transitions" => array("diceRolled" => 30)
     ),
 
     // First player reroll option
@@ -220,7 +150,19 @@ $machinestates = array(
         "description" => '',
         "type" => "game",
         "action" => "stFirstPlayerReroll",
-        "transitions" => array("rerolled" => 14)
+        "transitions" => array("rerolled" => 30)
+    ),
+
+    // FIXED: Check if second player needs reroll option 
+    31 => array( 
+        "name" => "checkSecondPlayerReroll", 
+        "description" => "", 
+        "type" => "game", 
+        "action" => "stCheckSecondPlayerReroll", 
+        "transitions" => array( 
+            "secondPlayerReroll" => 26, 
+            "noSecondReroll" => 15 
+        ) 
     ),
 
     // Second player reroll option
@@ -240,7 +182,7 @@ $machinestates = array(
         "description" => '',
         "type" => "game",
         "action" => "stSecondPlayerReroll",
-        "transitions" => array("rerolled" => 23)
+        "transitions" => array("rerolled" => 30)
     ),
 
     // Apply card effects and trademark moves
@@ -278,15 +220,6 @@ $machinestates = array(
         "type" => "activeplayer",
         "possibleactions" => array("actResolveScramble"),
         "transitions" => array("resolved" => 18)
-    ),
-
-    // Draw scramble card if applicable
-    17 => array(
-        "name" => "drawScramble",
-        "description" => '',
-        "type" => "game",
-        "action" => "stDrawScramble",
-        "transitions" => array("nextRound" => 18)
     ),
 
     // Check for next round/period
