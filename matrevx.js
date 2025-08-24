@@ -331,7 +331,10 @@ setup: function( gamedatas )
 						const actionBar3 = document.getElementById('generalactions');
 						if (actionBar3) {
 							actionBar3.appendChild(scrambleInfoDiv);
-						}					case 'firstPlayerRollDice':
+						}
+						break;
+						
+					case 'firstPlayerRollDice':
 					case 'secondPlayerRollDice':
 						this.addActionButton('btn-roll-dice', _('Roll Die'), () => this.onRollDice(), null, null, 'blue');
 						
@@ -350,8 +353,6 @@ setup: function( gamedatas )
 						if (actionBar4) {
 							actionBar4.appendChild(rollInfoDiv);
 						}
-						break;
-
 						break;
 				}
 			}
@@ -619,9 +620,9 @@ setup: function( gamedatas )
             // Show game area
             document.getElementById('wrestling-mat').style.display = 'block';
             
-            // If it's our turn, show our hand
+            // If it's our turn, make cards interactive
             if (this.isCurrentPlayerActive()) {
-                // Get the args from the state - ADD SAFETY CHECKS
+                // Get the args from the state
                 const stateArgs = args && args.args;
                 const playableCardsIds = (stateArgs && stateArgs.playableCardsIds) ? stateArgs.playableCardsIds : [];
                 const currentPosition = (stateArgs && stateArgs.current_position) ? stateArgs.current_position : 'offense';
@@ -630,13 +631,13 @@ setup: function( gamedatas )
                 console.log('Current position:', currentPosition);
                 console.log('Playable cards:', playableCardsIds);
                 
-                // Show position info - with safety check
+                // Show position info
                 if (currentPosition) {
                     this.showPositionInfo(currentPosition);
                 }
                 
-                // Display our available cards
-                this.displayPlayerHand(playableCardsIds, currentPosition);
+                // Make cards interactive since it's our turn
+                this.displayPlayerCards(playableCardsIds, currentPosition, true);
             }
         },
 
@@ -653,8 +654,51 @@ setup: function( gamedatas )
             }
         },       
         
-       displayPlayerHand: function(playableCardsIds, currentPosition) {
-            console.log('displayPlayerHand called with:', playableCardsIds, 'position:', currentPosition);
+        
+        getPositionColor: function(position) {
+            const colors = {
+                'offense': '#e74c3c',   // Red
+                'defense': '#3498db',   // Blue  
+                'top': '#f39c12',       // Orange
+                'bottom': '#27ae60',    // Green
+                'any': '#9b59b6'        // Purple
+            };
+            return colors[position] || '#95a5a6'; // Gray fallback
+        },
+        
+        showBothPlayersCards: function(positionData) {
+            console.log('showBothPlayersCards called with:', positionData);
+            
+            // Show wrestling mat area
+            document.getElementById('wrestling-mat').style.display = 'block';
+            
+            // Show both players their cards regardless of whose turn it is
+            const currentPlayerId = this.player_id;
+            const offensePlayerId = positionData.offense_player_id;
+            const defensePlayerId = positionData.defense_player_id;
+            
+            // Determine current player's position and cards
+            let currentPlayerPosition, currentPlayerCards;
+            if (currentPlayerId == offensePlayerId) {
+                currentPlayerPosition = 'offense';
+                currentPlayerCards = positionData.offense_cards;
+            } else if (currentPlayerId == defensePlayerId) {
+                currentPlayerPosition = 'defense';
+                currentPlayerCards = positionData.defense_cards;
+            } else {
+                console.warn('Current player is neither offense nor defense');
+                return;
+            }
+            
+            console.log('Current player position:', currentPlayerPosition);
+            console.log('Current player cards:', currentPlayerCards);
+            
+            // Show the player's cards (non-interactive for now)
+            this.displayPlayerCards(currentPlayerCards, currentPlayerPosition, false);
+        },
+        
+        displayPlayerCards: function(playableCardsIds, currentPosition, interactive = true) {
+            console.log('displayPlayerCards called with:', playableCardsIds, 'position:', currentPosition, 'interactive:', interactive);
             
             const handContainer = document.getElementById('player-hand');
             const handArea = document.getElementById('player-hand-area');
@@ -670,15 +714,15 @@ setup: function( gamedatas )
             // Show hand area with position info
             handArea.style.display = 'block';
             
-            // Update hand title to show position - ADD SAFETY CHECK
+            // Update hand title to show position
             const handTitle = handArea.querySelector('h3');
             if (handTitle && currentPosition) {
-                handTitle.textContent = `Your ${currentPosition.toUpperCase()} Cards`;
+                handTitle.textContent = `Your ${currentPosition.toUpperCase()} Cards ${interactive ? '' : '(Preview)'}`;
             } else if (handTitle) {
-                handTitle.textContent = 'Your Cards';
+                handTitle.textContent = `Your Cards ${interactive ? '' : '(Preview)'}`;
             }
             
-            // Use card types from game data - add safety check
+            // Use card types from game data
             const cardTypes = this.gamedatas && this.gamedatas.cardTypes;
             if (!cardTypes) {
                 console.error('No cardTypes found in gamedatas!');
@@ -686,9 +730,7 @@ setup: function( gamedatas )
                 return;
             }
             
-            console.log('Available cardTypes:', cardTypes);
-            
-            // SAFETY CHECK: Ensure playableCardsIds is an array
+            // Ensure playableCardsIds is an array
             if (!Array.isArray(playableCardsIds)) {
                 console.warn('playableCardsIds is not an array:', playableCardsIds);
                 playableCardsIds = [];
@@ -700,8 +742,6 @@ setup: function( gamedatas )
                 console.log('Processing card ID:', cardId);
                 
                 const card = cardTypes[cardId];
-                console.log('Card data:', card);
-                
                 if (!card) {
                     console.warn('No card found for ID:', cardId);
                     continue;
@@ -712,10 +752,10 @@ setup: function( gamedatas )
                 cardElement.className = 'card';
                 cardElement.id = 'card-' + cardId;
 
-                // Build the inner HTML safely with better styling
+                // Build the inner HTML
                 let cardHTML = '<div class="card-header" style="font-weight: bold; font-size: 14px; margin-bottom: 8px;">' + (card.card_name || 'Unknown Card') + '</div>';
                 
-                // Position badge - ADD SAFETY CHECK
+                // Position badge
                 if (card.position) {
                     const positionColor = this.getPositionColor(card.position);
                     cardHTML += '<div class="card-position" style="background: ' + positionColor + '; color: white; padding: 2px 6px; border-radius: 3px; font-size: 11px; display: inline-block; margin-bottom: 8px;">' + card.position.toUpperCase() + '</div>';
@@ -725,7 +765,7 @@ setup: function( gamedatas )
                 cardHTML += '<div><strong>Conditioning:</strong> ' + (card.conditioning_cost || 0) + '</div>';
                 cardHTML += '<div><strong>Tokens:</strong> ' + (card.special_tokens || 0) + '</div>';
                 if (card.scoring) {
-                    cardHTML += '<div class="scoring-indicator" style="color: #ff6b35; font-weight: bold;"> Scoring</div>';
+                    cardHTML += '<div class="scoring-indicator" style="color: #ff6b35; font-weight: bold;">★ Scoring</div>';
                 }
                 cardHTML += '</div>';
                 
@@ -736,46 +776,50 @@ setup: function( gamedatas )
                 cardElement.style.borderRadius = '8px';
                 cardElement.style.padding = '12px';
                 cardElement.style.background = 'white';
-                cardElement.style.cursor = 'pointer';
                 cardElement.style.minWidth = '160px';
                 cardElement.style.maxWidth = '180px';
                 cardElement.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
                 cardElement.style.transition = 'all 0.2s ease';
                 
-                // Add hover effects
-                cardElement.addEventListener('mouseenter', function() {
-                    this.style.transform = 'translateY(-5px)';
-                    this.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
-                    this.style.borderColor = '#0066cc';
-                });
-                
-                cardElement.addEventListener('mouseleave', function() {
-                    this.style.transform = 'translateY(0)';
-                    this.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
-                    this.style.borderColor = '#333';
-                });
-                
-                // Add click handler
-                const self = this;
-                cardElement.addEventListener('click', function() {
-                    self.onCardClick(cardId);
-                });
+                if (interactive) {
+                    // Make cards interactive if it's the player's turn
+                    cardElement.style.cursor = 'pointer';
+                    
+                    // Add hover effects
+                    cardElement.addEventListener('mouseenter', function() {
+                        this.style.transform = 'translateY(-5px)';
+                        this.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
+                        this.style.borderColor = '#0066cc';
+                    });
+                    
+                    cardElement.addEventListener('mouseleave', function() {
+                        this.style.transform = 'translateY(0)';
+                        this.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+                        this.style.borderColor = '#333';
+                    });
+                    
+                    // Add click handler
+                    const self = this;
+                    cardElement.addEventListener('click', function() {
+                        self.onCardClick(cardId);
+                    });
+                } else {
+                    // Make cards look inactive when not interactive
+                    cardElement.style.opacity = '0.7';
+                    cardElement.style.cursor = 'default';
+                    
+                    // Add preview label
+                    const previewLabel = document.createElement('div');
+                    previewLabel.textContent = 'PREVIEW';
+                    previewLabel.style.cssText = 'position: absolute; top: 5px; right: 5px; background: #ff6b35; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: bold;';
+                    cardElement.style.position = 'relative';
+                    cardElement.appendChild(previewLabel);
+                }
                 
                 handContainer.appendChild(cardElement);
             }
             
             console.log('Added', handContainer.children.length, 'cards to hand');
-        },
-        
-        getPositionColor: function(position) {
-            const colors = {
-                'offense': '#e74c3c',   // Red
-                'defense': '#3498db',   // Blue  
-                'top': '#f39c12',       // Orange
-                'bottom': '#27ae60',    // Green
-                'any': '#9b59b6'        // Purple
-            };
-            return colors[position] || '#95a5a6'; // Gray fallback
         },
         
         leavePlayerTurn: function() {
@@ -1466,6 +1510,9 @@ setup: function( gamedatas )
                     <p>Defense: ${this.gamedatas.players[notif.args.defense_player_id].name}</p>
                 </div>
             `;
+            
+            // Show both players their available cards immediately
+            this.showBothPlayersCards(notif.args);
         },
         
         notif_cardPlayed: function(notif) {

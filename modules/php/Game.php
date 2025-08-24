@@ -566,6 +566,14 @@ private function executeDiceChallenge(int $player_id): array
         $this->setGameStateValue("position_offense", $offense_player_id);
         $this->setGameStateValue("position_defense", $defense_player_id);
 
+        // Get available cards for both players
+        $offense_cards = $this->getAvailableCardsForPosition("offense");
+        $defense_cards = $this->getAvailableCardsForPosition("defense");
+        
+        // Get player names for display
+        $offense_player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $offense_player_id");
+        $defense_player_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $defense_player_id");
+        
         // Notify all players about position selection
         $this->notifyAllPlayers("positionSelected", clienttranslate('${player_name} chooses ${position}. Match begins!'), [
             "player_id" => $player_id,
@@ -573,6 +581,10 @@ private function executeDiceChallenge(int $player_id): array
             "position" => ucfirst($position),
             "offense_player_id" => $offense_player_id,
             "defense_player_id" => $defense_player_id,
+            "offense_player_name" => $offense_player_name,
+            "defense_player_name" => $defense_player_name,
+            "offense_cards" => $offense_cards,
+            "defense_cards" => $defense_cards,
             "period" => 1,
             "round" => 1
         ]);
