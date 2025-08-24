@@ -808,12 +808,26 @@ setup: function( gamedatas )
                     cardElement.style.opacity = '0.7';
                     cardElement.style.cursor = 'default';
                     
-                    // Add preview label
+                    // Add preview label with subtle animation
                     const previewLabel = document.createElement('div');
                     previewLabel.textContent = 'PREVIEW';
-                    previewLabel.style.cssText = 'position: absolute; top: 5px; right: 5px; background: #ff6b35; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: bold;';
+                    previewLabel.style.cssText = 'position: absolute; top: 5px; right: 5px; background: #2196f3; color: white; padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; box-shadow: 0 2px 4px rgba(33,150,243,0.3); animation: pulse 2s infinite;';
                     cardElement.style.position = 'relative';
                     cardElement.appendChild(previewLabel);
+                    
+                    // Add CSS animation for preview label
+                    if (!document.getElementById('preview-animation-styles')) {
+                        const style = document.createElement('style');
+                        style.id = 'preview-animation-styles';
+                        style.textContent = `
+                            @keyframes pulse {
+                                0% { opacity: 1; }
+                                50% { opacity: 0.7; }
+                                100% { opacity: 1; }
+                            }
+                        `;
+                        document.head.appendChild(style);
+                    }
                 }
                 
                 handContainer.appendChild(cardElement);
