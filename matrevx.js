@@ -625,19 +625,25 @@ setup: function( gamedatas )
                 // Get the args from the state
                 const stateArgs = args && args.args;
                 const playableCardsIds = (stateArgs && stateArgs.playableCardsIds) ? stateArgs.playableCardsIds : [];
+                const affordableCardsIds = (stateArgs && stateArgs.affordableCardsIds) ? stateArgs.affordableCardsIds : [];
+                const unaffordableCardsIds = (stateArgs && stateArgs.unaffordableCardsIds) ? stateArgs.unaffordableCardsIds : [];
+                const cardAffordability = (stateArgs && stateArgs.cardAffordability) ? stateArgs.cardAffordability : {};
                 const currentPosition = (stateArgs && stateArgs.current_position) ? stateArgs.current_position : 'offense';
                 
                 console.log('Player turn args:', stateArgs);
                 console.log('Current position:', currentPosition);
-                console.log('Playable cards:', playableCardsIds);
+                console.log('All cards:', playableCardsIds);
+                console.log('Affordable cards:', affordableCardsIds);
+                console.log('Unaffordable cards:', unaffordableCardsIds);
+                console.log('Card affordability:', cardAffordability);
                 
                 // Show position info
                 if (currentPosition) {
                     this.showPositionInfo(currentPosition);
                 }
                 
-                // Make cards interactive since it's our turn
-                this.displayPlayerCards(playableCardsIds, currentPosition, true);
+                // Make cards interactive since it's our turn, pass affordability info
+                this.displayPlayerCards(playableCardsIds, currentPosition, true, cardAffordability);
             }
         },
 
@@ -694,11 +700,11 @@ setup: function( gamedatas )
             console.log('Current player cards:', currentPlayerCards);
             
             // Show the player's cards (non-interactive for now)
-            this.displayPlayerCards(currentPlayerCards, currentPlayerPosition, false);
+            this.displayPlayerCards(currentPlayerCards, currentPlayerPosition, false, {});
         },
         
-        displayPlayerCards: function(playableCardsIds, currentPosition, interactive = true) {
-            console.log('displayPlayerCards called with:', playableCardsIds, 'position:', currentPosition, 'interactive:', interactive);
+        displayPlayerCards: function(playableCardsIds, currentPosition, interactive = true, cardAffordability = {}) {
+            console.log('displayPlayerCards called with:', playableCardsIds, 'position:', currentPosition, 'interactive:', interactive, 'affordability:', cardAffordability);
             
             const handContainer = document.getElementById('player-hand');
             const handArea = document.getElementById('player-hand-area');
@@ -782,27 +788,54 @@ setup: function( gamedatas )
                 cardElement.style.transition = 'all 0.2s ease';
                 
                 if (interactive) {
-                    // Make cards interactive if it's the player's turn
-                    cardElement.style.cursor = 'pointer';
+                    // Check if this card is affordable
+                    const canAfford = cardAffordability[cardId] !== false; // Default to true if not specified
                     
-                    // Add hover effects
-                    cardElement.addEventListener('mouseenter', function() {
-                        this.style.transform = 'translateY(-5px)';
-                        this.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
-                        this.style.borderColor = '#0066cc';
-                    });
-                    
-                    cardElement.addEventListener('mouseleave', function() {
-                        this.style.transform = 'translateY(0)';
-                        this.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
-                        this.style.borderColor = '#333';
-                    });
-                    
-                    // Add click handler
-                    const self = this;
-                    cardElement.addEventListener('click', function() {
-                        self.onCardClick(cardId);
-                    });
+                    if (canAfford) {
+                        // Make affordable cards interactive
+                        cardElement.style.cursor = 'pointer';
+                        cardElement.style.opacity = '1';
+                        
+                        // Add hover effects for affordable cards
+                        cardElement.addEventListener('mouseenter', function() {
+                            this.style.transform = 'translateY(-5px)';
+                            this.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
+                            this.style.borderColor = '#0066cc';
+                        });
+                        
+                        cardElement.addEventListener('mouseleave', function() {
+                            this.style.transform = 'translateY(0)';
+                            this.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+                            this.style.borderColor = '#333';
+                        });
+                        
+                        // Add click handler for affordable cards
+                        const self = this;
+                        cardElement.addEventListener('click', function() {
+                            self.onCardClick(cardId);
+                        });
+                    } else {
+                        // Make unaffordable cards unselectable
+                        cardElement.style.cursor = 'not-allowed';
+                        cardElement.style.opacity = '0.4';
+                        cardElement.style.filter = 'grayscale(50%)';
+                        cardElement.style.borderColor = '#888';
+                        
+                        // Add unaffordable label
+                        const unaffordableLabel = document.createElement('div');
+                        unaffordableLabel.textContent = 'CANNOT AFFORD';
+                        unaffordableLabel.style.cssText = 'position: absolute; top: 5px; right: 5px; background: #f44336; color: white; padding: 2px 6px; border-radius: 3px; font-size: 9px; font-weight: bold; box-shadow: 0 2px 4px rgba(244,67,54,0.3);';
+                        cardElement.style.position = 'relative';
+                        cardElement.appendChild(unaffordableLabel);
+                        
+                        // Show tooltip on hover for unaffordable cards
+                        cardElement.addEventListener('mouseenter', function() {
+                            const card = cardTypes[cardId];
+                            if (card) {
+                                cardElement.title = `Need ${card.conditioning_cost || 0} conditioning and ${card.special_tokens || 0} tokens`;
+                            }
+                        });
+                    }
                 } else {
                     // Make cards look inactive when not interactive
                     cardElement.style.opacity = '0.7';

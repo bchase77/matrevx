@@ -24,7 +24,7 @@ return [
 			"defense" => 7,
 			"top" => 8,
 			"bottom" => 8,
-			"special_tokens" => 1,
+			"special_tokens" => 5,
 			"trademark" => "Opponent Star Play - When opponent plays a scoring card, gain 1 Special Token",
 			"special_cards" => ["Go Behind (D)", "Granby Roll (B)", "Arm Bar (T)"],
 			"image_id" => 73
@@ -38,7 +38,7 @@ return [
 			"defense" => 5,
 			"top" => 6,
 			"bottom" => 7,
-			"special_tokens" => 0,
+			"special_tokens" => 1,
 			"trademark" => "Star Cards 0 - All your scoring cards cost 0 Special Tokens",
 			"special_cards" => ["Single Leg (O)", "Sit Out (B)", "Break Down (T)"],
 			"image_id" => 74
@@ -52,7 +52,7 @@ return [
 			"defense" => 8,
 			"top" => 7,
 			"bottom" => 9,
-			"special_tokens" => 0,
+			"special_tokens" => 1,
 			"trademark" => "Double Leg - costs only 3 Conditioning and 1 Special Token",
 			"special_cards" => ["Double Leg (O)", "Spladle (D)", "Mat Return (T)"],
 			"image_id" => 77
@@ -66,7 +66,7 @@ return [
 			"defense" => 6,
 			"top" => 10,
 			"bottom" => 5,
-			"special_tokens" => 2,
+			"special_tokens" => 3,
 			"trademark" => "Speed Specialist - All speed-based cards cost 1 less conditioning (minimum 1)",
 			"special_cards" => ["Hand Fight (O)", "Sprawl (D)", "Stand Up (B)"],
 			"image_id" => 80
@@ -80,7 +80,7 @@ return [
 			"defense" => 9,
 			"top" => 6,
 			"bottom" => 8,
-			"special_tokens" => 1,
+			"special_tokens" => 4,
 			"trademark" => "Defensive Master - When opponent fails a scoring attempt, gain 1 Special Token",
 			"special_cards" => ["Adrenaline Rush (Any)", "Stalling (Any)", "Spladle (D)"],
 			"image_id" => 82

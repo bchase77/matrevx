@@ -103,13 +103,20 @@ class Game extends \Table
     {
         $available_cards = [];
         
+        $this->trace("getAvailableCardsForPosition: Looking for position '$position'");
+        $this->trace("getAvailableCardsForPosition: Available card types: " . json_encode(array_keys(self::$CARD_TYPES)));
+        
         foreach (self::$CARD_TYPES as $card_id => $card) {
+            $this->trace("getAvailableCardsForPosition: Checking card $card_id (position: {$card['position']})");
+            
             // Include cards that match the position OR are "any" position
             if ($card['position'] === $position || $card['position'] === 'any') {
                 $available_cards[] = $card_id;
+                $this->trace("getAvailableCardsForPosition: Added card $card_id ({$card['card_name']})");
             }
         }
         
+        $this->trace("getAvailableCardsForPosition: Final cards for $position: " . implode(', ', $available_cards));
         return $available_cards;
     }
 
@@ -1892,35 +1899,42 @@ private function executeDiceChallenge(int $player_id): array
             $this->trace("argPlayerTurn: ERROR - Could not find player data for player $player_id");
             // Return safe defaults instead of throwing exception
             return [
-                "playableCardsIds" => [25], // Just stall card
+                "playableCardsIds" => [46], // Just stall card
                 "current_position" => $current_position,
             ];
         }
         
         $this->trace("argPlayerTurn: Player $player_id resources - conditioning: {$player_data['conditioning']}, tokens: {$player_data['special_tokens']}");
         
-        // Filter to only cards the player can afford
+        // Show all available cards with affordability information
         $playable_cards = [];
+        $unaffordable_cards = [];
+        $card_affordability = [];
+        
         foreach ($available_cards as $card_id) {
             $can_afford = $this->canAffordCard($player_id, $card_id);
             $card = self::$CARD_TYPES[$card_id];
             $this->trace("argPlayerTurn: Card $card_id ({$card['card_name']}) - cost: {$card['conditioning_cost']}, tokens: {$card['special_tokens']}, can afford: " . ($can_afford ? 'YES' : 'NO'));
             
+            $card_affordability[$card_id] = $can_afford;
+            
             if ($can_afford) {
                 $playable_cards[] = $card_id;
+            } else {
+                $unaffordable_cards[] = $card_id;
             }
         }
         
-        // If no cards are affordable, player can at least play Stall (card 25)
-        if (empty($playable_cards)) {
-            $this->trace("argPlayerTurn: No affordable cards, adding Stall (25)");
-            $playable_cards[] = 25; // Stall card costs 0
-        }
+        // Show all cards (affordable + unaffordable)
+        $all_cards = array_merge($playable_cards, $unaffordable_cards);
         
-        $this->trace("argPlayerTurn: Final playable cards for player $player_id: " . implode(', ', $playable_cards));
+        $this->trace("argPlayerTurn: Final cards for player $player_id - playable: " . implode(', ', $playable_cards) . ", unaffordable: " . implode(', ', $unaffordable_cards));
         
         return [
-            "playableCardsIds" => $playable_cards,
+            "playableCardsIds" => $all_cards, // Show all cards
+            "affordableCardsIds" => $playable_cards, // Cards that can actually be played
+            "unaffordableCardsIds" => $unaffordable_cards, // Cards that can't be played
+            "cardAffordability" => $card_affordability, // Map of card_id => boolean
             "current_position" => $current_position,
         ];
     }
