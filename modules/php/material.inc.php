@@ -92,19 +92,21 @@ return [
         3 => [
             "card_name" => 'Single Leg',
             "position" => "offense",
-            "conditioning_cost" => 4,
+            "conditioning_cost" => 3,
             "special_tokens" => 0,
             "action" => "roll_speed",
             "scoring" => true,
+            "effect" => "If you roll +1 or higher, steal 1 token from opponent",
             "image_id" => 3
         ],
         7 => [
             "card_name" => 'Double Leg',
             "position" => "offense",
-            "conditioning_cost" => 6,
-            "special_tokens" => 1,
+            "conditioning_cost" => 5,
+            "special_tokens" => 2,
             "action" => "roll_speed",
             "scoring" => true,
+            "effect" => "Draw Scramble Card",
             "image_id" => 7
         ],
         1 => [
@@ -114,6 +116,7 @@ return [
             "special_tokens" => 1,
             "action" => "roll_speed",
             "scoring" => false,
+            "effect" => "If you roll +1, -1 to opponent conditioning. If you roll +2, -2 to opponent conditioning",
             "image_id" => 1
         ],
         
@@ -122,27 +125,30 @@ return [
             "card_name" => 'Sprawl',
             "position" => "defense",
             "conditioning_cost" => 3,
-            "special_tokens" => 0,
-            "action" => "roll_speed", 
+            "special_tokens" => 2,
+            "action" => "roll_strength", 
             "scoring" => false,
+            "effect" => "If played against Ankle Pick, Single Leg or High Crotch roll strength again and take best roll",
             "image_id" => 13
         ],
         14 => [
             "card_name" => 'Go Behind',
             "position" => "defense",
-            "conditioning_cost" => 4,
-            "special_tokens" => 1,
+            "conditioning_cost" => 3,
+            "special_tokens" => 0,
             "action" => "roll_speed",
             "scoring" => true,
+            "effect" => "If you roll +1 or higher, steal 1 token from opponent",
             "image_id" => 14
         ],
         22 => [
             "card_name" => 'Spladle',
             "position" => "defense",
             "conditioning_cost" => 5,
-            "special_tokens" => 2,
-            "action" => "roll_strength",
+            "special_tokens" => 4,
+            "action" => "roll_neither",
             "scoring" => true,
+            "effect" => "Draw Scramble card. If win, score 2 point takedown and go to Pin Round 1. If tie, score 2 point takedown, 4 point nearfall, and go to Pin Round 3. If lose, Opponent scores 2 point takedown",
             "image_id" => 22
         ],
         
@@ -150,28 +156,31 @@ return [
         25 => [
             "card_name" => 'Stand Up',
             "position" => "bottom",
-            "conditioning_cost" => 4,
+            "conditioning_cost" => 2,
             "special_tokens" => 0,
             "action" => "roll_speed",
             "scoring" => true,
+            "effect" => "If you roll +1 or higher, steal 1 token from opponent. Scramble win: Score ESCAPE. Scramble loss: Start next round",
             "image_id" => 25
         ],
         27 => [
             "card_name" => 'Sit Out',
             "position" => "bottom",
-            "conditioning_cost" => 3,
-            "special_tokens" => 0,
-            "action" => "roll_speed",
+            "conditioning_cost" => 6,
+            "special_tokens" => 2,
+            "action" => "roll_speed_and_strength",
             "scoring" => true,
+            "effect" => "Scramble win: Score Reversal. Scramble lose: Start next round",
             "image_id" => 27
         ],
         29 => [
             "card_name" => 'Granby Roll',
             "position" => "bottom",
-            "conditioning_cost" => 5,
-            "special_tokens" => 1,
-            "action" => "roll_speed",
+            "conditioning_cost" => 3,
+            "special_tokens" => -2,
+            "action" => "roll_neither",
             "scoring" => true,
+            "effect" => "Draw Scramble Card. Scramble win: Score ESCAPE; Lower opponent conditioning by 1. Lose: Cannot score this round",
             "image_id" => 29
         ],
         
@@ -179,28 +188,31 @@ return [
         34 => [
             "card_name" => 'Break Down',
             "position" => "top",
-            "conditioning_cost" => 3,
+            "conditioning_cost" => 2,
             "special_tokens" => 1,
-            "action" => "roll_strength",
+            "action" => "roll_speed",
             "scoring" => false,
+            "effect" => "If you roll +1, -1 to Opp cond. If you roll +2, -2 to Opp cond",
             "image_id" => 34
         ],
         35 => [
             "card_name" => 'Mat Return',
             "position" => "top",
-            "conditioning_cost" => 2,
-            "special_tokens" => 0,
+            "conditioning_cost" => 3,
+            "special_tokens" => 2,
             "action" => "roll_strength",
             "scoring" => false,
+            "effect" => "If opp plays STAND UP, POWER STAND UP, or SIT OUT this round, roll strength again and take best result",
             "image_id" => 35
         ],
         38 => [
             "card_name" => 'Arm Bar',
             "position" => "top",
-            "conditioning_cost" => 4,
+            "conditioning_cost" => 6,
             "special_tokens" => 0,
-            "action" => "roll_strength",
+            "action" => "roll_speed_and_strength",
             "scoring" => true,
+            "effect" => "Lead in to DOUBLE ARM BAR. Scramble win: Score 2 NEARFALL; Go to Pin Round 2. Lose: Start next round",
             "image_id" => 38
         ],
         
@@ -212,15 +224,17 @@ return [
             "special_tokens" => 1,
             "action" => "adrenaline",
             "scoring" => false,
+            "effect" => "Apply +4 to current position. Can be played only once per period",
             "image_id" => 47
         ],
         46 => [
             "card_name" => 'Stalling',
             "position" => "any",
-            "conditioning_cost" => 0,
+            "conditioning_cost" => -5,
             "special_tokens" => 0,
             "action" => "stall",
             "scoring" => false,
+            "effect" => "If played as Offense, Opp cannot play star Defense card. Opp can switch their card to any offense or non-star defense card",
             "image_id" => 46
         ],
     ],
