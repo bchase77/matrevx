@@ -15,33 +15,7 @@
 
 return [
 	'wrestlers' => [
-		1 => [
-			"name" => "Po Cret",
-			"conditioning_p1" => 42,
-			"conditioning_p2" => 11,
-			"conditioning_p3" => 10,
-			"offense" => 8,
-			"defense" => 8,
-			"top" => 7,
-			"bottom" => 9,
-			"special_tokens" => 0,
-			"trademark" => "Double Leg - costs only 3 Conditioning and 1 Special Token",
-			"special_cards" => ["Double Leg (O)", "Splits (D)", "Tilt (T)", "Switch (B)", "Hip Heist (B)"]
-		],
-		2 => [
-			"name" => "Darnell Hogler", 
-			"conditioning_p1" => 45,
-			"conditioning_p2" => 17,
-			"conditioning_p3" => 3,
-			"offense" => 6,
-			"defense" => 6,
-			"top" => 10,
-			"bottom" => 5,
-			"special_tokens" => 2,
-			"trademark" => "When you draw a Scramble Card, pick from the top 3 and put the other two on the bottom of the deck",
-			"special_cards" => ["Super Duck (O)", "Splits (D)", "Cranky Roll (B)", "Neckbridge (B)"]
-		],
-		3 => [
+		73 => [
 			"name" => "Goldie Meadows",
 			"conditioning_p1" => 40,
 			"conditioning_p2" => 15,
@@ -52,9 +26,10 @@ return [
 			"bottom" => 8,
 			"special_tokens" => 1,
 			"trademark" => "Opponent Star Play - When opponent plays a scoring card, gain 1 Special Token",
-			"special_cards" => ["Counter Attack (D)", "Reversal (B)", "Escape (B)", "Takedown (O)"]
+			"special_cards" => ["Go Behind (D)", "Granby Roll (B)", "Arm Bar (T)"],
+			"image_id" => 73
 		],
-		4 => [
+		74 => [
 			"name" => "Frankie Boulay",
 			"conditioning_p1" => 38,
 			"conditioning_p2" => 12,
@@ -65,227 +40,188 @@ return [
 			"bottom" => 7,
 			"special_tokens" => 0,
 			"trademark" => "Star Cards 0 - All your scoring cards cost 0 Special Tokens",
-			"special_cards" => ["Power Shot (O)", "Quick Escape (B)", "Defensive Block (D)", "Pin Attempt (T)"]
+			"special_cards" => ["Single Leg (O)", "Sit Out (B)", "Break Down (T)"],
+			"image_id" => 74
+		],
+		77 => [
+			"name" => "Po Cret",
+			"conditioning_p1" => 42,
+			"conditioning_p2" => 11,
+			"conditioning_p3" => 10,
+			"offense" => 8,
+			"defense" => 8,
+			"top" => 7,
+			"bottom" => 9,
+			"special_tokens" => 0,
+			"trademark" => "Double Leg - costs only 3 Conditioning and 1 Special Token",
+			"special_cards" => ["Double Leg (O)", "Spladle (D)", "Mat Return (T)"],
+			"image_id" => 77
+		],
+		80 => [
+			"name" => "Sandy Freefro", 
+			"conditioning_p1" => 45,
+			"conditioning_p2" => 17,
+			"conditioning_p3" => 3,
+			"offense" => 6,
+			"defense" => 6,
+			"top" => 10,
+			"bottom" => 5,
+			"special_tokens" => 2,
+			"trademark" => "Speed Specialist - All speed-based cards cost 1 less conditioning (minimum 1)",
+			"special_cards" => ["Hand Fight (O)", "Sprawl (D)", "Stand Up (B)"],
+			"image_id" => 80
+		],
+		82 => [
+			"name" => "Najat Abbas",
+			"conditioning_p1" => 41,
+			"conditioning_p2" => 14,
+			"conditioning_p3" => 9,
+			"offense" => 7,
+			"defense" => 9,
+			"top" => 6,
+			"bottom" => 8,
+			"special_tokens" => 1,
+			"trademark" => "Defensive Master - When opponent fails a scoring attempt, gain 1 Special Token",
+			"special_cards" => ["Adrenaline Rush (Any)", "Stalling (Any)", "Spladle (D)"],
+			"image_id" => 82
 		]
 	],
 
     'cardTypes' => [
-        // OFFENSE CARDS (6 cards)
-        1 => [
+        // OFFENSE CARDS (3 cards)
+        3 => [
             "card_name" => 'Single Leg',
             "position" => "offense",
             "conditioning_cost" => 4,
             "special_tokens" => 0,
             "action" => "roll_speed",
-            "scoring" => true
+            "scoring" => true,
+            "image_id" => 3
         ],
-        2 => [
+        7 => [
             "card_name" => 'Double Leg',
             "position" => "offense",
             "conditioning_cost" => 6,
             "special_tokens" => 1,
             "action" => "roll_speed",
-            "scoring" => true
+            "scoring" => true,
+            "image_id" => 7
         ],
-        3 => [
+        1 => [
             "card_name" => 'Hand Fight',
             "position" => "offense", 
             "conditioning_cost" => 2,
             "special_tokens" => 1,
             "action" => "roll_speed",
-            "scoring" => false
-        ],
-        4 => [
-            "card_name" => 'Snap Down',
-            "position" => "offense",
-            "conditioning_cost" => 3,
-            "special_tokens" => 0,
-            "action" => "roll_speed",
-            "scoring" => false
-        ],
-        5 => [
-            "card_name" => 'Underhook',
-            "position" => "offense",
-            "conditioning_cost" => 5,
-            "special_tokens" => 0,
-            "action" => "roll_strength",
-            "scoring" => true
-        ],
-        6 => [
-            "card_name" => 'Collar Tie',
-            "position" => "offense",
-            "conditioning_cost" => 1,
-            "special_tokens" => 0,
-            "action" => "roll_speed",
-            "scoring" => false
+            "scoring" => false,
+            "image_id" => 1
         ],
         
-        // DEFENSE CARDS (6 cards)
-        7 => [
+        // DEFENSE CARDS (3 cards)
+        13 => [
             "card_name" => 'Sprawl',
             "position" => "defense",
             "conditioning_cost" => 3,
             "special_tokens" => 0,
             "action" => "roll_speed", 
-            "scoring" => false
-        ],
-        8 => [
-            "card_name" => 'Down Block',
-            "position" => "defense",
-            "conditioning_cost" => 2,
-            "special_tokens" => 1,
-            "action" => "roll_speed",
-            "scoring" => false
-        ],
-        9 => [
-            "card_name" => 'Counter Attack',
-            "position" => "defense",
-            "conditioning_cost" => 4,
-            "special_tokens" => 1,
-            "action" => "roll_speed",
-            "scoring" => true
-        ],
-        10 => [
-            "card_name" => 'Circle Away',
-            "position" => "defense",
-            "conditioning_cost" => 1,
-            "special_tokens" => 0,
-            "action" => "roll_speed",
-            "scoring" => false
-        ],
-        11 => [
-            "card_name" => 'Defensive Shot',
-            "position" => "defense",
-            "conditioning_cost" => 5,
-            "special_tokens" => 0,
-            "action" => "roll_speed",
-            "scoring" => true
-        ],
-        12 => [
-            "card_name" => 'Tie Up',
-            "position" => "defense",
-            "conditioning_cost" => 2,
-            "special_tokens" => 0,
-            "action" => "roll_strength",
-            "scoring" => false
-        ],
-        
-        // TOP CARDS (7 cards)
-        13 => [
-            "card_name" => 'Half Nelson',
-            "position" => "top",
-            "conditioning_cost" => 5,
-            "special_tokens" => 0,
-            "action" => "roll_strength",
-            "scoring" => true
+            "scoring" => false,
+            "image_id" => 13
         ],
         14 => [
-            "card_name" => 'Break Down',
-            "position" => "top",
-            "conditioning_cost" => 3,
-            "special_tokens" => 1,
-            "action" => "roll_strength",
-            "scoring" => false
-        ],
-        15 => [
-            "card_name" => 'Crossface',
-            "position" => "top",
+            "card_name" => 'Go Behind',
+            "position" => "defense",
             "conditioning_cost" => 4,
-            "special_tokens" => 0,
-            "action" => "roll_strength",
-            "scoring" => false
-        ],
-        16 => [
-            "card_name" => 'Tilt',
-            "position" => "top",
-            "conditioning_cost" => 6,
             "special_tokens" => 1,
-            "action" => "roll_strength",
-            "scoring" => true
+            "action" => "roll_speed",
+            "scoring" => true,
+            "image_id" => 14
         ],
-        17 => [
-            "card_name" => 'Arm Bar',
-            "position" => "top",
-            "conditioning_cost" => 4,
-            "special_tokens" => 0,
-            "action" => "roll_strength",
-            "scoring" => true
-        ],
-        18 => [
-            "card_name" => 'Ride',
-            "position" => "top",
-            "conditioning_cost" => 2,
-            "special_tokens" => 0,
-            "action" => "roll_strength",
-            "scoring" => false
-        ],
-        19 => [
-            "card_name" => 'Pin Attempt',
-            "position" => "top",
-            "conditioning_cost" => 7,
+        22 => [
+            "card_name" => 'Spladle',
+            "position" => "defense",
+            "conditioning_cost" => 5,
             "special_tokens" => 2,
             "action" => "roll_strength",
-            "scoring" => true
+            "scoring" => true,
+            "image_id" => 22
         ],
         
-        // BOTTOM CARDS (5 cards)
-        20 => [
+        // BOTTOM CARDS (3 cards)
+        25 => [
             "card_name" => 'Stand Up',
             "position" => "bottom",
             "conditioning_cost" => 4,
             "special_tokens" => 0,
             "action" => "roll_speed",
-            "scoring" => true
+            "scoring" => true,
+            "image_id" => 25
         ],
-        21 => [
+        27 => [
             "card_name" => 'Sit Out',
             "position" => "bottom",
             "conditioning_cost" => 3,
             "special_tokens" => 0,
             "action" => "roll_speed",
-            "scoring" => true
+            "scoring" => true,
+            "image_id" => 27
         ],
-        22 => [
-            "card_name" => 'Switch',
+        29 => [
+            "card_name" => 'Granby Roll',
             "position" => "bottom",
             "conditioning_cost" => 5,
             "special_tokens" => 1,
             "action" => "roll_speed",
-            "scoring" => true
-        ],
-        23 => [
-            "card_name" => 'Roll',
-            "position" => "bottom",
-            "conditioning_cost" => 2,
-            "special_tokens" => 0,
-            "action" => "roll_speed",
-            "scoring" => false
-        ],
-        24 => [
-            "card_name" => 'Hip Heist',
-            "position" => "bottom",
-            "conditioning_cost" => 6,
-            "special_tokens" => 1,
-            "action" => "roll_speed",
-            "scoring" => true
+            "scoring" => true,
+            "image_id" => 29
         ],
         
-        // ANY POSITION CARDS (2 cards)
-        25 => [
-            "card_name" => 'Stall',
-            "position" => "any",
-            "conditioning_cost" => 0,
-            "special_tokens" => 0,
-            "action" => "stall",
-            "scoring" => false
+        // TOP CARDS (3 cards)
+        34 => [
+            "card_name" => 'Break Down',
+            "position" => "top",
+            "conditioning_cost" => 3,
+            "special_tokens" => 1,
+            "action" => "roll_strength",
+            "scoring" => false,
+            "image_id" => 34
         ],
-        26 => [
+        35 => [
+            "card_name" => 'Mat Return',
+            "position" => "top",
+            "conditioning_cost" => 2,
+            "special_tokens" => 0,
+            "action" => "roll_strength",
+            "scoring" => false,
+            "image_id" => 35
+        ],
+        38 => [
+            "card_name" => 'Arm Bar',
+            "position" => "top",
+            "conditioning_cost" => 4,
+            "special_tokens" => 0,
+            "action" => "roll_strength",
+            "scoring" => true,
+            "image_id" => 38
+        ],
+        
+        // ANY POSITION CARDS (2 cards) 
+        47 => [
             "card_name" => 'Adrenaline Rush',
             "position" => "any",
             "conditioning_cost" => 3,
             "special_tokens" => 1,
             "action" => "adrenaline",
-            "scoring" => false
+            "scoring" => false,
+            "image_id" => 47
+        ],
+        46 => [
+            "card_name" => 'Stalling',
+            "position" => "any",
+            "conditioning_cost" => 0,
+            "special_tokens" => 0,
+            "action" => "stall",
+            "scoring" => false,
+            "image_id" => 46
         ],
     ],
 	'scrambleCards' => [

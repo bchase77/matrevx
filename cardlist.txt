@@ -1,0 +1,36 @@
+3 O Single Leg
+7 O Double Leg
+1 O Hand Fight
+13 D Sprawl
+14 D Go Behind
+22 D Spladle
+47 Any Adrenaline Rush
+46 Any Stalling
+25 B Stand Up
+27 B Sit Out
+29 B Granby Roll
+34 T Break Down
+35 T Mat Return
+38 T Arm Bar
+73 W Goldie Meadows
+74 W Frankie Boulay
+77 W Po Cret
+80 W Sandy Freefro
+82 W Najat Abbas
+
+26 B Standing Switch
+10 O Lat Drop
+11 O Headlock
+12 D Crossface
+15 D Re-Shot
+16 D Front Headlock
+17 D Gator Roll
+18 D Crotch Lock
+19 D Funk Roll
+2 O Fake Shot
+20 D Chin Whip
+21 D Splits
+4 O Ankle Pick
+5 O High Crotch
+100 SCRAMBLE
+101 RedBlue Die definition
