@@ -91,6 +91,9 @@ setup: function( gamedatas )
     // Setup game notifications
     this.setupNotifications();
 
+    // Show player's cards based on current game state (after refresh)
+    this.showPlayerCardsOnSetup();
+
     console.log( "Ending game setup" );
 },       
         ///////////////////////////////////////////////////
@@ -622,6 +625,25 @@ setup: function( gamedatas )
             
             // If it's our turn, make cards interactive
             if (this.isCurrentPlayerActive()) {
+                console.log('PLAYER TURN STARTING - clearing existing cards and showing interactive ones');
+                
+                // Clear any existing cards first to remove preview labels
+                const handContainer = document.getElementById('player-hand');
+                const handArea = document.getElementById('player-hand-area');
+                
+                if (handContainer) {
+                    console.log('Clearing hand container contents');
+                    handContainer.innerHTML = '';
+                }
+                
+                if (handArea) {
+                    // Make sure hand area is visible
+                    handArea.style.display = 'block';
+                }
+                
+                // Small delay to ensure clearing takes effect
+                setTimeout(() => {
+                    console.log('Now showing interactive cards after clearing');
                 // Get the args from the state
                 const stateArgs = args && args.args;
                 const playableCardsIds = (stateArgs && stateArgs.playableCardsIds) ? stateArgs.playableCardsIds : [];
@@ -644,6 +666,7 @@ setup: function( gamedatas )
                 
                 // Make cards interactive since it's our turn, pass affordability info
                 this.displayPlayerCards(playableCardsIds, currentPosition, true, cardAffordability);
+                }, 100); // 100ms delay to ensure DOM clearing takes effect
             }
         },
 
@@ -705,6 +728,7 @@ setup: function( gamedatas )
         
         displayPlayerCards: function(playableCardsIds, currentPosition, interactive = true, cardAffordability = {}) {
             console.log('displayPlayerCards called with:', playableCardsIds, 'position:', currentPosition, 'interactive:', interactive, 'affordability:', cardAffordability);
+            console.log('CLEARING hand container and rebuilding cards...');
             
             const handContainer = document.getElementById('player-hand');
             const handArea = document.getElementById('player-hand-area');
@@ -869,6 +893,89 @@ setup: function( gamedatas )
             console.log('Added', handContainer.children.length, 'cards to hand');
         },
         
+        showPlayerCardsOnSetup: function() {
+            // Show player's cards after refresh/setup based on current positions
+            console.log('showPlayerCardsOnSetup called');
+            console.log('Full gamedatas:', this.gamedatas);
+            
+            const gameState = this.gamedatas && this.gamedatas.game_state;
+            const globalVars = this.gamedatas && this.gamedatas.globals;
+            
+            console.log('Game state:', gameState);
+            console.log('Global vars:', globalVars);
+            
+            // Try multiple ways to get position data
+            let offensePlayerId = null;
+            let defensePlayerId = null;
+            
+            if (gameState) {
+                offensePlayerId = gameState.position_offense;
+                defensePlayerId = gameState.position_defense;
+            }
+            
+            if (globalVars) {
+                offensePlayerId = offensePlayerId || globalVars.position_offense;
+                defensePlayerId = defensePlayerId || globalVars.position_defense;
+            }
+            
+            console.log('Found offense player:', offensePlayerId, 'defense player:', defensePlayerId);
+            
+            const currentPlayerId = this.player_id;
+            
+            if (!offensePlayerId || !defensePlayerId) {
+                console.log('Positions not yet assigned or not found');
+                return;
+            }
+            
+            // Show wrestling mat if positions are assigned
+            const wrestlingMat = document.getElementById('wrestling-mat');
+            if (wrestlingMat) {
+                wrestlingMat.style.display = 'block';
+            }
+            
+            // Determine current player's position and show their cards
+            let currentPlayerPosition = null;
+            let availableCards = [];
+            
+            if (currentPlayerId == offensePlayerId) {
+                currentPlayerPosition = 'offense';
+                // Show offense + any cards
+                availableCards = this.getCardsForPosition('offense').concat(this.getCardsForPosition('any'));
+                console.log('Current player is OFFENSE');
+            } else if (currentPlayerId == defensePlayerId) {
+                currentPlayerPosition = 'defense';
+                // Show defense + any cards
+                availableCards = this.getCardsForPosition('defense').concat(this.getCardsForPosition('any'));
+                console.log('Current player is DEFENSE');
+            } else {
+                console.log('Current player is neither offense nor defense');
+                return;
+            }
+            
+            if (currentPlayerPosition && availableCards.length > 0) {
+                console.log('Showing cards for position:', currentPlayerPosition, 'Cards:', availableCards);
+                // Show cards in preview mode (non-interactive) since we don't know affordability
+                this.displayPlayerCards(availableCards, currentPlayerPosition, false, {});
+            } else {
+                console.log('No cards to show or no position determined');
+            }
+        },
+        
+        getCardsForPosition: function(position) {
+            // Get cards for a specific position from game data
+            const cardTypes = this.gamedatas && this.gamedatas.cardTypes;
+            if (!cardTypes) return [];
+            
+            const cards = [];
+            for (const cardId in cardTypes) {
+                const card = cardTypes[cardId];
+                if (card.position === position) {
+                    cards.push(parseInt(cardId));
+                }
+            }
+            return cards;
+        },
+
         leavePlayerTurn: function() {
             // Clean up any temporary UI elements
         },
