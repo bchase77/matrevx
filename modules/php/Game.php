@@ -1656,6 +1656,16 @@ private function executeDiceChallenge(int $player_id): array
 	{
 		$this->trace("stSetFirstPlayer: START - making both players active for card selection");
 		
+		// Get both players and store them
+		$offense_player_id = $this->getGameStateValue("position_offense");
+		$defense_player_id = $this->getGameStateValue("position_defense");
+		
+		$this->trace("stSetFirstPlayer: offense=$offense_player_id, defense=$defense_player_id");
+		
+		// Store first/second player IDs for the round logic
+		$this->setGameStateValue("first_player_id", $offense_player_id);
+		$this->setGameStateValue("second_player_id", $defense_player_id);
+		
 		// Make both players active so they can choose cards simultaneously
 		$this->gamestate->setAllPlayersMultiactive();
 		
@@ -1871,11 +1881,21 @@ private function executeDiceChallenge(int $player_id): array
             
             $this->trace("argPlayerTurn: MULTIACTIVE - offense: $offense_player_id, defense: $defense_player_id");
             
+            // Validate player IDs
+            if ($offense_player_id <= 0 || $defense_player_id <= 0) {
+                $this->trace("argPlayerTurn: ERROR - Invalid player IDs, offense=$offense_player_id, defense=$defense_player_id");
+                return [];
+            }
+            
             // Get data for offense player
+            $this->trace("argPlayerTurn: Getting data for offense player $offense_player_id");
             $result[$offense_player_id] = $this->getPlayerTurnData($offense_player_id, 'offense');
             
             // Get data for defense player  
+            $this->trace("argPlayerTurn: Getting data for defense player $defense_player_id");
             $result[$defense_player_id] = $this->getPlayerTurnData($defense_player_id, 'defense');
+            
+            $this->trace("argPlayerTurn: MULTIACTIVE result - " . json_encode(array_keys($result)));
             
             return $result;
         }
