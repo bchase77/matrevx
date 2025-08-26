@@ -630,6 +630,13 @@ setup: function( gamedatas )
             const activePlayerId = gamestate && gamestate.active_player;
             const stateName = (args && args.name) || (gamestate && gamestate.name);
             
+            // For multiactive states, get player-specific args
+            let playerArgs = args;
+            if (stateName === 'playersSelectCards' && args && args[this.player_id]) {
+                playerArgs = args[this.player_id];
+                console.log('Using player-specific args:', playerArgs);
+            }
+            
             console.log('Active player from gamestate:', activePlayerId);
             console.log('State name:', stateName);
             console.log('Am I the active player?', this.player_id == activePlayerId);
@@ -666,8 +673,8 @@ setup: function( gamedatas )
                 // Small delay to ensure clearing takes effect
                 setTimeout(() => {
                     console.log('Now showing interactive cards after clearing');
-                // Get the args from the state
-                const stateArgs = args && args.args;
+                // Get the args from the state - use playerArgs for multiactive states
+                const stateArgs = (stateName === 'playersSelectCards') ? playerArgs : (args && args.args);
                 const playableCardsIds = (stateArgs && stateArgs.playableCardsIds) ? stateArgs.playableCardsIds : [];
                 const affordableCardsIds = (stateArgs && stateArgs.affordableCardsIds) ? stateArgs.affordableCardsIds : [];
                 const unaffordableCardsIds = (stateArgs && stateArgs.unaffordableCardsIds) ? stateArgs.unaffordableCardsIds : [];

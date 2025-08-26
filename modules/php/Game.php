@@ -1859,9 +1859,31 @@ private function executeDiceChallenge(int $player_id): array
      */
     public function argPlayerTurn(): array
     {
+        $state_name = $this->gamestate->state()['name'];
+        
+        // For multiactive states, return per-player data
+        if ($state_name === 'playersSelectCards') {
+            $result = [];
+            
+            // Get both players
+            $offense_player_id = $this->getGameStateValue("position_offense");
+            $defense_player_id = $this->getGameStateValue("position_defense");
+            
+            $this->trace("argPlayerTurn: MULTIACTIVE - offense: $offense_player_id, defense: $defense_player_id");
+            
+            // Get data for offense player
+            $result[$offense_player_id] = $this->getPlayerTurnData($offense_player_id, 'offense');
+            
+            // Get data for defense player  
+            $result[$defense_player_id] = $this->getPlayerTurnData($defense_player_id, 'defense');
+            
+            return $result;
+        }
+        
+        // For single player states, use the old logic
         $player_id = $this->getTurnPlayerId();
         
-        $this->trace("argPlayerTurn: START for player $player_id");
+        $this->trace("argPlayerTurn: SINGLE PLAYER for player $player_id");
         
         // Get player's current position - ADD ERROR HANDLING
         try {
@@ -1871,11 +1893,19 @@ private function executeDiceChallenge(int $player_id): array
             $current_position = 'offense'; // Safe fallback
         }
         
-        $this->trace("argPlayerTurn: Player $player_id current position: $current_position");
+        return $this->getPlayerTurnData($player_id, $current_position);
+    }
+    
+    /**
+     * Helper function to get turn data for a specific player
+     */
+    private function getPlayerTurnData(int $player_id, string $position): array
+    {
+        $this->trace("getPlayerTurnData: START for player $player_id, position $position");
         
         // Get all available cards for this position
-        $available_cards = $this->getAvailableCardsForPosition($current_position);
-        $this->trace("argPlayerTurn: Available cards for position $current_position: " . implode(', ', $available_cards));
+        $available_cards = $this->getAvailableCardsForPosition($position);
+        $this->trace("getPlayerTurnData: Available cards for position $position: " . implode(', ', $available_cards));
         
         // Get player resources for debugging
         $player_data = $this->getObjectFromDB(
@@ -1883,15 +1913,15 @@ private function executeDiceChallenge(int $player_id): array
         );
         
         if (!$player_data) {
-            $this->trace("argPlayerTurn: ERROR - Could not find player data for player $player_id");
+            $this->trace("getPlayerTurnData: ERROR - Could not find player data for player $player_id");
             // Return safe defaults instead of throwing exception
             return [
                 "playableCardsIds" => [46], // Just stall card
-                "current_position" => $current_position,
+                "current_position" => $position,
             ];
         }
         
-        $this->trace("argPlayerTurn: Player $player_id resources - conditioning: {$player_data['conditioning']}, tokens: {$player_data['special_tokens']}");
+        $this->trace("getPlayerTurnData: Player $player_id resources - conditioning: {$player_data['conditioning']}, tokens: {$player_data['special_tokens']}");
         
         // Show all available cards with affordability information
         $playable_cards = [];
@@ -1901,7 +1931,7 @@ private function executeDiceChallenge(int $player_id): array
         foreach ($available_cards as $card_id) {
             $can_afford = $this->canAffordCard($player_id, $card_id);
             $card = self::$CARD_TYPES[$card_id];
-            $this->trace("argPlayerTurn: Card $card_id ({$card['card_name']}) - cost: {$card['conditioning_cost']}, tokens: {$card['special_tokens']}, can afford: " . ($can_afford ? 'YES' : 'NO'));
+            $this->trace("getPlayerTurnData: Card $card_id ({$card['card_name']}) - cost: {$card['conditioning_cost']}, tokens: {$card['special_tokens']}, can afford: " . ($can_afford ? 'YES' : 'NO'));
             
             $card_affordability[$card_id] = $can_afford;
             
@@ -1915,14 +1945,14 @@ private function executeDiceChallenge(int $player_id): array
         // Show all cards (affordable + unaffordable)
         $all_cards = array_merge($playable_cards, $unaffordable_cards);
         
-        $this->trace("argPlayerTurn: Final cards for player $player_id - playable: " . implode(', ', $playable_cards) . ", unaffordable: " . implode(', ', $unaffordable_cards));
+        $this->trace("getPlayerTurnData: Final cards for player $player_id - playable: " . implode(', ', $playable_cards) . ", unaffordable: " . implode(', ', $unaffordable_cards));
         
         return [
             "playableCardsIds" => $all_cards, // Show all cards
             "affordableCardsIds" => $playable_cards, // Cards that can actually be played
             "unaffordableCardsIds" => $unaffordable_cards, // Cards that can't be played
             "cardAffordability" => $card_affordability, // Map of card_id => boolean
-            "current_position" => $current_position,
+            "current_position" => $position,
         ];
     }
     
