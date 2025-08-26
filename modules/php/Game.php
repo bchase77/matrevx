@@ -1021,34 +1021,41 @@ private function executeDiceChallenge(int $player_id): array
 
         $this->trace("actPlayCard: Player $player_id ($player_name) successfully playing card $card_id ($card_name)");
 
-        if ($state_name === 'firstPlayerTurn') {
-            // Store first player's card in global variables
-            $this->setGameStateValue("first_player_id", $player_id);
-            $this->setGameStateValue("first_player_card", $card_id);            
-            $this->trace("actPlayCard: Stored first player card, transitioning to second player");
+        if ($state_name === 'playersSelectCards') {
+            // In multiactive state, determine if this is first or second player
+            $first_player_id = $this->getGameStateValue("first_player_id");
+            $second_player_id = $this->getGameStateValue("second_player_id");
             
-            // Notify that first player played (but don't reveal the card)
-            $this->notifyAllPlayers("firstCardPlayed", clienttranslate('${player_name} has played a card'), [
-                "player_id" => $player_id,
-                "player_name" => $player_name,
-            ]);
-
-            $this->gamestate->nextState("cardPlayed");
+            if ($player_id == $first_player_id) {
+                // Store first player's card
+                $this->setGameStateValue("first_player_card", $card_id);
+                $this->trace("actPlayCard: Stored first player card $card_id");
+                
+                // Notify that first player played (but don't reveal the card)
+                $this->notifyAllPlayers("firstCardPlayed", clienttranslate('${player_name} has played a card'), [
+                    "player_id" => $player_id,
+                    "player_name" => $player_name,
+                ]);
+                
+            } else if ($player_id == $second_player_id) {
+                // Store second player's card
+                $this->setGameStateValue("second_player_card", $card_id);
+                $this->trace("actPlayCard: Stored second player card $card_id");
+                
+                // Notify that second player played (but don't reveal yet)
+                $this->notifyAllPlayers("secondCardPlayed", clienttranslate('${player_name} has played a card'), [
+                    "player_id" => $player_id,
+                    "player_name" => $player_name,
+                ]);
+                
+            } else {
+                $this->trace("actPlayCard: ERROR - Player $player_id is not first ($first_player_id) or second ($second_player_id) player");
+                throw new \BgaUserException("Player not found in current round");
+            }
             
-        } else if ($state_name === 'secondPlayerTurn') {
-            // Store second player's card in global variables
-            $this->setGameStateValue("second_player_id", $player_id);
-            $this->setGameStateValue("second_player_card", $card_id);
+            // Mark this player as inactive (they've made their choice)
+            $this->gamestate->setPlayerNonMultiactive($player_id, 'allCardsSelected');
             
-            $this->trace("actPlayCard: Stored second player card, transitioning to reveal");
-            
-            // Notify that second player played (but don't reveal yet)
-            $this->notifyAllPlayers("secondCardPlayed", clienttranslate('${player_name} has played a card'), [
-                "player_id" => $player_id,
-                "player_name" => $player_name,
-            ]);
-
-            $this->gamestate->nextState("cardPlayed");
         } else {
             $this->trace("actPlayCard: ERROR - Unexpected state $state_name");
             throw new \BgaUserException("Cannot play card in current game state");
@@ -1644,36 +1651,16 @@ private function executeDiceChallenge(int $player_id): array
     /**
      * Set the first player for the round - IMPROVED with debugging
      */
-	// 3. UPDATED: stSetFirstPlayer method to check for momentum
+	// 3. UPDATED: stSetFirstPlayer method to make both players active simultaneously
 	public function stSetFirstPlayer(): void
 	{
-		$this->trace("stSetFirstPlayer: START");
+		$this->trace("stSetFirstPlayer: START - making both players active for card selection");
 		
-		// Check if anyone has momentum
-		$momentum_player = (int)$this->getGameStateValue("momentum_player");
+		// Make both players active so they can choose cards simultaneously
+		$this->gamestate->setAllPlayersMultiactive();
 		
-		if ($momentum_player > 0) {
-			// Player with momentum goes first
-			$this->trace("stSetFirstPlayer: Player $momentum_player has momentum and goes first");
-			$this->gamestate->changeActivePlayer($momentum_player);
-			
-			// Clear momentum after using it
-			$this->setGameStateValue("momentum_player", 0);
-			
-		} else {
-			// Normal logic: offense player goes first
-			$offense_player_id = $this->getGameStateValue("position_offense");
-			
-			$this->trace("stSetFirstPlayer: No momentum, offense player $offense_player_id goes first");
-			
-			if ($offense_player_id == 0) {
-				throw new \BgaSystemException("No offense player set in stSetFirstPlayer");
-			}
-			
-			$this->gamestate->changeActivePlayer($offense_player_id);
-		}
-		
-		$this->trace("stSetFirstPlayer: COMPLETE - transitioning to first player turn");
+		$this->trace("stSetFirstPlayer: Both players are now multiactive for card selection");
+		$this->trace("stSetFirstPlayer: COMPLETE - transitioning to card selection");
 		$this->gamestate->nextState("startRound");
 	}
     /**

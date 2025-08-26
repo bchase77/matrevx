@@ -67,39 +67,17 @@ $machinestates = array(
         "transitions" => array("startRound" => 10)
     ),
 
-    // First player selects card
+    // Both players select cards simultaneously
     10 => array(
-        "name" => "firstPlayerTurn",
-        "description" => clienttranslate('${actplayer} must play a card'),
-        "descriptionmyturn" => clienttranslate('${you} must play a card'),
-        "type" => "activeplayer",
+        "name" => "playersSelectCards",
+        "description" => clienttranslate('Both players must select their cards'),
+        "descriptionmyturn" => clienttranslate('${you} must select a card'),
+        "type" => "multipleactiveplayer",
         "args" => "argPlayerTurn",
         "possibleactions" => array(
             "actPlayCard"
         ),
-        "transitions" => array("cardPlayed" => 20)
-    ),
-
-    // Switch to second player
-    20 => array(
-        "name" => "switchToSecondPlayer",
-        "description" => '',
-        "type" => "game",
-        "action" => "stSwitchToSecondPlayer",
-        "transitions" => array("secondPlayerReady" => 11)
-    ),
-
-    // Second player selects card
-    11 => array(
-        "name" => "secondPlayerTurn",
-        "description" => clienttranslate('${actplayer} must play a card'),
-        "descriptionmyturn" => clienttranslate('${you} must play a card'),
-        "type" => "activeplayer",
-        "args" => "argPlayerTurn",
-        "possibleactions" => array(
-            "actPlayCard"
-        ),
-        "transitions" => array("cardPlayed" => 30)
+        "transitions" => array("allCardsSelected" => 12)
     ),
 
     // Reveal both cards and start resolution
