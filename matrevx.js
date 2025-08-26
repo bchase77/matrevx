@@ -113,8 +113,7 @@ setup: function( gamedatas )
                     this.enterPositionSelection(args);
                     break;
                     
-                case 'firstPlayerTurn':
-                case 'secondPlayerTurn':
+                case 'playersSelectCards':
                     this.enterPlayerTurn(args);
                     break;
                     
@@ -620,11 +619,30 @@ setup: function( gamedatas )
         },
         
         enterPlayerTurn: function(args) {
+            console.log('=== enterPlayerTurn called ===');
+            console.log('Args:', args);
+            console.log('Game state name:', args && args.name);
+            console.log('this.isCurrentPlayerActive():', this.isCurrentPlayerActive());
+            console.log('Current player ID:', this.player_id);
+            
+            // Check active player from game state
+            const gamestate = this.gamedatas.gamestate;
+            const activePlayerId = gamestate && gamestate.active_player;
+            const stateName = (args && args.name) || (gamestate && gamestate.name);
+            
+            console.log('Active player from gamestate:', activePlayerId);
+            console.log('State name:', stateName);
+            console.log('Am I the active player?', this.player_id == activePlayerId);
+            
             // Show game area
             document.getElementById('wrestling-mat').style.display = 'block';
             
+            // Only show interactive cards if it's actually our turn
+            const isMyTurn = this.isCurrentPlayerActive() && (this.player_id == activePlayerId);
+            console.log('Final isMyTurn decision:', isMyTurn);
+            
             // If it's our turn, make cards interactive
-            if (this.isCurrentPlayerActive()) {
+            if (isMyTurn) {
                 console.log('PLAYER TURN STARTING - clearing existing cards and showing interactive ones');
                 
                 // Clear any existing cards first to remove preview labels
@@ -667,6 +685,10 @@ setup: function( gamedatas )
                 // Make cards interactive since it's our turn, pass affordability info
                 this.displayPlayerCards(playableCardsIds, currentPosition, true, cardAffordability);
                 }, 100); // 100ms delay to ensure DOM clearing takes effect
+            } else {
+                console.log('=== NOT my turn - no interactive cards shown ===');
+                console.log('this.isCurrentPlayerActive():', this.isCurrentPlayerActive());
+                console.log('this.player_id == activePlayerId:', this.player_id == activePlayerId);
             }
         },
 
@@ -811,9 +833,13 @@ setup: function( gamedatas )
                 cardElement.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
                 cardElement.style.transition = 'all 0.2s ease';
                 
+                console.log(`Card ${cardId}: interactive=${interactive}, cardAffordability=`, cardAffordability);
+                
                 if (interactive) {
+                    console.log(`Card ${cardId} is INTERACTIVE mode`);
                     // Check if this card is affordable
                     const canAfford = cardAffordability[cardId] !== false; // Default to true if not specified
+                    console.log(`Card ${cardId} canAfford=${canAfford}`);
                     
                     if (canAfford) {
                         // Make affordable cards interactive
@@ -861,6 +887,7 @@ setup: function( gamedatas )
                         });
                     }
                 } else {
+                    console.log(`Card ${cardId} is PREVIEW mode (interactive=${interactive})`);
                     // Make cards look inactive when not interactive
                     cardElement.style.opacity = '0.7';
                     cardElement.style.cursor = 'default';
