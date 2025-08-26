@@ -637,8 +637,12 @@ setup: function( gamedatas )
             // Show game area
             document.getElementById('wrestling-mat').style.display = 'block';
             
-            // Only show interactive cards if it's actually our turn
-            const isMyTurn = this.isCurrentPlayerActive() && (this.player_id == activePlayerId);
+            // For multiactive states, only check isCurrentPlayerActive()
+            // For single player states, also check if we match the active player
+            const isMultiactive = stateName === 'playersSelectCards';
+            const isMyTurn = isMultiactive ? this.isCurrentPlayerActive() : 
+                             (this.isCurrentPlayerActive() && (this.player_id == activePlayerId));
+            console.log('Is multiactive state:', isMultiactive);
             console.log('Final isMyTurn decision:', isMyTurn);
             
             // If it's our turn, make cards interactive
