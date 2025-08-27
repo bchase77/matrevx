@@ -1128,13 +1128,16 @@ setup: function( gamedatas )
             // Main game board area  
             gameAreaHTML += '<div id="game-main-area" style="display: none;">';
             
-            // Left Player Stats Board
+            // Left Player Stats Board with Label
+            gameAreaHTML += '<div class="stats-board-container">';
+            gameAreaHTML += '<div class="stats-board-label">You</div>';
             gameAreaHTML += '<div id="left-stats-board" class="player-stats-board">';
             gameAreaHTML += '<div class="stat-tracker offense-stat" id="left-offense-stat">0</div>';
             gameAreaHTML += '<div class="stat-tracker defense-stat" id="left-defense-stat">0</div>';
             gameAreaHTML += '<div class="stat-tracker top-stat" id="left-top-stat">0</div>';
             gameAreaHTML += '<div class="stat-tracker bottom-stat" id="left-bottom-stat">0</div>';
-            gameAreaHTML += '<div class="stat-tracker tokens-stat" id="left-tokens-stat">0</div>';
+            gameAreaHTML += '<div class="stat-tracker conditioning-stat" id="left-conditioning-stat">0</div>';
+            gameAreaHTML += '</div>';
             gameAreaHTML += '</div>';
             
             // Wrestling Mat (Center)
@@ -1150,16 +1153,49 @@ setup: function( gamedatas )
             gameAreaHTML += '<div id="game-info"></div>';
             gameAreaHTML += '</div>';
             
-            // Right Player Stats Board
+            // Right Player Stats Board with Label  
+            gameAreaHTML += '<div class="stats-board-container">';
+            gameAreaHTML += '<div class="stats-board-label">Opponent</div>';
             gameAreaHTML += '<div id="right-stats-board" class="player-stats-board">';
             gameAreaHTML += '<div class="stat-tracker offense-stat" id="right-offense-stat">0</div>';
             gameAreaHTML += '<div class="stat-tracker defense-stat" id="right-defense-stat">0</div>';
             gameAreaHTML += '<div class="stat-tracker top-stat" id="right-top-stat">0</div>';
             gameAreaHTML += '<div class="stat-tracker bottom-stat" id="right-bottom-stat">0</div>';
-            gameAreaHTML += '<div class="stat-tracker tokens-stat" id="right-tokens-stat">0</div>';
+            gameAreaHTML += '<div class="stat-tracker conditioning-stat" id="right-conditioning-stat">0</div>';
+            gameAreaHTML += '</div>';
             gameAreaHTML += '</div>';
             
             gameAreaHTML += '</div>'; // End game-main-area
+            
+            // Left Player Panel (You)
+            gameAreaHTML += '<div id="left-player-panel" class="player-panel">';
+            gameAreaHTML += '<div class="panel-section">';
+            gameAreaHTML += '<h4>Technique & Adrenaline</h4>';
+            gameAreaHTML += '<div class="stat-row">';
+            gameAreaHTML += '<span class="stat-label">Technique</span>';
+            gameAreaHTML += '<span class="stat-value" id="your-technique">0</span>';
+            gameAreaHTML += '</div>';
+            gameAreaHTML += '<div class="stat-row">';
+            gameAreaHTML += '<span class="stat-label">Adrenaline</span>';
+            gameAreaHTML += '<span class="stat-value" id="your-adrenaline">0</span>';
+            gameAreaHTML += '</div>';
+            gameAreaHTML += '</div>';
+            gameAreaHTML += '</div>';
+            
+            // Right Player Panel (Opponent)
+            gameAreaHTML += '<div id="right-player-panel" class="player-panel">';
+            gameAreaHTML += '<div class="panel-section">';
+            gameAreaHTML += '<h4>Opponent Stats</h4>';
+            gameAreaHTML += '<div class="stat-row">';
+            gameAreaHTML += '<span class="stat-label">Technique</span>';
+            gameAreaHTML += '<span class="stat-value" id="opponent-technique">0</span>';
+            gameAreaHTML += '</div>';
+            gameAreaHTML += '<div class="stat-row">';
+            gameAreaHTML += '<span class="stat-label">Adrenaline</span>';
+            gameAreaHTML += '<span class="stat-value" id="opponent-adrenaline">0</span>';
+            gameAreaHTML += '</div>';
+            gameAreaHTML += '</div>';
+            gameAreaHTML += '</div>';
             
             // Player Hand Area (Bottom)
             gameAreaHTML += '<div id="player-hand-area" style="display: none;">';

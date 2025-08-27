@@ -62,6 +62,21 @@
 
 /* ========== PLAYER STATS BOARDS ========== */
 
+.stats-board-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.stats-board-label {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: #333;
+    text-align: center;
+}
+
 .player-stats-board {
     width: 200px;
     height: 500px;
@@ -94,19 +109,19 @@
     line-height: 1;
 }
 
-/* Left board (Player 1) stats */
+/* Left board (You - Current Player) stats */
 #left-stats-board .offense-stat { top: 40px; left: 12px; }
 #left-stats-board .defense-stat { top: 135px; left: 12px; }
 #left-stats-board .top-stat { top: 225px; left: 12px; }
 #left-stats-board .bottom-stat { top: 315px; left: 12px; }
-#left-stats-board .tokens-stat { top: 405px; left: 12px; }
+#left-stats-board .conditioning-stat { top: 405px; left: 12px; }
 
-/* Right board (Player 2) stats */  
+/* Right board (Opponent) stats */  
 #right-stats-board .offense-stat { top: 40px; right: 32px; }
 #right-stats-board .defense-stat { top: 135px; right: 32px; }
 #right-stats-board .top-stat { top: 225px; right: 32px; }
 #right-stats-board .bottom-stat { top: 315px; right: 32px; }
-#right-stats-board .tokens-stat { top: 405px; right: 32px; }
+#right-stats-board .conditioning-stat { top: 405px; right: 32px; }
 
 /* ========== WRESTLING MAT (Center) ========== */
 
@@ -221,6 +236,66 @@
     100% { transform: rotate(360deg) scale(1); }
 }
 
+/* ========== PLAYER PANELS ========== */
+
+.player-panel {
+    position: fixed;
+    bottom: 20px;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 10px;
+    padding: 15px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    min-width: 200px;
+}
+
+#left-player-panel {
+    left: 20px;
+}
+
+#right-player-panel {
+    right: 20px;
+}
+
+.panel-section {
+    margin-bottom: 15px;
+}
+
+.panel-section h4 {
+    margin: 0 0 10px 0;
+    font-size: 16px;
+    font-weight: bold;
+    color: #333;
+    border-bottom: 2px solid #ddd;
+    padding-bottom: 5px;
+}
+
+.stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 8px 0;
+    padding: 5px 10px;
+    background: rgba(0,0,0,0.05);
+    border-radius: 5px;
+}
+
+.stat-label {
+    font-weight: bold;
+    color: #555;
+}
+
+.stat-value {
+    font-size: 18px;
+    font-weight: bold;
+    color: #333;
+    min-width: 30px;
+    text-align: center;
+    background: white;
+    border-radius: 3px;
+    padding: 2px 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
 /* ========== PLAYER HAND AREA ========== */
 
 #player-hand-area {
@@ -232,7 +307,7 @@
     border-radius: 10px;
     padding: 15px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-    max-width: 80vw;
+    max-width: 60vw;
 }
 
 #player-hand {
