@@ -62,10 +62,12 @@ setup: function( gamedatas )
         playerInfoHTML += '<div id="wrestler-name-' + player.id + '">' + wrestlerName + '</div>';
         // ADD SCORE DISPLAY
         playerInfoHTML += '<div id="player-score-' + player.id + '" class="score-display" style="font-weight: bold; color: #2e7d32;">Score: ' + score + '</div>';
-        playerInfoHTML += '<div id="conditioning-' + player.id + '" class="stat-display">Conditioning: ' + conditioning + '</div>';
         // ADD TOKEN DISPLAY
         playerInfoHTML += '<div id="player-tokens-' + player.id + '" class="stat-display">Tokens: ' + tokens + '</div>';
-        // Note: O/D/T/B stats now displayed on stats boards instead
+        // ADD TECHNIQUE AND ADRENALINE TO PLAYER PANEL
+        playerInfoHTML += '<div id="technique-' + player.id + '" class="stat-display">Technique: 0</div>';
+        playerInfoHTML += '<div id="adrenaline-' + player.id + '" class="stat-display">Adrenaline: 0</div>';
+        // Note: O/D/T/B/Conditioning stats now displayed on stats boards instead
         playerInfoHTML += '</div>';
         
         this.getPlayerPanelElement(player.id).insertAdjacentHTML('beforeend', playerInfoHTML);
@@ -1205,34 +1207,6 @@ setup: function( gamedatas )
             
             gameAreaHTML += '</div>'; // End game-main-area
             
-            // Player Panels with only Technique and Adrenaline
-            gameAreaHTML += '<div id="left-player-panel" class="player-panel">';
-            gameAreaHTML += '<div class="panel-section">';
-            gameAreaHTML += '<h4>You</h4>';
-            gameAreaHTML += '<div class="stat-row">';
-            gameAreaHTML += '<span class="stat-label">Technique</span>';
-            gameAreaHTML += '<span class="stat-value" id="your-technique">0</span>';
-            gameAreaHTML += '</div>';
-            gameAreaHTML += '<div class="stat-row">';
-            gameAreaHTML += '<span class="stat-label">Adrenaline</span>';
-            gameAreaHTML += '<span class="stat-value" id="your-adrenaline">0</span>';
-            gameAreaHTML += '</div>';
-            gameAreaHTML += '</div>';
-            gameAreaHTML += '</div>';
-            
-            gameAreaHTML += '<div id="right-player-panel" class="player-panel">';
-            gameAreaHTML += '<div class="panel-section">';
-            gameAreaHTML += '<h4>Opponent</h4>';
-            gameAreaHTML += '<div class="stat-row">';
-            gameAreaHTML += '<span class="stat-label">Technique</span>';
-            gameAreaHTML += '<span class="stat-value" id="opponent-technique">0</span>';
-            gameAreaHTML += '</div>';
-            gameAreaHTML += '<div class="stat-row">';
-            gameAreaHTML += '<span class="stat-label">Adrenaline</span>';
-            gameAreaHTML += '<span class="stat-value" id="opponent-adrenaline">0</span>';
-            gameAreaHTML += '</div>';
-            gameAreaHTML += '</div>';
-            gameAreaHTML += '</div>';
             
             // Player Hand Area (Bottom)
             gameAreaHTML += '<div id="player-hand-area" style="display: none;">';
@@ -1906,11 +1880,7 @@ setup: function( gamedatas )
                 wrestlerNameElement.textContent = wrestlerName;
             }
             
-            // Update conditioning display
-            const conditioningElement = document.getElementById(`conditioning-${playerId}`);
-            if (conditioningElement && this.gamedatas.players[playerId]) {
-                conditioningElement.textContent = `Conditioning: ${this.gamedatas.players[playerId].conditioning || 0}`;
-            }
+            // Conditioning now displayed on stats boards instead of player panels
             
             // Update token display
             const tokenElement = document.getElementById(`player-tokens-${playerId}`);
