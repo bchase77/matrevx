@@ -1876,8 +1876,8 @@ private function executeDiceChallenge(int $player_id): array
             $result = [];
             
             // Get both players
-            $offense_player_id = $this->getGameStateValue("position_offense");
-            $defense_player_id = $this->getGameStateValue("position_defense");
+            $offense_player_id = (int)$this->getGameStateValue("position_offense");
+            $defense_player_id = (int)$this->getGameStateValue("position_defense");
             
             $this->trace("argPlayerTurn: MULTIACTIVE - offense: $offense_player_id, defense: $defense_player_id");
             
