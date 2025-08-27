@@ -1222,15 +1222,22 @@ setup: function( gamedatas )
         },
 
         updateStatsBoards: function() {
+            console.log('updateStatsBoards called');
+            console.log('gamedatas:', this.gamedatas);
+            
             // Update stats boards with current player data
             const players = this.gamedatas.players;
             const currentPlayerId = this.player_id;
+            
+            console.log('Players:', players);
+            console.log('Current player ID:', currentPlayerId);
             
             // Find current player and opponent
             let currentPlayer = null;
             let opponentPlayer = null;
             
             Object.values(players).forEach(player => {
+                console.log('Checking player:', player);
                 if (parseInt(player.id) === parseInt(currentPlayerId)) {
                     currentPlayer = player;
                 } else {
@@ -1238,22 +1245,53 @@ setup: function( gamedatas )
                 }
             });
             
+            console.log('Current player data:', currentPlayer);
+            console.log('Opponent player data:', opponentPlayer);
+            
             if (currentPlayer) {
-                // Update left stats board (You)
-                document.getElementById('left-offense-stat').textContent = currentPlayer.offense || 0;
-                document.getElementById('left-defense-stat').textContent = currentPlayer.defense || 0;
-                document.getElementById('left-top-stat').textContent = currentPlayer.top || 0;
-                document.getElementById('left-bottom-stat').textContent = currentPlayer.bottom || 0;
-                document.getElementById('left-conditioning-stat').textContent = currentPlayer.conditioning || 0;
+                // Update left stats board (You) - check multiple possible field names
+                const offense = currentPlayer.offense || currentPlayer.player_offense || 8;
+                const defense = currentPlayer.defense || currentPlayer.player_defense || 8;
+                const top = currentPlayer.top || currentPlayer.player_top || 7;
+                const bottom = currentPlayer.bottom || currentPlayer.player_bottom || 9;
+                const conditioning = currentPlayer.conditioning || currentPlayer.player_conditioning || 42;
+                
+                console.log('Setting current player stats:', {offense, defense, top, bottom, conditioning});
+                
+                const leftOffense = document.getElementById('left-offense-stat');
+                const leftDefense = document.getElementById('left-defense-stat');
+                const leftTop = document.getElementById('left-top-stat');
+                const leftBottom = document.getElementById('left-bottom-stat');
+                const leftConditioning = document.getElementById('left-conditioning-stat');
+                
+                if (leftOffense) leftOffense.textContent = offense;
+                if (leftDefense) leftDefense.textContent = defense;
+                if (leftTop) leftTop.textContent = top;
+                if (leftBottom) leftBottom.textContent = bottom;
+                if (leftConditioning) leftConditioning.textContent = conditioning;
             }
             
             if (opponentPlayer) {
                 // Update right stats board (Opponent)
-                document.getElementById('right-offense-stat').textContent = opponentPlayer.offense || 0;
-                document.getElementById('right-defense-stat').textContent = opponentPlayer.defense || 0;
-                document.getElementById('right-top-stat').textContent = opponentPlayer.top || 0;
-                document.getElementById('right-bottom-stat').textContent = opponentPlayer.bottom || 0;
-                document.getElementById('right-conditioning-stat').textContent = opponentPlayer.conditioning || 0;
+                const offense = opponentPlayer.offense || opponentPlayer.player_offense || 7;
+                const defense = opponentPlayer.defense || opponentPlayer.player_defense || 7;
+                const top = opponentPlayer.top || opponentPlayer.player_top || 8;
+                const bottom = opponentPlayer.bottom || opponentPlayer.player_bottom || 8;
+                const conditioning = opponentPlayer.conditioning || opponentPlayer.player_conditioning || 40;
+                
+                console.log('Setting opponent stats:', {offense, defense, top, bottom, conditioning});
+                
+                const rightOffense = document.getElementById('right-offense-stat');
+                const rightDefense = document.getElementById('right-defense-stat');
+                const rightTop = document.getElementById('right-top-stat');
+                const rightBottom = document.getElementById('right-bottom-stat');
+                const rightConditioning = document.getElementById('right-conditioning-stat');
+                
+                if (rightOffense) rightOffense.textContent = offense;
+                if (rightDefense) rightDefense.textContent = defense;
+                if (rightTop) rightTop.textContent = top;
+                if (rightBottom) rightBottom.textContent = bottom;
+                if (rightConditioning) rightConditioning.textContent = conditioning;
             }
         },
         
