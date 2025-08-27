@@ -1170,7 +1170,7 @@ setup: function( gamedatas )
             // Left Player Panel (You)
             gameAreaHTML += '<div id="left-player-panel" class="player-panel">';
             gameAreaHTML += '<div class="panel-section">';
-            gameAreaHTML += '<h4>Technique & Adrenaline</h4>';
+            gameAreaHTML += '<h4>You</h4>';
             gameAreaHTML += '<div class="stat-row">';
             gameAreaHTML += '<span class="stat-label">Technique</span>';
             gameAreaHTML += '<span class="stat-value" id="your-technique">0</span>';
@@ -1185,7 +1185,7 @@ setup: function( gamedatas )
             // Right Player Panel (Opponent)
             gameAreaHTML += '<div id="right-player-panel" class="player-panel">';
             gameAreaHTML += '<div class="panel-section">';
-            gameAreaHTML += '<h4>Opponent Stats</h4>';
+            gameAreaHTML += '<h4>Opponent</h4>';
             gameAreaHTML += '<div class="stat-row">';
             gameAreaHTML += '<span class="stat-label">Technique</span>';
             gameAreaHTML += '<span class="stat-value" id="opponent-technique">0</span>';
