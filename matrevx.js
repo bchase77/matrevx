@@ -630,6 +630,9 @@ setup: function( gamedatas )
             // Show game area
             document.getElementById('game-main-area').style.display = 'flex';
             
+            // Update stats boards with current player data
+            this.updateStatsBoards();
+            
             // For multiactive states, only check isCurrentPlayerActive()
             // For single player states, also check if we match the active player
             const isMultiactive = stateName === 'playersSelectCards';
@@ -1167,7 +1170,7 @@ setup: function( gamedatas )
             
             gameAreaHTML += '</div>'; // End game-main-area
             
-            // Left Player Panel (You)
+            // Player Panels with only Technique and Adrenaline
             gameAreaHTML += '<div id="left-player-panel" class="player-panel">';
             gameAreaHTML += '<div class="panel-section">';
             gameAreaHTML += '<h4>You</h4>';
@@ -1182,7 +1185,6 @@ setup: function( gamedatas )
             gameAreaHTML += '</div>';
             gameAreaHTML += '</div>';
             
-            // Right Player Panel (Opponent)
             gameAreaHTML += '<div id="right-player-panel" class="player-panel">';
             gameAreaHTML += '<div class="panel-section">';
             gameAreaHTML += '<h4>Opponent</h4>';
@@ -1217,6 +1219,42 @@ setup: function( gamedatas )
             console.log('Setting up interactive dice system');
             // This will be called when dice rolling is needed
             // We'll implement the actual dice logic later when we need it
+        },
+
+        updateStatsBoards: function() {
+            // Update stats boards with current player data
+            const players = this.gamedatas.players;
+            const currentPlayerId = this.player_id;
+            
+            // Find current player and opponent
+            let currentPlayer = null;
+            let opponentPlayer = null;
+            
+            Object.values(players).forEach(player => {
+                if (parseInt(player.id) === parseInt(currentPlayerId)) {
+                    currentPlayer = player;
+                } else {
+                    opponentPlayer = player;
+                }
+            });
+            
+            if (currentPlayer) {
+                // Update left stats board (You)
+                document.getElementById('left-offense-stat').textContent = currentPlayer.offense || 0;
+                document.getElementById('left-defense-stat').textContent = currentPlayer.defense || 0;
+                document.getElementById('left-top-stat').textContent = currentPlayer.top || 0;
+                document.getElementById('left-bottom-stat').textContent = currentPlayer.bottom || 0;
+                document.getElementById('left-conditioning-stat').textContent = currentPlayer.conditioning || 0;
+            }
+            
+            if (opponentPlayer) {
+                // Update right stats board (Opponent)
+                document.getElementById('right-offense-stat').textContent = opponentPlayer.offense || 0;
+                document.getElementById('right-defense-stat').textContent = opponentPlayer.defense || 0;
+                document.getElementById('right-top-stat').textContent = opponentPlayer.top || 0;
+                document.getElementById('right-bottom-stat').textContent = opponentPlayer.bottom || 0;
+                document.getElementById('right-conditioning-stat').textContent = opponentPlayer.conditioning || 0;
+            }
         },
         
         showDiceOverlay: function(diceCount, callback) {
