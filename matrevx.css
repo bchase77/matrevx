@@ -99,14 +99,14 @@
 #left-stats-board .defense-stat { top: 135px; left: 12px; }
 #left-stats-board .top-stat { top: 225px; left: 12px; }
 #left-stats-board .bottom-stat { top: 315px; left: 12px; }
-#left-stats-board .tokens-stat { top: 415px; left: 12px; }
+#left-stats-board .tokens-stat { top: 405px; left: 12px; }
 
 /* Right board (Player 2) stats */  
-#right-stats-board .offense-stat { top: 40px; right: 12px; }
-#right-stats-board .defense-stat { top: 135px; right: 12px; }
-#right-stats-board .top-stat { top: 225px; right: 12px; }
-#right-stats-board .bottom-stat { top: 315px; right: 12px; }
-#right-stats-board .tokens-stat { top: 415px; right: 12px; }
+#right-stats-board .offense-stat { top: 40px; right: 32px; }
+#right-stats-board .defense-stat { top: 135px; right: 32px; }
+#right-stats-board .top-stat { top: 225px; right: 32px; }
+#right-stats-board .bottom-stat { top: 315px; right: 32px; }
+#right-stats-board .tokens-stat { top: 405px; right: 32px; }
 
 /* ========== WRESTLING MAT (Center) ========== */
 
