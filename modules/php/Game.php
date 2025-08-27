@@ -995,7 +995,16 @@ private function executeDiceChallenge(int $player_id): array
 
         // Validate card choice using the same logic as argPlayerTurn
         $args = $this->argPlayerTurn();
-        $playableCardsIds = $args['playableCardsIds'];
+        
+        // Handle both single-player and multiactive args formats
+        if (isset($args[$player_id])) {
+            // Multiactive format: args[player_id][data]
+            $player_args = $args[$player_id];
+            $playableCardsIds = $player_args['playableCardsIds'];
+        } else {
+            // Single-player format: args[data] 
+            $playableCardsIds = $args['playableCardsIds'];
+        }
         
         $this->trace("actPlayCard: Playable cards for player $player_id: " . implode(', ', $playableCardsIds));
         
