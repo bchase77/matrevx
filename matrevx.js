@@ -65,7 +65,7 @@ setup: function( gamedatas )
         playerInfoHTML += '<div id="conditioning-' + player.id + '" class="stat-display">Conditioning: ' + conditioning + '</div>';
         // ADD TOKEN DISPLAY
         playerInfoHTML += '<div id="player-tokens-' + player.id + '" class="stat-display">Tokens: ' + tokens + '</div>';
-        playerInfoHTML += '<div class="wrestler-stats-compact">O:' + offense + ' D:' + defense + ' T:' + top + ' B:' + bottom + '</div>';
+        // Note: O/D/T/B stats now displayed on stats boards instead
         playerInfoHTML += '</div>';
         
         this.getPlayerPanelElement(player.id).insertAdjacentHTML('beforeend', playerInfoHTML);
@@ -1550,8 +1550,7 @@ setup: function( gamedatas )
                     // Update local data
                     this.gamedatas.players[notif.args.player_id].offense = notif.args.new_offense;
                     
-                    // Update display
-                    statsElement.textContent = `O:${notif.args.new_offense} D:${player.defense || 0} T:${player.top || 0} B:${player.bottom || 0}`;
+                    // Stats now displayed on visual stats boards instead
                     
                     // Add visual highlight
                     statsElement.style.background = '#ff6b6b';
@@ -1898,11 +1897,7 @@ setup: function( gamedatas )
             }
             
             // Update stats display
-            const statsElement = document.querySelector(`#player-wrestler-info-${playerId} .wrestler-stats-compact`);
-            if (statsElement && this.gamedatas.players[playerId]) {
-                const player = this.gamedatas.players[playerId];
-                statsElement.textContent = `O:${player.offense || 0} D:${player.defense || 0} T:${player.top || 0} B:${player.bottom || 0}`;
-            }
+            // Stats now displayed on visual stats boards instead of player panels
             
             // Remove wrestler from available list if visible
             const wrestlerCard = document.getElementById(`wrestler-${wrestlerId}`);
@@ -2056,8 +2051,7 @@ setup: function( gamedatas )
                         // Update the local data
                         this.gamedatas.players[playerId].offense = newOffense;
                         
-                        // Update the display
-                        statsElement.textContent = `O:${newOffense} D:${player.defense || 0} T:${player.top || 0} B:${player.bottom || 0}`;
+                        // Stats now displayed on visual stats boards instead
                         
                         // Add a visual highlight to show the change
                         statsElement.style.background = '#ffeb3b';
