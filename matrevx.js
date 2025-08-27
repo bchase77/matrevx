@@ -630,8 +630,16 @@ setup: function( gamedatas )
             // Show game area
             document.getElementById('game-main-area').style.display = 'flex';
             
-            // Update stats boards with current player data
-            this.updateStatsBoards();
+            // Update stats boards with current player data (only if positions are assigned)
+            const offense_player_id = this.getGameStateValue ? this.getGameStateValue("position_offense") : 0;
+            const defense_player_id = this.getGameStateValue ? this.getGameStateValue("position_defense") : 0;
+            
+            if (offense_player_id > 0 && defense_player_id > 0) {
+                console.log('Positions assigned, updating stats boards');
+                this.updateStatsBoards();
+            } else {
+                console.log('Positions not yet assigned, skipping stats board update');
+            }
             
             // For multiactive states, only check isCurrentPlayerActive()
             // For single player states, also check if we match the active player
@@ -1918,6 +1926,10 @@ setup: function( gamedatas )
         
         notif_positionSelected: function(notif) {
             console.log('notif_positionSelected', notif);
+            
+            // Update stats boards now that positions are assigned
+            console.log('Positions selected, updating stats boards');
+            this.updateStatsBoards();
             
             // Update game info to show current positions
             document.getElementById('game-info').innerHTML = `
