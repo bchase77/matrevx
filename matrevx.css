@@ -60,50 +60,52 @@
     max-width: 1200px;
 }
 
-/* ========== STATS BOARD (Left Side) ========== */
+/* ========== PLAYER STATS BOARDS ========== */
 
-#stats-board {
-    width: 300px;
-    height: 550px;
-    background: url('img/statsBoardOnly.jpg') no-repeat;
+.player-stats-board {
+    width: 150px;
+    height: 350px;
     background-size: cover;
+    background-repeat: no-repeat;
     position: relative;
     flex-shrink: 0;
 }
 
-#stats-board .stat-tracker {
+#left-stats-board {
+    background-image: url('img/statsBoardLeft.jpg');
+}
+
+#right-stats-board {
+    background-image: url('img/statsBoardRight.jpg');
+}
+
+.player-stats-board .stat-tracker {
     position: absolute;
-    width: 60px;
-    height: 60px;
+    width: 50px;
+    height: 50px;
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
     font-weight: bold;
-    font-size: 18px;
+    font-size: 16px;
     text-shadow: 2px 2px 4px rgba(0,0,0,0.9);
     line-height: 1;
 }
 
-/* Offense stats (Red) */
-#stats-board .offense-top { top: 8px; left: 8px; }
-#stats-board .offense-bottom { top: 185px; right: 8px; }
+/* Left board (Player 1) stats */
+#left-stats-board .offense-stat { top: 8px; left: 8px; }
+#left-stats-board .defense-stat { top: 78px; left: 8px; }
+#left-stats-board .top-stat { top: 148px; left: 8px; }
+#left-stats-board .bottom-stat { top: 218px; left: 8px; }
+#left-stats-board .tokens-stat { top: 288px; left: 8px; }
 
-/* Defense stats (Green) */  
-#stats-board .defense-top { top: 8px; right: 8px; }
-#stats-board .defense-bottom { top: 185px; left: 8px; }
-
-/* Bottom stats (Blue) */
-#stats-board .bottom-left { top: 450px; left: 8px; }
-#stats-board .bottom-right { top: 315px; right: 8px; }
-
-/* Top stats (Orange) */
-#stats-board .top-left { top: 315px; left: 8px; }
-#stats-board .top-right { top: 450px; right: 8px; }
-
-/* Token stats (Yellow) */
-#stats-board .tokens-left { bottom: 8px; left: 8px; }
-#stats-board .tokens-right { bottom: 8px; right: 8px; }
+/* Right board (Player 2) stats */  
+#right-stats-board .offense-stat { top: 8px; right: 8px; }
+#right-stats-board .defense-stat { top: 78px; right: 8px; }
+#right-stats-board .top-stat { top: 148px; right: 8px; }
+#right-stats-board .bottom-stat { top: 218px; right: 8px; }
+#right-stats-board .tokens-stat { top: 288px; right: 8px; }
 
 /* ========== WRESTLING MAT (Center) ========== */
 

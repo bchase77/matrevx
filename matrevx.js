@@ -1128,18 +1128,13 @@ setup: function( gamedatas )
             // Main game board area  
             gameAreaHTML += '<div id="game-main-area" style="display: none;">';
             
-            // Stats Board (Left Side)
-            gameAreaHTML += '<div id="stats-board">';
-            gameAreaHTML += '<div class="stat-tracker offense-top" id="offense-stat-1">0</div>';
-            gameAreaHTML += '<div class="stat-tracker offense-bottom" id="offense-stat-2">0</div>';
-            gameAreaHTML += '<div class="stat-tracker defense-top" id="defense-stat-1">0</div>';
-            gameAreaHTML += '<div class="stat-tracker defense-bottom" id="defense-stat-2">0</div>';
-            gameAreaHTML += '<div class="stat-tracker bottom-left" id="bottom-stat-1">0</div>';
-            gameAreaHTML += '<div class="stat-tracker bottom-right" id="bottom-stat-2">0</div>';
-            gameAreaHTML += '<div class="stat-tracker top-left" id="top-stat-1">0</div>';
-            gameAreaHTML += '<div class="stat-tracker top-right" id="top-stat-2">0</div>';
-            gameAreaHTML += '<div class="stat-tracker tokens-left" id="tokens-p1">0</div>';
-            gameAreaHTML += '<div class="stat-tracker tokens-right" id="tokens-p2">0</div>';
+            // Left Player Stats Board
+            gameAreaHTML += '<div id="left-stats-board" class="player-stats-board">';
+            gameAreaHTML += '<div class="stat-tracker offense-stat" id="left-offense-stat">0</div>';
+            gameAreaHTML += '<div class="stat-tracker defense-stat" id="left-defense-stat">0</div>';
+            gameAreaHTML += '<div class="stat-tracker top-stat" id="left-top-stat">0</div>';
+            gameAreaHTML += '<div class="stat-tracker bottom-stat" id="left-bottom-stat">0</div>';
+            gameAreaHTML += '<div class="stat-tracker tokens-stat" id="left-tokens-stat">0</div>';
             gameAreaHTML += '</div>';
             
             // Wrestling Mat (Center)
@@ -1153,6 +1148,15 @@ setup: function( gamedatas )
             gameAreaHTML += '<div id="mat-center"></div>';
             // Game info area
             gameAreaHTML += '<div id="game-info"></div>';
+            gameAreaHTML += '</div>';
+            
+            // Right Player Stats Board
+            gameAreaHTML += '<div id="right-stats-board" class="player-stats-board">';
+            gameAreaHTML += '<div class="stat-tracker offense-stat" id="right-offense-stat">0</div>';
+            gameAreaHTML += '<div class="stat-tracker defense-stat" id="right-defense-stat">0</div>';
+            gameAreaHTML += '<div class="stat-tracker top-stat" id="right-top-stat">0</div>';
+            gameAreaHTML += '<div class="stat-tracker bottom-stat" id="right-bottom-stat">0</div>';
+            gameAreaHTML += '<div class="stat-tracker tokens-stat" id="right-tokens-stat">0</div>';
             gameAreaHTML += '</div>';
             
             gameAreaHTML += '</div>'; // End game-main-area
