@@ -1860,6 +1860,7 @@ setup: function( gamedatas )
             console.log('notif_wrestlerSelected', notif);
             
             const playerId = notif.args.player_id;
+            
             const wrestlerName = notif.args.wrestler_name;
             const wrestlerId = notif.args.wrestler_id;
             
@@ -1898,6 +1899,10 @@ setup: function( gamedatas )
             
             // Update stats display
             // Stats now displayed on visual stats boards instead of player panels
+            
+            // Update stats boards after wrestler data is updated
+            console.log('Wrestler selected, updating stats boards for all players');
+            this.updateStatsBoards();
             
             // Remove wrestler from available list if visible
             const wrestlerCard = document.getElementById(`wrestler-${wrestlerId}`);
