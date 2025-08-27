@@ -207,7 +207,7 @@ $machinestates = array(
         "type" => "game",
         "action" => "stNextRound",
         "updateGameProgression" => true,
-        "transitions" => array("setNextPlayer" => 19, "endGame" => 99)
+        "transitions" => array("firstPlayerSetup" => 9, "endGame" => 99)
     ),
 
     // Set next player for new round

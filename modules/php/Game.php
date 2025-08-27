@@ -1654,7 +1654,7 @@ private function executeDiceChallenge(int $player_id): array
 			"momentum_player" => $momentum_player
 		]);
 
-		$this->gamestate->nextState("setNextPlayer");
+		$this->gamestate->nextState("firstPlayerSetup");
 	}
 
     /**
