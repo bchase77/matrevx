@@ -49,23 +49,237 @@
 /********* You can start writing your CSS below this line: **********/
 
 
-/*
-    Example of CSS sprites (a black token and a white token, 20x20px each, embedded in the same "tokens.png" 40x20px image):
+/* ========== MAIN GAME LAYOUT ========== */
 
-    .white_token {
-        background-image: url('img/tokens.png');
-        background-position: 0px 0px;
-    }
-    .black_token {
-        background-image: url('img/tokens.png');
-        background-position: -20px 0px;
-    }
-    .token {
-        width: 20px;
-        height: 20px;
-        background-repeat: none;
-    }
-*/
+#game-main-area {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 20px;
+    margin: 20px auto;
+    max-width: 1200px;
+}
+
+/* ========== STATS BOARD (Left Side) ========== */
+
+#stats-board {
+    width: 250px;
+    height: 350px;
+    background: url('img/statsBoardOnly.jpg') no-repeat;
+    background-size: contain;
+    position: relative;
+    flex-shrink: 0;
+}
+
+#stats-board .stat-tracker {
+    position: absolute;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+}
+
+/* Offense stats (Red) */
+#stats-board .offense-top { top: 10px; left: 10px; }
+#stats-board .offense-bottom { top: 170px; right: 10px; }
+
+/* Defense stats (Green) */  
+#stats-board .defense-top { top: 10px; right: 10px; }
+#stats-board .defense-bottom { top: 170px; left: 10px; }
+
+/* Bottom stats (Blue) */
+#stats-board .bottom-left { top: 330px; left: 10px; }
+#stats-board .bottom-right { top: 330px; right: 10px; }
+
+/* Top stats (Orange) */
+#stats-board .top-left { top: 250px; left: 10px; }
+#stats-board .top-right { top: 250px; right: 10px; }
+
+/* Token stats (Yellow) */
+#stats-board .tokens-left { bottom: 10px; left: 10px; }
+#stats-board .tokens-right { bottom: 10px; right: 10px; }
+
+/* ========== WRESTLING MAT (Center) ========== */
+
+#wrestling-mat {
+    width: 500px;
+    height: 500px;
+    background: url('img/mat768.jpg') no-repeat;
+    background-size: contain;
+    position: relative;
+    margin: 0 20px;
+}
+
+/* Card placement areas on the mat */
+.card-placement-area {
+    position: absolute;
+    width: 120px;
+    height: 168px;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.card-placement-area.can-drop {
+    border-color: #FFD700;
+    background: rgba(255, 215, 0, 0.2);
+}
+
+/* Player 1 card areas (Red/Left) */
+#mat-p1-move { top: 150px; left: 30px; }
+#mat-p1-wrestler { bottom: 150px; left: 30px; }
+
+/* Player 2 card areas (Green/Right) */
+#mat-p2-move { top: 150px; right: 30px; }
+#mat-p2-wrestler { bottom: 150px; right: 30px; }
+
+/* Scramble area (Yellow/Top) */
+#mat-scramble { top: 50px; left: 50%; transform: translateX(-50%); width: 150px; height: 80px; }
+
+/* Central circle for dice/action */
+#mat-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ========== DICE OVERLAY SYSTEM ========== */
+
+#dice-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+#dice-container {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    justify-content: center;
+}
+
+.die {
+    width: 60px;
+    height: 60px;
+    background: white;
+    border: 2px solid #333;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.die:hover {
+    transform: scale(1.1);
+    background: #f0f0f0;
+}
+
+.die.selected {
+    background: #4CAF50;
+    color: white;
+}
+
+.die.rerolling {
+    animation: spin 0.5s ease-in-out;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg) scale(1); }
+    50% { transform: rotate(180deg) scale(1.2); }
+    100% { transform: rotate(360deg) scale(1); }
+}
+
+/* ========== PLAYER HAND AREA ========== */
+
+#player-hand-area {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 10px;
+    padding: 15px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    max-width: 80vw;
+}
+
+#player-hand {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    align-items: center;
+}
+
+/* ========== CARDS ========== */
+
+.card {
+    width: 100px;
+    height: 140px;
+    border-radius: 8px;
+    border: 2px solid #333;
+    background: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.card:hover {
+    transform: translateY(-10px) scale(1.05);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+}
+
+.card.preview {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.card.preview:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+.card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.card.unaffordable {
+    opacity: 0.5;
+    filter: grayscale(50%);
+}
+
+.card.unaffordable:hover {
+    transform: translateY(-5px) scale(1.02);
+}
 
 
 

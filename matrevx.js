@@ -40,22 +40,8 @@ setup: function( gamedatas )
     console.log( "Starting game setup" );
     console.log( "Game data:", gamedatas );
 
-    // Set up main game area
-    var gameAreaHTML = '';
-    gameAreaHTML += '<div id="wrestler-selection-area" style="display: none;">';
-    gameAreaHTML += '<h3>Select Your Wrestler</h3>';
-    gameAreaHTML += '<div id="available-wrestlers"></div>';
-    gameAreaHTML += '</div>';
-    gameAreaHTML += '<div id="wrestling-mat" style="display: none;">';
-    gameAreaHTML += '<div id="player-stats"></div>';
-    gameAreaHTML += '<div id="game-info"></div>';
-    gameAreaHTML += '</div>';
-    gameAreaHTML += '<div id="player-hand-area" style="display: none; margin-top: 20px; padding: 15px; background: #f9f9f9; border-radius: 8px;">';
-    gameAreaHTML += '<h3>Your Hand</h3>';
-    gameAreaHTML += '<div id="player-hand" style="display: flex; gap: 10px; flex-wrap: wrap;"></div>';
-    gameAreaHTML += '</div>';
-    
-    document.getElementById('game_play_area').insertAdjacentHTML('beforeend', gameAreaHTML);
+    // Set up main game area with complete game board
+    this.setupGameBoard();
     
     // Setting up player boards with wrestler info INCLUDING SCORES AND TOKENS
     var players = Object.values ? Object.values(gamedatas.players) : Object.keys(gamedatas.players).map(function(k) { return gamedatas.players[k]; });
@@ -369,7 +355,7 @@ setup: function( gamedatas )
             
             // Show wrestler selection area
             document.getElementById('wrestler-selection-area').style.display = 'block';
-            document.getElementById('wrestling-mat').style.display = 'none';
+            document.getElementById('game-main-area').style.display = 'none';
             
             // Clear previous wrestlers and selection state
             const container = document.getElementById('available-wrestlers');
@@ -466,7 +452,7 @@ setup: function( gamedatas )
         leaveWrestlerSelection: function() {
             // Hide wrestler selection area
             document.getElementById('wrestler-selection-area').style.display = 'none';
-            document.getElementById('wrestling-mat').style.display = 'block';
+            document.getElementById('game-main-area').style.display = 'flex';
         },
         
         enterPositionSelection: function(args) {
@@ -474,7 +460,7 @@ setup: function( gamedatas )
             
             // Hide wrestler selection area and show match area
             document.getElementById('wrestler-selection-area').style.display = 'none';
-            document.getElementById('wrestling-mat').style.display = 'block';
+            document.getElementById('game-main-area').style.display = 'flex';
             
             // Show game info
             document.getElementById('game-info').innerHTML = `
@@ -642,7 +628,7 @@ setup: function( gamedatas )
             console.log('Am I the active player?', this.player_id == activePlayerId);
             
             // Show game area
-            document.getElementById('wrestling-mat').style.display = 'block';
+            document.getElementById('game-main-area').style.display = 'flex';
             
             // For multiactive states, only check isCurrentPlayerActive()
             // For single player states, also check if we match the active player
@@ -732,7 +718,7 @@ setup: function( gamedatas )
             console.log('showBothPlayersCards called with:', positionData);
             
             // Show wrestling mat area
-            document.getElementById('wrestling-mat').style.display = 'block';
+            document.getElementById('game-main-area').style.display = 'flex';
             
             // Show both players their cards regardless of whose turn it is
             const currentPlayerId = this.player_id;
@@ -1125,6 +1111,131 @@ setup: function( gamedatas )
                 // Success handled by game state change
             });        
         },    
+
+        // ========== GAME BOARD SETUP ==========
+        
+        setupGameBoard: function() {
+            console.log('Setting up game board with wrestling mat and stats board');
+            
+            var gameAreaHTML = '';
+            
+            // Wrestler selection area (existing)
+            gameAreaHTML += '<div id="wrestler-selection-area" style="display: none;">';
+            gameAreaHTML += '<h3>Select Your Wrestler</h3>';
+            gameAreaHTML += '<div id="available-wrestlers"></div>';
+            gameAreaHTML += '</div>';
+            
+            // Main game board area  
+            gameAreaHTML += '<div id="game-main-area" style="display: none;">';
+            
+            // Stats Board (Left Side)
+            gameAreaHTML += '<div id="stats-board">';
+            gameAreaHTML += '<div class="stat-tracker offense-top" id="offense-stat-1">0</div>';
+            gameAreaHTML += '<div class="stat-tracker offense-bottom" id="offense-stat-2">0</div>';
+            gameAreaHTML += '<div class="stat-tracker defense-top" id="defense-stat-1">0</div>';
+            gameAreaHTML += '<div class="stat-tracker defense-bottom" id="defense-stat-2">0</div>';
+            gameAreaHTML += '<div class="stat-tracker bottom-left" id="bottom-stat-1">0</div>';
+            gameAreaHTML += '<div class="stat-tracker bottom-right" id="bottom-stat-2">0</div>';
+            gameAreaHTML += '<div class="stat-tracker top-left" id="top-stat-1">0</div>';
+            gameAreaHTML += '<div class="stat-tracker top-right" id="top-stat-2">0</div>';
+            gameAreaHTML += '<div class="stat-tracker tokens-left" id="tokens-p1">0</div>';
+            gameAreaHTML += '<div class="stat-tracker tokens-right" id="tokens-p2">0</div>';
+            gameAreaHTML += '</div>';
+            
+            // Wrestling Mat (Center)
+            gameAreaHTML += '<div id="wrestling-mat">';
+            // Card placement areas
+            gameAreaHTML += '<div id="mat-p1-move" class="card-placement-area"></div>';
+            gameAreaHTML += '<div id="mat-p1-wrestler" class="card-placement-area"></div>';
+            gameAreaHTML += '<div id="mat-p2-move" class="card-placement-area"></div>';
+            gameAreaHTML += '<div id="mat-p2-wrestler" class="card-placement-area"></div>';
+            gameAreaHTML += '<div id="mat-scramble" class="card-placement-area"></div>';
+            gameAreaHTML += '<div id="mat-center"></div>';
+            // Game info area
+            gameAreaHTML += '<div id="game-info"></div>';
+            gameAreaHTML += '</div>';
+            
+            gameAreaHTML += '</div>'; // End game-main-area
+            
+            // Player Hand Area (Bottom)
+            gameAreaHTML += '<div id="player-hand-area" style="display: none;">';
+            gameAreaHTML += '<div id="player-hand"></div>';
+            gameAreaHTML += '</div>';
+            
+            // Dice Overlay (Hidden by default)
+            gameAreaHTML += '<div id="dice-overlay">';
+            gameAreaHTML += '<div id="dice-container"></div>';
+            gameAreaHTML += '</div>';
+            
+            document.getElementById('game_play_area').insertAdjacentHTML('beforeend', gameAreaHTML);
+            
+            // Initialize dice system
+            this.setupDiceSystem();
+        },
+        
+        setupDiceSystem: function() {
+            console.log('Setting up interactive dice system');
+            // This will be called when dice rolling is needed
+            // We'll implement the actual dice logic later when we need it
+        },
+        
+        showDiceOverlay: function(diceCount, callback) {
+            console.log('Showing dice overlay with', diceCount, 'dice');
+            var diceContainer = document.getElementById('dice-container');
+            var diceOverlay = document.getElementById('dice-overlay');
+            
+            // Clear existing dice
+            diceContainer.innerHTML = '';
+            
+            // Create dice
+            for (var i = 0; i < diceCount; i++) {
+                var die = document.createElement('div');
+                die.className = 'die';
+                die.id = 'die-' + i;
+                die.textContent = '?';
+                die.addEventListener('click', this.onDieClick.bind(this, i, callback));
+                diceContainer.appendChild(die);
+            }
+            
+            // Show overlay
+            diceOverlay.style.display = 'flex';
+        },
+        
+        hideDiceOverlay: function() {
+            document.getElementById('dice-overlay').style.display = 'none';
+        },
+        
+        onDieClick: function(dieIndex, callback) {
+            console.log('Die', dieIndex, 'clicked');
+            var die = document.getElementById('die-' + dieIndex);
+            
+            // Add rerolling animation
+            die.classList.add('rerolling');
+            
+            // Roll the die after animation
+            setTimeout(() => {
+                var newValue = Math.floor(Math.random() * 6) + 1;
+                die.textContent = newValue;
+                die.classList.remove('rerolling');
+                
+                // Call callback if provided
+                if (callback) {
+                    callback(dieIndex, newValue);
+                }
+            }, 500);
+        },
+        
+        updateStatsBoard: function(playerData) {
+            console.log('Updating stats board with:', playerData);
+            // Update token displays
+            if (playerData.player1) {
+                document.getElementById('tokens-p1').textContent = playerData.player1.tokens || 0;
+            }
+            if (playerData.player2) {
+                document.getElementById('tokens-p2').textContent = playerData.player2.tokens || 0;
+            }
+            // Add more stat updates as needed
+        },
 
 		// Fix the duplicate and misplaced notification handlers in matrevx.js
 		// Place these at the END of your setupNotifications method, replacing the duplicates:
