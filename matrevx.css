@@ -95,18 +95,18 @@
 }
 
 /* Left board (Player 1) stats */
-#left-stats-board .offense-stat { top: 12px; left: 12px; }
-#left-stats-board .defense-stat { top: 112px; left: 12px; }
-#left-stats-board .top-stat { top: 212px; left: 12px; }
-#left-stats-board .bottom-stat { top: 312px; left: 12px; }
-#left-stats-board .tokens-stat { top: 412px; left: 12px; }
+#left-stats-board .offense-stat { top: 25px; left: 12px; }
+#left-stats-board .defense-stat { top: 125px; left: 12px; }
+#left-stats-board .top-stat { top: 225px; left: 12px; }
+#left-stats-board .bottom-stat { top: 325px; left: 12px; }
+#left-stats-board .tokens-stat { top: 425px; left: 12px; }
 
 /* Right board (Player 2) stats */  
-#right-stats-board .offense-stat { top: 12px; right: 12px; }
-#right-stats-board .defense-stat { top: 112px; right: 12px; }
-#right-stats-board .top-stat { top: 212px; right: 12px; }
-#right-stats-board .bottom-stat { top: 312px; right: 12px; }
-#right-stats-board .tokens-stat { top: 412px; right: 12px; }
+#right-stats-board .offense-stat { top: 25px; right: 12px; }
+#right-stats-board .defense-stat { top: 125px; right: 12px; }
+#right-stats-board .top-stat { top: 225px; right: 12px; }
+#right-stats-board .bottom-stat { top: 325px; right: 12px; }
+#right-stats-board .tokens-stat { top: 425px; right: 12px; }
 
 /* ========== WRESTLING MAT (Center) ========== */
 
