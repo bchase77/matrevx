@@ -632,8 +632,8 @@ setup: function( gamedatas )
             
             // For multiactive states, get player-specific args
             let playerArgs = args;
-            if (stateName === 'playersSelectCards' && args && args[this.player_id]) {
-                playerArgs = args[this.player_id];
+            if (stateName === 'playersSelectCards' && args && args.args && args.args[this.player_id]) {
+                playerArgs = args.args[this.player_id];
                 console.log('Using player-specific args:', playerArgs);
             }
             
