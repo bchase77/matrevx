@@ -1096,6 +1096,12 @@ setup: function( gamedatas )
                 wrestler_id: parseInt(this.selectedWrestler)
             }).then(() => {
                 console.log('Wrestler selection successful');
+            
+            // Test: Try to update stats boards manually to see what happens
+            console.log('Testing manual stats board update...');
+            setTimeout(() => {
+                this.updateStatsBoards();
+            }, 1000);
                 // Success handled by notification
             }).catch(error => {
                 console.error('Error selecting wrestler:', error);
@@ -1232,6 +1238,14 @@ setup: function( gamedatas )
         updateStatsBoards: function() {
             console.log('updateStatsBoards called');
             console.log('gamedatas:', this.gamedatas);
+            
+            // First, check if the DOM elements exist
+            console.log('Checking DOM elements:');
+            console.log('left-offense-stat:', document.getElementById('left-offense-stat'));
+            console.log('left-defense-stat:', document.getElementById('left-defense-stat'));
+            console.log('left-top-stat:', document.getElementById('left-top-stat'));
+            console.log('left-bottom-stat:', document.getElementById('left-bottom-stat'));
+            console.log('left-conditioning-stat:', document.getElementById('left-conditioning-stat'));
             
             // Update stats boards with current player data
             const players = this.gamedatas.players;
