@@ -81,6 +81,27 @@ setup: function( gamedatas )
     this.showPlayerCardsOnSetup();
 
     console.log( "Ending game setup" );
+    
+    // Update stats boards if players have wrestlers assigned (for page refresh)
+    if (this.gamedatas && this.gamedatas.players) {
+        console.log('Initial setup: checking if we should update stats boards');
+        // Check if any player has wrestler stats
+        let hasWrestlerStats = false;
+        Object.values(this.gamedatas.players).forEach(player => {
+            if (player.wrestler_id && player.offense) {
+                hasWrestlerStats = true;
+            }
+        });
+        
+        if (hasWrestlerStats) {
+            console.log('Found wrestler stats in setup, updating stats boards');
+            setTimeout(() => {
+                this.updateStatsBoards();
+            }, 100); // Small delay to ensure DOM is ready
+        } else {
+            console.log('No wrestler stats found in setup, skipping stats board update');
+        }
+    }
 },       
         ///////////////////////////////////////////////////
         //// Game & client states
