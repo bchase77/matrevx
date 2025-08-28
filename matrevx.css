@@ -74,13 +74,13 @@
 
 /* Position opponent stats at top, aligned with mat */
 .stats-board-container:nth-child(1) {
-    top: 50px;
+    top: 0;
     left: 520px;
 }
 
 /* Position current player stats at bottom-right, aligned with opponent */  
 .stats-board-container:nth-child(3) {
-    bottom: 50px;
+    bottom: 0;
     left: 520px;
 }
 
@@ -165,9 +165,9 @@
     background-size: contain;
     position: absolute;
     left: 0;
-    top: 50%;
-    transform: rotate(90deg) translateY(-50%);
-    transform-origin: left center;
+    top: 0;
+    transform: rotate(90deg);
+    transform-origin: left top;
     flex-shrink: 0;
     z-index: 1;
 }
