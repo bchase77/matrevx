@@ -72,7 +72,7 @@
     position: absolute;
 }
 
-/* Position opponent stats at top, aligned with mat */
+/* Position opponent stats to the right of mat, aligned with mat top */
 .stats-board-container:nth-child(1) {
     top: 0;
     left: 520px;
@@ -90,7 +90,7 @@
     margin-bottom: 10px;
     color: #333;
     text-align: center;
-    transform: rotate(-90deg);
+    transform: none;
     white-space: nowrap;
 }
 
@@ -99,7 +99,7 @@
     position: absolute;
     bottom: -30px;
     left: 50%;
-    transform: rotate(-90deg) translateX(-50%);
+    transform: translateX(-50%);
     margin: 0;
 }
 
@@ -111,7 +111,7 @@
     background-position: center center;
     position: relative;
     flex-shrink: 0;
-    transform: rotate(90deg);
+    transform: none;
 }
 
 #left-stats-board {
@@ -137,7 +137,7 @@
     background: rgba(0,0,0,0.3);
     border-radius: 50%;
     border: 2px solid white;
-    transform: rotate(-90deg);
+    transform: none;
 }
 
 /* Left board (You - Current Player) stats */
@@ -164,23 +164,19 @@
     background: url('img/mat768.jpg') no-repeat center center;
     background-size: contain;
     position: absolute;
-    left: 500px;
+    left: 0;
     top: 0;
-    transform: rotate(90deg);
-    transform-origin: right top;
+    transform: none;
     flex-shrink: 0;
     z-index: 1;
 }
 
 #game-info {
-    transform: rotate(-90deg);
     position: absolute;
     top: 50%;
     left: 50%;
-    transform-origin: center;
+    transform: translate(-50%, -50%);
     width: 400px;
-    margin-left: -200px;
-    margin-top: -50px;
     z-index: 1000;
 }
 
