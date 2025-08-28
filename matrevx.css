@@ -75,13 +75,13 @@
 /* Position opponent stats to the right of mat, aligned with mat top */
 .stats-board-container:nth-child(1) {
     top: 0;
-    left: 500px;
+    left: 520px;
 }
 
 /* Position current player stats at bottom-right, aligned with mat bottom */  
 .stats-board-container:nth-child(3) {
     top: 300px;
-    left: 500px;
+    left: 520px;
 }
 
 .stats-board-label {
@@ -201,13 +201,13 @@
     background: rgba(255, 215, 0, 0.2);
 }
 
-/* Player 1 card areas (Red/Left) */
-#mat-p1-move { top: 120px; left: 0px; }
-#mat-p1-wrestler { top: 320px; left: 25px; }
+/* Player 1 card areas (Red/Left) - adjusted for rotated mat */
+#mat-p1-move { top: 120px; left: 25px; }
+#mat-p1-wrestler { top: 200px; left: 25px; }
 
-/* Player 2 card areas (Green/Right) */
-#mat-p2-move { top: 120px; right: 0px; }
-#mat-p2-wrestler { top: 320px; right: 25px; }
+/* Player 2 card areas (Green/Right) - adjusted for rotated mat */
+#mat-p2-move { top: 120px; right: 25px; }
+#mat-p2-wrestler { top: 200px; right: 25px; }
 
 /* Scramble area (Yellow/Top) */
 #mat-scramble { top: 50px; left: 50%; transform: translateX(-50%); width: 150px; height: 80px; }
