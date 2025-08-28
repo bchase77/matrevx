@@ -55,7 +55,7 @@
     display: flex;
     justify-content: flex-start;
     align-items: center;
-    gap: 20px;
+    gap: 0px;
     margin: 20px auto;
     max-width: 1200px;
     position: relative;
@@ -74,14 +74,14 @@
 
 /* Position opponent stats at top, aligned with mat */
 .stats-board-container:nth-child(1) {
-    top: 0;
+    top: 50px;
     left: 520px;
 }
 
 /* Position current player stats at bottom-right, aligned with opponent */  
 .stats-board-container:nth-child(3) {
-    bottom: 0;
-    right: 0;
+    bottom: 50px;
+    left: 520px;
 }
 
 .stats-board-label {
@@ -98,8 +98,8 @@
 .stats-board-container:nth-child(3) .stats-board-label {
     position: absolute;
     bottom: -30px;
-    right: 50%;
-    transform: rotate(-90deg) translateX(50%);
+    left: 50%;
+    transform: rotate(-90deg) translateX(-50%);
     margin: 0;
 }
 
