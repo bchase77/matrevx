@@ -101,12 +101,22 @@
 #stats-boards-column {
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
     flex-shrink: 0;
     z-index: 10;
     position: relative;
     height: 500px;
     width: 200px;
+}
+
+/* Position boards to align with mat edges */
+.stats-board-container:nth-child(1) {
+    position: absolute;
+    top: -250px;
+}
+
+.stats-board-container:nth-child(2) {
+    position: absolute;
+    bottom: -250px;
 }
 
 .stats-board-label {
@@ -127,7 +137,7 @@
 
 .player-stats-board {
     width: 200px;
-    height: 200px;
+    height: 500px;
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center center;
@@ -162,21 +172,21 @@
     transform: none;
 }
 
-/* Left board (You - Current Player) stats - scaled for 200px height */
-#left-stats-board .offense-stat { top: 16px; left: 12px; }
-#left-stats-board .defense-stat { top: 54px; left: 12px; }
-#left-stats-board .top-stat { top: 90px; left: 12px; }
-#left-stats-board .bottom-stat { top: 126px; left: 12px; }
-#left-stats-board .conditioning-stat { top: 162px; left: 12px; }
-#left-stats-board .stalling-stat { top: 188px; left: 12px; }
+/* Left board (You - Current Player) stats */
+#left-stats-board .offense-stat { top: 40px; left: 12px; }
+#left-stats-board .defense-stat { top: 135px; left: 12px; }
+#left-stats-board .top-stat { top: 225px; left: 12px; }
+#left-stats-board .bottom-stat { top: 315px; left: 12px; }
+#left-stats-board .conditioning-stat { top: 405px; left: 12px; }
+#left-stats-board .stalling-stat { top: 470px; left: 12px; }
 
-/* Right board (Opponent) stats - scaled for 200px height */  
-#right-stats-board .offense-stat { top: 16px; right: 32px; }
-#right-stats-board .defense-stat { top: 54px; right: 32px; }
-#right-stats-board .top-stat { top: 90px; right: 32px; }
-#right-stats-board .bottom-stat { top: 126px; right: 32px; }
-#right-stats-board .conditioning-stat { top: 162px; right: 32px; }
-#right-stats-board .stalling-stat { top: 188px; right: 32px; }
+/* Right board (Opponent) stats */  
+#right-stats-board .offense-stat { top: 40px; right: 32px; }
+#right-stats-board .defense-stat { top: 135px; right: 32px; }
+#right-stats-board .top-stat { top: 225px; right: 32px; }
+#right-stats-board .bottom-stat { top: 315px; right: 32px; }
+#right-stats-board .conditioning-stat { top: 405px; right: 32px; }
+#right-stats-board .stalling-stat { top: 470px; right: 32px; }
 
 /* ========== WRESTLING MAT (Center) ========== */
 
@@ -222,13 +232,13 @@
     background: rgba(255, 215, 0, 0.2);
 }
 
-/* Player 1 card areas (Red/Left) - adjusted for rotated mat */
-#mat-p1-move { top: 120px; left: 25px; }
-#mat-p1-wrestler { top: 200px; left: 60px; }
+/* Player 1 card areas (Red/Left) - moved 40px right */
+#mat-p1-move { top: 120px; left: 65px; }
+#mat-p1-wrestler { top: 200px; left: 100px; }
 
-/* Player 2 card areas (Green/Right) - adjusted for rotated mat */
-#mat-p2-move { top: 120px; right: 25px; }
-#mat-p2-wrestler { top: 200px; right: 60px; }
+/* Player 2 card areas (Green/Right) - moved 40px right */
+#mat-p2-move { top: 120px; right: -15px; }
+#mat-p2-wrestler { top: 200px; right: 20px; }
 
 /* Scramble area (Yellow/Top) - hidden for now */
 #mat-scramble { display: none; }
