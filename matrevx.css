@@ -94,36 +94,44 @@
     flex-direction: column;
     align-items: center;
     flex-shrink: 0;
+    position: absolute;
 }
 
-/* Stats board column - boards positioned to align with mat */
+/* Opponent stats board - align with top of mat */
+.stats-board-container:nth-child(1) {
+    top: 0;
+}
+
+/* Player stats board - align with bottom of mat */
+.stats-board-container:nth-child(2) {
+    bottom: 0;
+}
+
+/* Stats board column - positioned to match layout */
 #stats-boards-column {
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
-    height: 500px;
+    justify-content: flex-start;
     flex-shrink: 0;
     z-index: 10;
     position: relative;
+    height: 500px;
 }
 
 .stats-board-label {
-    font-size: 18px;
+    position: absolute;
+    right: -120px;
+    top: 50%;
+    transform: translateY(-50%);
+    margin: 0;
+    background: yellow;
+    padding: 5px 10px;
+    border: 2px solid #333;
+    font-size: 14px;
     font-weight: bold;
-    margin-bottom: 10px;
     color: #333;
     text-align: center;
-    transform: none;
     white-space: nowrap;
-}
-
-/* Move "You" label to be just underneath mat bottom */
-.stats-board-container:nth-child(3) .stats-board-label {
-    position: absolute;
-    top: -30px;
-    left: -500px;
-    transform: none;
-    margin: 0;
 }
 
 .player-stats-board {
