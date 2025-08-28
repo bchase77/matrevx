@@ -75,13 +75,13 @@
 /* Position opponent stats to the right of mat, aligned with mat top */
 .stats-board-container:nth-child(1) {
     top: 0;
-    left: 520px;
+    left: 500px;
 }
 
-/* Position current player stats at bottom-right, aligned with opponent */  
+/* Position current player stats at bottom-right, aligned with mat bottom */  
 .stats-board-container:nth-child(3) {
-    bottom: 0;
-    left: 520px;
+    top: 300px;
+    left: 500px;
 }
 
 .stats-board-label {
@@ -94,12 +94,12 @@
     white-space: nowrap;
 }
 
-/* Move "You" label to be under the Player's stat board */
+/* Move "You" label to be just underneath mat bottom */
 .stats-board-container:nth-child(3) .stats-board-label {
     position: absolute;
-    bottom: -30px;
-    left: 50%;
-    transform: translateX(-50%);
+    top: -30px;
+    left: -300px;
+    transform: none;
     margin: 0;
 }
 
@@ -176,7 +176,7 @@
     position: absolute;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%) rotate(90deg);
     width: 400px;
     z-index: 1000;
 }
