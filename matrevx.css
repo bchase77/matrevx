@@ -53,11 +53,13 @@
 
 #game-main-area {
     display: flex;
-    justify-content: center;
-    align-items: flex-start;
+    justify-content: flex-start;
+    align-items: center;
     gap: 20px;
     margin: 20px auto;
     max-width: 1200px;
+    position: relative;
+    min-height: 600px;
 }
 
 /* ========== PLAYER STATS BOARDS ========== */
@@ -67,6 +69,19 @@
     flex-direction: column;
     align-items: center;
     flex-shrink: 0;
+    position: absolute;
+}
+
+/* Position opponent stats at top, aligned with mat */
+.stats-board-container:nth-child(1) {
+    top: 0;
+    left: 520px;
+}
+
+/* Position current player stats at bottom-right, aligned with opponent */  
+.stats-board-container:nth-child(3) {
+    bottom: 0;
+    right: 0;
 }
 
 .stats-board-label {
@@ -75,6 +90,17 @@
     margin-bottom: 10px;
     color: #333;
     text-align: center;
+    transform: rotate(-90deg);
+    white-space: nowrap;
+}
+
+/* Move "You" label to be under the Player's stat board */
+.stats-board-container:nth-child(3) .stats-board-label {
+    position: absolute;
+    bottom: -30px;
+    right: 50%;
+    transform: rotate(-90deg) translateX(50%);
+    margin: 0;
 }
 
 .player-stats-board {
@@ -85,6 +111,7 @@
     background-position: center center;
     position: relative;
     flex-shrink: 0;
+    transform: rotate(90deg);
 }
 
 #left-stats-board {
@@ -110,6 +137,7 @@
     background: rgba(0,0,0,0.3);
     border-radius: 50%;
     border: 2px solid white;
+    transform: rotate(-90deg);
 }
 
 /* Left board (You - Current Player) stats */
@@ -118,6 +146,7 @@
 #left-stats-board .top-stat { top: 225px; left: 12px; }
 #left-stats-board .bottom-stat { top: 315px; left: 12px; }
 #left-stats-board .conditioning-stat { top: 405px; left: 12px; }
+#left-stats-board .stalling-stat { top: 470px; left: 12px; }
 
 /* Right board (Opponent) stats */  
 #right-stats-board .offense-stat { top: 40px; right: 32px; }
@@ -125,6 +154,7 @@
 #right-stats-board .top-stat { top: 225px; right: 32px; }
 #right-stats-board .bottom-stat { top: 315px; right: 32px; }
 #right-stats-board .conditioning-stat { top: 405px; right: 32px; }
+#right-stats-board .stalling-stat { top: 470px; right: 32px; }
 
 /* ========== WRESTLING MAT (Center) ========== */
 
@@ -133,21 +163,40 @@
     height: 500px;
     background: url('img/mat768.jpg') no-repeat center center;
     background-size: contain;
-    position: relative;
-    margin: 0 20px;
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: rotate(90deg) translateY(-50%);
+    transform-origin: left center;
+    flex-shrink: 0;
+    z-index: 1;
+}
+
+#game-info {
+    transform: rotate(-90deg);
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform-origin: center;
+    width: 400px;
+    margin-left: -200px;
+    margin-top: -50px;
+    z-index: 1000;
 }
 
 /* Card placement areas on the mat */
 .card-placement-area {
     position: absolute;
-    width: 120px;
-    height: 168px;
-    border: 2px solid transparent;
+    width: 180px;
+    height: 252px;
+    border: 2px solid rgba(255,255,255,0.1);
     border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: all 0.3s ease;
+    background: rgba(255,255,255,0.05);
+    z-index: 5;
 }
 
 .card-placement-area.can-drop {
@@ -156,12 +205,12 @@
 }
 
 /* Player 1 card areas (Red/Left) */
-#mat-p1-move { top: 150px; left: 30px; }
-#mat-p1-wrestler { bottom: 150px; left: 30px; }
+#mat-p1-move { top: 120px; left: 0px; }
+#mat-p1-wrestler { top: 320px; left: 25px; }
 
 /* Player 2 card areas (Green/Right) */
-#mat-p2-move { top: 150px; right: 30px; }
-#mat-p2-wrestler { bottom: 150px; right: 30px; }
+#mat-p2-move { top: 120px; right: 0px; }
+#mat-p2-wrestler { top: 320px; right: 25px; }
 
 /* Scramble area (Yellow/Top) */
 #mat-scramble { top: 50px; left: 50%; transform: translateX(-50%); width: 150px; height: 80px; }
@@ -179,6 +228,53 @@
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+/* Cards placed on the mat */
+.mat-card {
+    width: 100%;
+    height: 100%;
+    background: white;
+    border-radius: 8px;
+    border: 3px solid #333;
+    display: block;
+    font-size: 12px;
+    font-weight: bold;
+    line-height: 1.2;
+    padding: 0;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.6);
+    z-index: 10;
+    position: relative;
+    overflow: hidden;
+    transform: rotate(-90deg);
+}
+
+.mat-card-header {
+    font-weight: bold;
+    font-size: 12px;
+    margin-bottom: 4px;
+    text-align: center;
+    color: #333;
+}
+
+.mat-card-stats {
+    font-size: 9px;
+    text-align: center;
+    color: #666;
+    line-height: 1.1;
+}
+
+.mat-card.wrestler-card {
+    background: linear-gradient(135deg, #fff3e0, #ffcc02);
+    border-color: #333;
+    border-width: 3px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.6);
+    z-index: 15;
+}
+
+.mat-card.move-card {
+    background: linear-gradient(135deg, #e8f5e8, #4caf50);
+    border-color: #2e7d32;
 }
 
 /* ========== DICE OVERLAY SYSTEM ========== */
