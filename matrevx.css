@@ -75,13 +75,13 @@
 /* Position opponent stats to the right of mat, aligned with mat top */
 .stats-board-container:nth-child(1) {
     top: 0;
-    left: 520px;
+    left: 720px;
 }
 
 /* Position current player stats at bottom-right, aligned with mat bottom */  
 .stats-board-container:nth-child(3) {
-    top: 300px;
-    left: 520px;
+    top: 200px;
+    left: 720px;
 }
 
 .stats-board-label {
@@ -98,7 +98,7 @@
 .stats-board-container:nth-child(3) .stats-board-label {
     position: absolute;
     top: -30px;
-    left: -300px;
+    left: -500px;
     transform: none;
     margin: 0;
 }
