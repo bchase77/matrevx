@@ -1028,6 +1028,48 @@ private function executeDiceChallenge(int $player_id): array
             $player_name = "Player $player_id";
         }
 
+        // Check if this is a stalling card (card ID 46)
+        if ($card_id == 46) {
+            // Increment stall count for this player
+            $this->DbQuery("UPDATE player SET stall_count = stall_count + 1 WHERE player_id = $player_id");
+            
+            // Get new stall count
+            $new_stall_count = (int)$this->getUniqueValueFromDB("SELECT stall_count FROM player WHERE player_id = $player_id");
+            $this->trace("actPlayCard: Player $player_id now has $new_stall_count stalls");
+            
+            // Notify about stalling
+            $this->notifyAllPlayers("playerStalled", clienttranslate('${player_name} played STALLING (${stall_count}/5)'), [
+                "player_id" => $player_id,
+                "player_name" => $player_name,
+                "stall_count" => $new_stall_count
+            ]);
+            
+            // Check for automatic win condition (5 stalls = opponent wins)
+            if ($new_stall_count >= 5) {
+                // Find opponent
+                $opponent_id = $this->getOpponentId($player_id);
+                $opponent_name = $this->getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id = $opponent_id");
+                
+                $this->trace("actPlayCard: Player $player_id has 5 stalls - opponent $opponent_id wins!");
+                
+                // Set final scores
+                $this->DbQuery("UPDATE player SET player_score = 0 WHERE player_id = $player_id"); // Staller loses
+                $this->DbQuery("UPDATE player SET player_score = 1 WHERE player_id = $opponent_id"); // Opponent wins
+                
+                // Notify about stalling victory
+                $this->notifyAllPlayers("stallingVictory", clienttranslate('${winner_name} wins by stalling forfeit! ${staller_name} has reached 5 stalls.'), [
+                    "winner_id" => $opponent_id,
+                    "winner_name" => $opponent_name,
+                    "staller_id" => $player_id,
+                    "staller_name" => $player_name
+                ]);
+                
+                // End the game immediately
+                $this->gamestate->nextState("endGame");
+                return;
+            }
+        }
+
         $this->trace("actPlayCard: Player $player_id ($player_name) successfully playing card $card_id ($card_name)");
 
         if ($state_name === 'playersSelectCards') {
@@ -1069,6 +1111,20 @@ private function executeDiceChallenge(int $player_id): array
             $this->trace("actPlayCard: ERROR - Unexpected state $state_name");
             throw new \BgaUserException("Cannot play card in current game state");
         }
+    }
+
+    /**
+     * Get the opponent's player ID
+     */
+    private function getOpponentId(int $player_id): int
+    {
+        $all_players = $this->getCollectionFromDb("SELECT player_id FROM player");
+        foreach ($all_players as $id => $data) {
+            if ((int)$id !== $player_id) {
+                return (int)$id;
+            }
+        }
+        throw new \BgaSystemException("Could not find opponent for player $player_id");
     }
 
     /**

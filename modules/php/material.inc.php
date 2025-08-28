@@ -15,35 +15,7 @@
 
 return [
 	'wrestlers' => [
-		73 => [
-			"name" => "Goldie Meadows",
-			"conditioning_p1" => 40,
-			"conditioning_p2" => 15,
-			"conditioning_p3" => 8,
-			"offense" => 7,
-			"defense" => 7,
-			"top" => 8,
-			"bottom" => 8,
-			"special_tokens" => 5,
-			"trademark" => "Opponent Star Play - When opponent plays a scoring card, gain 1 Special Token",
-			"special_cards" => ["Go Behind (D)", "Granby Roll (B)", "Arm Bar (T)"],
-			"image_id" => 73
-		],
-		74 => [
-			"name" => "Frankie Boulay",
-			"conditioning_p1" => 38,
-			"conditioning_p2" => 12,
-			"conditioning_p3" => 12,
-			"offense" => 9,
-			"defense" => 5,
-			"top" => 6,
-			"bottom" => 7,
-			"special_tokens" => 1,
-			"trademark" => "Star Cards 0 - All your scoring cards cost 0 Special Tokens",
-			"special_cards" => ["Single Leg (O)", "Sit Out (B)", "Break Down (T)"],
-			"image_id" => 74
-		],
-		77 => [
+		1 => [
 			"name" => "Po Cret",
 			"conditioning_p1" => 42,
 			"conditioning_p2" => 11,
@@ -55,10 +27,38 @@ return [
 			"special_tokens" => 1,
 			"trademark" => "Double Leg - costs only 3 Conditioning and 1 Special Token",
 			"special_cards" => ["Double Leg (O)", "Spladle (D)", "Mat Return (T)"],
-			"image_id" => 77
+			"image_id" => 1
 		],
-		80 => [
-			"name" => "Sandy Freefro", 
+		2 => [
+			"name" => "Darnell Hogler",
+			"conditioning_p1" => 38,
+			"conditioning_p2" => 12,
+			"conditioning_p3" => 12,
+			"offense" => 9,
+			"defense" => 5,
+			"top" => 6,
+			"bottom" => 7,
+			"special_tokens" => 1,
+			"trademark" => "Star Cards 0 - All your scoring cards cost 0 Special Tokens",
+			"special_cards" => ["Single Leg (O)", "Sit Out (B)", "Break Down (T)"],
+			"image_id" => 2
+		],
+		3 => [
+			"name" => "Percy Hercules",
+			"conditioning_p1" => 40,
+			"conditioning_p2" => 15,
+			"conditioning_p3" => 8,
+			"offense" => 7,
+			"defense" => 7,
+			"top" => 8,
+			"bottom" => 8,
+			"special_tokens" => 5,
+			"trademark" => "Opponent Star Play - When opponent plays a scoring card, gain 1 Special Token",
+			"special_cards" => ["Go Behind (D)", "Granby Roll (B)", "Arm Bar (T)"],
+			"image_id" => 3
+		],
+		4 => [
+			"name" => "Willie Karzoni",
 			"conditioning_p1" => 45,
 			"conditioning_p2" => 17,
 			"conditioning_p3" => 3,
@@ -69,10 +69,10 @@ return [
 			"special_tokens" => 3,
 			"trademark" => "Speed Specialist - All speed-based cards cost 1 less conditioning (minimum 1)",
 			"special_cards" => ["Hand Fight (O)", "Sprawl (D)", "Stand Up (B)"],
-			"image_id" => 80
+			"image_id" => 4
 		],
-		82 => [
-			"name" => "Najat Abbas",
+		5 => [
+			"name" => "Debbie Chancer",
 			"conditioning_p1" => 41,
 			"conditioning_p2" => 14,
 			"conditioning_p3" => 9,
@@ -83,7 +83,63 @@ return [
 			"special_tokens" => 4,
 			"trademark" => "Defensive Master - When opponent fails a scoring attempt, gain 1 Special Token",
 			"special_cards" => ["Adrenaline Rush (Any)", "Stalling (Any)", "Spladle (D)"],
-			"image_id" => 82
+			"image_id" => 5
+		],
+		6 => [
+			"name" => "Tina Howser",
+			"conditioning_p1" => 44,
+			"conditioning_p2" => 16,
+			"conditioning_p3" => 5,
+			"offense" => 8,
+			"defense" => 6,
+			"top" => 9,
+			"bottom" => 6,
+			"special_tokens" => 2,
+			"trademark" => "Power Move - Double Leg and Arm Bar cost 1 less conditioning",
+			"special_cards" => ["Double Leg (O)", "Switch (B)", "Arm Bar (T)"],
+			"image_id" => 6
+		],
+		7 => [
+			"name" => "Sandy Freefro",
+			"conditioning_p1" => 39,
+			"conditioning_p2" => 13,
+			"conditioning_p3" => 11,
+			"offense" => 6,
+			"defense" => 8,
+			"top" => 7,
+			"bottom" => 9,
+			"special_tokens" => 3,
+			"trademark" => "Scramble Master - When scramble occurs, choose the outcome",
+			"special_cards" => ["Sprawl (D)", "Hip Heist (B)", "Mat Return (T)"],
+			"image_id" => 7
+		],
+		8 => [
+			"name" => "Maria Banini",
+			"conditioning_p1" => 43,
+			"conditioning_p2" => 14,
+			"conditioning_p3" => 7,
+			"offense" => 9,
+			"defense" => 7,
+			"top" => 8,
+			"bottom" => 7,
+			"special_tokens" => 2,
+			"trademark" => "Aggressive Style - All offensive cards cost 1 less conditioning",
+			"special_cards" => ["Single Leg (O)", "Go Behind (D)", "Switch (B)"],
+			"image_id" => 8
+		],
+		9 => [
+			"name" => "Ernie the Cactus",
+			"conditioning_p1" => 46,
+			"conditioning_p2" => 18,
+			"conditioning_p3" => 1,
+			"offense" => 5,
+			"defense" => 10,
+			"top" => 5,
+			"bottom" => 10,
+			"special_tokens" => 6,
+			"trademark" => "Defensive Wall - Cannot be scored on with strength-based moves",
+			"special_cards" => ["Stalling (Any)", "Sprawl (D)", "Stand Up (B)"],
+			"image_id" => 9
 		]
 	],
 

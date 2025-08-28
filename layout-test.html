@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Wrestling Game Layout Test</title>
+    <style>
+        body { 
+            margin: 0; 
+            padding: 20px; 
+            background: #deb887; 
+            font-family: Arial, sans-serif;
+        }
+        
+        #game-container {
+            width: 1200px;
+            height: 600px;
+            background: #deb887;
+            position: relative;
+            border: 2px solid #333;
+        }
+        
+        .element {
+            position: absolute;
+            border: 2px solid red;
+            background: rgba(255,255,255,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        
+        #mat {
+            width: 500px;
+            height: 500px;
+            background: lightblue;
+        }
+        
+        #stats-container {
+            width: 200px;
+            height: 500px;
+            background: lightgreen;
+        }
+        
+        #opponent-stats {
+            width: 200px;
+            height: 200px;
+            background: orange;
+        }
+        
+        #player-stats {
+            width: 200px;
+            height: 200px;
+            background: pink;
+        }
+    </style>
+</head>
+<body>
+    <h2>Wrestling Game Layout Test - Tell me where to position each element</h2>
+    
+    <div id="game-container">
+        <div class="element" id="mat" style="left: 50px; top: 50px;">
+            WRESTLING MAT<br>
+            500x500px
+        </div>
+        
+        <div class="element" id="stats-container" style="left: 600px; top: 50px;">
+            STATS CONTAINER<br>
+            200x500px
+        </div>
+        
+        <div class="element" id="opponent-stats" style="left: 650px; top: 80px;">
+            OPPONENT<br>
+            STATS<br>
+            200x200px
+        </div>
+        
+        <div class="element" id="opponent-label" style="left: 870px; top: 80px; width: 100px; height: 30px; background: yellow;">
+            Opponent
+        </div>
+        
+        <div class="element" id="player-stats" style="left: 650px; top: 320px;">
+            PLAYER<br>
+            STATS<br>
+            200x200px
+        </div>
+        
+        <div class="element" id="player-label" style="left: 870px; top: 490px; width: 100px; height: 30px; background: yellow;">
+            You
+        </div>
+    </div>
+    
+    <p><strong>Instructions:</strong> Tell me the exact positioning for each element and I'll implement it in the actual game CSS.</p>
+</body>
+</html>

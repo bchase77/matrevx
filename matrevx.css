@@ -96,12 +96,12 @@
     flex-shrink: 0;
 }
 
-/* Stats board column - both boards stacked vertically */
+/* Stats board column - boards positioned to align with mat */
 #stats-boards-column {
     display: flex;
     flex-direction: column;
-    justify-content: flex-start;
-    gap: 50px;
+    justify-content: space-between;
+    height: 500px;
     flex-shrink: 0;
     z-index: 10;
     position: relative;
