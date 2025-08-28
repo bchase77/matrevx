@@ -54,10 +54,10 @@
 #game-main-area {
     display: flex;
     justify-content: flex-start;
-    align-items: center;
-    gap: 0px;
+    align-items: flex-start;
+    gap: 20px;
     margin: 20px auto;
-    max-width: 1200px;
+    max-width: 1400px;
     position: relative;
     min-height: 600px;
 }
@@ -94,19 +94,15 @@
     flex-direction: column;
     align-items: center;
     flex-shrink: 0;
-    position: absolute;
 }
 
-/* Position opponent stats to the right of mat, aligned with mat top */
-.stats-board-container:nth-child(1) {
-    top: 0;
-    left: 720px;
-}
-
-/* Position current player stats at bottom-right, aligned with mat bottom */  
-.stats-board-container:nth-child(3) {
-    top: 0;
-    left: 940px;
+/* Stats board column - both boards stacked vertically */
+#stats-boards-column {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 500px;
+    flex-shrink: 0;
 }
 
 .stats-board-label {
