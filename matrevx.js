@@ -99,6 +99,8 @@ setup: function( gamedatas )
             console.log('Found wrestler stats in setup, updating stats boards');
             setTimeout(() => {
                 this.updateStatsBoards();
+                // Also place wrestler cards on mat for page refresh
+                this.placeExistingCardsOnMat();
             }, 100); // Small delay to ensure DOM is ready
         } else {
             console.log('No wrestler stats found in setup, skipping stats board update');
@@ -1170,13 +1172,14 @@ setup: function( gamedatas )
             
             // Left Player Stats Board with Label
             gameAreaHTML += '<div class="stats-board-container">';
-            gameAreaHTML += '<div class="stats-board-label">You</div>';
+            gameAreaHTML += '<div class="stats-board-label">Opponent</div>';
             gameAreaHTML += '<div id="left-stats-board" class="player-stats-board">';
             gameAreaHTML += '<div class="stat-tracker offense-stat" id="left-offense-stat">0</div>';
             gameAreaHTML += '<div class="stat-tracker defense-stat" id="left-defense-stat">0</div>';
             gameAreaHTML += '<div class="stat-tracker top-stat" id="left-top-stat">0</div>';
             gameAreaHTML += '<div class="stat-tracker bottom-stat" id="left-bottom-stat">0</div>';
             gameAreaHTML += '<div class="stat-tracker conditioning-stat" id="left-conditioning-stat">0</div>';
+            gameAreaHTML += '<div class="stat-tracker stalling-stat" id="left-stalling-stat">0</div>';
             gameAreaHTML += '</div>';
             gameAreaHTML += '</div>';
             
@@ -1195,13 +1198,14 @@ setup: function( gamedatas )
             
             // Right Player Stats Board with Label  
             gameAreaHTML += '<div class="stats-board-container">';
-            gameAreaHTML += '<div class="stats-board-label">Opponent</div>';
+            gameAreaHTML += '<div class="stats-board-label">You</div>';
             gameAreaHTML += '<div id="right-stats-board" class="player-stats-board">';
             gameAreaHTML += '<div class="stat-tracker offense-stat" id="right-offense-stat">0</div>';
             gameAreaHTML += '<div class="stat-tracker defense-stat" id="right-defense-stat">0</div>';
             gameAreaHTML += '<div class="stat-tracker top-stat" id="right-top-stat">0</div>';
             gameAreaHTML += '<div class="stat-tracker bottom-stat" id="right-bottom-stat">0</div>';
             gameAreaHTML += '<div class="stat-tracker conditioning-stat" id="right-conditioning-stat">0</div>';
+            gameAreaHTML += '<div class="stat-tracker stalling-stat" id="right-stalling-stat">0</div>';
             gameAreaHTML += '</div>';
             gameAreaHTML += '</div>';
             
@@ -1280,12 +1284,16 @@ setup: function( gamedatas )
                 const leftTop = document.getElementById('left-top-stat');
                 const leftBottom = document.getElementById('left-bottom-stat');
                 const leftConditioning = document.getElementById('left-conditioning-stat');
+                const leftStalling = document.getElementById('left-stalling-stat');
+                
+                const stalling = currentPlayer.stalling || currentPlayer.stall_count || 0;
                 
                 if (leftOffense) leftOffense.textContent = offense;
                 if (leftDefense) leftDefense.textContent = defense;
                 if (leftTop) leftTop.textContent = top;
                 if (leftBottom) leftBottom.textContent = bottom;
                 if (leftConditioning) leftConditioning.textContent = conditioning;
+                if (leftStalling) leftStalling.textContent = stalling;
             }
             
             if (opponentPlayer) {
@@ -1303,13 +1311,142 @@ setup: function( gamedatas )
                 const rightTop = document.getElementById('right-top-stat');
                 const rightBottom = document.getElementById('right-bottom-stat');
                 const rightConditioning = document.getElementById('right-conditioning-stat');
+                const rightStalling = document.getElementById('right-stalling-stat');
+                
+                const stalling = opponentPlayer.stalling || opponentPlayer.stall_count || 0;
                 
                 if (rightOffense) rightOffense.textContent = offense;
                 if (rightDefense) rightDefense.textContent = defense;
                 if (rightTop) rightTop.textContent = top;
                 if (rightBottom) rightBottom.textContent = bottom;
                 if (rightConditioning) rightConditioning.textContent = conditioning;
+                if (rightStalling) rightStalling.textContent = stalling;
             }
+        },
+
+        placeWrestlerCardOnMat: function(playerId, wrestlerId, wrestlerName) {
+            console.log('Placing wrestler card on mat:', playerId, wrestlerId, wrestlerName);
+            
+            // Determine which mat area to use based on player position
+            const currentPlayerId = this.player_id;
+            let matArea = null;
+            
+            if (parseInt(playerId) === parseInt(currentPlayerId)) {
+                // This is the current player - use P1 area (red/left)
+                matArea = document.getElementById('mat-p1-wrestler');
+                console.log('Using P1 wrestler area for current player', playerId);
+            } else {
+                // This is the opponent - use P2 area (green/right) 
+                matArea = document.getElementById('mat-p2-wrestler');
+                console.log('Using P2 wrestler area for opponent', playerId);
+            }
+            
+            console.log('Mat area found:', matArea);
+            console.log('Mat area classes:', matArea ? matArea.className : 'none');
+            console.log('Mat area parent:', matArea ? matArea.parentElement : 'none');
+            
+            if (matArea) {
+                // Create wrestler card element
+                const cardElement = document.createElement('div');
+                cardElement.className = 'mat-card wrestler-card';
+                cardElement.id = `mat-wrestler-${playerId}`;
+                
+                // Get wrestler data
+                const wrestler = this.gamedatas.wrestlers[wrestlerId];
+                console.log('Wrestler data found:', wrestler);
+                
+                // Use the wrestler card image instead of text
+                cardElement.innerHTML = '';
+                
+                // Try different image path formats for BGA
+                const imagePath = `${g_gamethemeurl}img/${wrestlerId}.jpg`;
+                console.log('Loading wrestler image:', imagePath);
+                
+                cardElement.style.backgroundImage = `url('${imagePath}')`;
+                cardElement.style.backgroundSize = 'cover';
+                cardElement.style.backgroundPosition = 'center';
+                cardElement.style.backgroundRepeat = 'no-repeat';
+                
+                // Add fallback background color in case image doesn't load
+                cardElement.style.backgroundColor = '#f0f0f0';
+                
+                // Test image loading
+                const testImg = new Image();
+                testImg.onload = () => console.log('✅ Wrestler image loaded successfully:', imagePath);
+                testImg.onerror = () => console.error('❌ Failed to load wrestler image:', imagePath);
+                testImg.src = imagePath;
+                
+                // No text overlay needed
+                
+                // Clear any existing wrestler card in this area
+                matArea.innerHTML = '';
+                matArea.appendChild(cardElement);
+                
+                console.log('Wrestler card placed in area:', matArea.id);
+            } else {
+                console.log('Mat area not found for wrestler placement');
+            }
+        },
+
+        placeMovCardOnMat: function(playerId, cardId, cardName) {
+            console.log('Placing move card on mat:', playerId, cardId, cardName);
+            
+            // Determine which mat area to use based on player position
+            const currentPlayerId = this.player_id;
+            let matArea = null;
+            
+            if (parseInt(playerId) === parseInt(currentPlayerId)) {
+                // This is the current player - use P1 area (red/left)
+                matArea = document.getElementById('mat-p1-move');
+            } else {
+                // This is the opponent - use P2 area (green/right)
+                matArea = document.getElementById('mat-p2-move');
+            }
+            
+            if (matArea) {
+                // Create move card element
+                const cardElement = document.createElement('div');
+                cardElement.className = 'mat-card move-card';
+                cardElement.id = `mat-move-${playerId}`;
+                
+                // Get card data
+                const card = this.gamedatas.cardTypes[cardId];
+                if (card) {
+                    cardElement.innerHTML = `
+                        <div class="mat-card-header">${cardName}</div>
+                        <div class="mat-card-stats">
+                            <div>${card.position?.toUpperCase()}</div>
+                            <div>Cost: ${card.conditioning_cost}</div>
+                            <div>Tokens: ${card.special_tokens}</div>
+                        </div>
+                    `;
+                } else {
+                    cardElement.innerHTML = `<div class="mat-card-header">${cardName}</div>`;
+                }
+                
+                // Clear any existing move card in this area
+                matArea.innerHTML = '';
+                matArea.appendChild(cardElement);
+                
+                console.log('Move card placed in area:', matArea.id);
+            } else {
+                console.log('Mat area not found for move card placement');
+            }
+        },
+
+        placeExistingCardsOnMat: function() {
+            console.log('Placing existing cards on mat for page refresh');
+            
+            // Place wrestler cards for all players who have selected wrestlers
+            Object.values(this.gamedatas.players).forEach(player => {
+                if (player.wrestler_id && this.gamedatas.wrestlers[player.wrestler_id]) {
+                    const wrestler = this.gamedatas.wrestlers[player.wrestler_id];
+                    this.placeWrestlerCardOnMat(player.id, player.wrestler_id, wrestler.name);
+                }
+            });
+            
+            // TODO: Place move cards if we have current round card data
+            // This would require checking game state for played cards
         },
         
         showDiceOverlay: function(diceCount, callback) {
@@ -1895,6 +2032,9 @@ setup: function( gamedatas )
             console.log('Wrestler selected, updating stats boards for all players');
             this.updateStatsBoards();
             
+            // Place wrestler card on mat
+            this.placeWrestlerCardOnMat(playerId, wrestlerId, wrestlerName);
+            
             // Remove wrestler from available list if visible
             const wrestlerCard = document.getElementById(`wrestler-${wrestlerId}`);
             if (wrestlerCard) {
@@ -1973,6 +2113,11 @@ setup: function( gamedatas )
             console.log('notif_firstCardPlayed', notif);
             this.showMessage(notif.args.player_name + ' has played a card', 'info');
             
+            // Place move card on mat
+            if (notif.args.card_id && notif.args.card_name) {
+                this.placeMovCardOnMat(notif.args.player_id, notif.args.card_id, notif.args.card_name);
+            }
+            
             // Hide hand if it was our turn
             if (notif.args.player_id == this.player_id) {
                 document.getElementById('player-hand-area').style.display = 'none';
@@ -1982,6 +2127,11 @@ setup: function( gamedatas )
         notif_secondCardPlayed: function(notif) {
             console.log('notif_secondCardPlayed', notif);
             this.showMessage(notif.args.player_name + ' has played a card', 'info');
+            
+            // Place move card on mat
+            if (notif.args.card_id && notif.args.card_name) {
+                this.placeMovCardOnMat(notif.args.player_id, notif.args.card_id, notif.args.card_name);
+            }
             
             // Hide hand if it was our turn
             if (notif.args.player_id == this.player_id) {
@@ -2196,7 +2346,69 @@ setup: function( gamedatas )
             } 
  
             this.showMessage(notif.args.player_name + ' rerolled ' + notif.args.die_label + ': ' + notif.args.new_value, 'info'); 
-        }, 
+        },
+
+        notif_playerStalled: function(notif) {
+            console.log('notif_playerStalled', notif);
+            
+            // Update stalling count in player data
+            if (this.gamedatas.players[notif.args.player_id]) {
+                this.gamedatas.players[notif.args.player_id].stall_count = notif.args.stall_count;
+            }
+            
+            // Update stats boards
+            this.updateStatsBoards();
+            
+            // Show stalling message
+            this.showMessage(notif.args.player_name + ' played STALLING (' + notif.args.stall_count + '/5)', 'info');
+            
+            // Flash the stalling stat
+            const playerId = notif.args.player_id;
+            const currentPlayerId = this.player_id;
+            const stallingElement = (parseInt(playerId) === parseInt(currentPlayerId)) ? 
+                document.getElementById('left-stalling-stat') : 
+                document.getElementById('right-stalling-stat');
+                
+            if (stallingElement) {
+                stallingElement.style.background = '#ff5722';
+                stallingElement.style.color = 'white';
+                setTimeout(() => {
+                    stallingElement.style.background = '';
+                    stallingElement.style.color = '';
+                }, 2000);
+            }
+        },
+
+        notif_stallingVictory: function(notif) {
+            console.log('notif_stallingVictory', notif);
+            
+            // Show victory message
+            this.showMessage(notif.args.winner_name + ' wins by stalling forfeit! ' + notif.args.staller_name + ' has reached 5 stalls.', 'error');
+            
+            // Update scores
+            if (this.gamedatas.players[notif.args.winner_id]) {
+                this.gamedatas.players[notif.args.winner_id].score = 1;
+            }
+            if (this.gamedatas.players[notif.args.staller_id]) {
+                this.gamedatas.players[notif.args.staller_id].score = 0;
+            }
+            
+            // Update score displays
+            const winnerScoreElement = document.getElementById('player-score-' + notif.args.winner_id);
+            if (winnerScoreElement) {
+                winnerScoreElement.textContent = 'Score: 1';
+                winnerScoreElement.style.background = '#4caf50';
+                winnerScoreElement.style.color = 'white';
+            }
+            
+            const stallerScoreElement = document.getElementById('player-score-' + notif.args.staller_id);
+            if (stallerScoreElement) {
+                stallerScoreElement.textContent = 'Score: 0';
+                stallerScoreElement.style.background = '#f44336';
+                stallerScoreElement.style.color = 'white';
+            }
+        },
+ 
    });             
 });
 
