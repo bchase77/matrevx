@@ -128,7 +128,7 @@
 
 .player-stats-board {
     width: 200px;
-    height: 240px;
+    height: 350px;
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center center;
@@ -163,21 +163,21 @@
     transform: none;
 }
 
-/* Left board (You - Current Player) stats - scaled for 240px height */
-#left-stats-board .offense-stat { top: 19px; left: 12px; }
-#left-stats-board .defense-stat { top: 65px; left: 12px; }
-#left-stats-board .top-stat { top: 108px; left: 12px; }
-#left-stats-board .bottom-stat { top: 151px; left: 12px; }
-#left-stats-board .conditioning-stat { top: 194px; left: 12px; }
-#left-stats-board .stalling-stat { top: 226px; left: 12px; }
+/* Left board (You - Current Player) stats - scaled for 350px height */
+#left-stats-board .offense-stat { top: 28px; left: 12px; }
+#left-stats-board .defense-stat { top: 94px; left: 12px; }
+#left-stats-board .top-stat { top: 158px; left: 12px; }
+#left-stats-board .bottom-stat { top: 220px; left: 12px; }
+#left-stats-board .conditioning-stat { top: 284px; left: 12px; }
+#left-stats-board .stalling-stat { top: 329px; left: 12px; }
 
-/* Right board (Opponent) stats - scaled for 240px height */  
-#right-stats-board .offense-stat { top: 19px; right: 32px; }
-#right-stats-board .defense-stat { top: 65px; right: 32px; }
-#right-stats-board .top-stat { top: 108px; right: 32px; }
-#right-stats-board .bottom-stat { top: 151px; right: 32px; }
-#right-stats-board .conditioning-stat { top: 194px; right: 32px; }
-#right-stats-board .stalling-stat { top: 226px; right: 32px; }
+/* Right board (Opponent) stats - scaled for 350px height */  
+#right-stats-board .offense-stat { top: 28px; right: 32px; }
+#right-stats-board .defense-stat { top: 94px; right: 32px; }
+#right-stats-board .top-stat { top: 158px; right: 32px; }
+#right-stats-board .bottom-stat { top: 220px; right: 32px; }
+#right-stats-board .conditioning-stat { top: 284px; right: 32px; }
+#right-stats-board .stalling-stat { top: 329px; right: 32px; }
 
 /* ========== WRESTLING MAT (Center) ========== */
 
