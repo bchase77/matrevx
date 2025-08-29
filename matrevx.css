@@ -139,22 +139,21 @@
 }
 
 .player-stats-board {
-    width: 200px;
-    height: 350px;
+    width: 350px;
+    height: 200px;
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center center;
     position: relative;
     flex-shrink: 0;
-    transform: rotate(90deg);
 }
 
 #left-stats-board {
-    background-image: url('img/statsBoardLeft.jpg');
+    background-image: url('img/statsBoardOnly.jpg');
 }
 
 #right-stats-board {
-    background-image: url('img/statsBoardRight.jpg');
+    background-image: url('img/statsBoardOnly.jpg');
 }
 
 .player-stats-board .stat-tracker {
@@ -175,21 +174,19 @@
     transform: none;
 }
 
-/* Left board (You - Current Player) stats - scaled for 350px height */
-#left-stats-board .offense-stat { top: 28px; left: 12px; }
-#left-stats-board .defense-stat { top: 94px; left: 12px; }
-#left-stats-board .top-stat { top: 158px; left: 12px; }
-#left-stats-board .bottom-stat { top: 220px; left: 12px; }
-#left-stats-board .conditioning-stat { top: 284px; left: 12px; }
-#left-stats-board .stalling-stat { display: none; }
+/* Stats board (unified) - positioned on colored squares in statsBoardOnly.jpg */
+.player-stats-board .offense-stat { top: 25px; left: 25px; }      /* Yellow lightning square top-left */
+.player-stats-board .top-stat { top: 25px; left: 95px; }          /* Orange T square top-center */  
+.player-stats-board .bottom-stat { top: 25px; left: 165px; }      /* Blue B square top-right */
+.player-stats-board .defense-stat { top: 25px; left: 235px; }     /* Red O square */
+.player-stats-board .conditioning-stat { top: 25px; left: 305px; } /* Green D square top-far-right */
 
-/* Right board (Opponent) stats - scaled for 350px height */  
-#right-stats-board .offense-stat { top: 28px; right: 32px; }
-#right-stats-board .defense-stat { top: 94px; right: 32px; }
-#right-stats-board .top-stat { top: 158px; right: 32px; }
-#right-stats-board .bottom-stat { top: 220px; right: 32px; }
-#right-stats-board .conditioning-stat { top: 284px; right: 32px; }
-#right-stats-board .stalling-stat { display: none; }
+/* Bottom row positioning */
+.player-stats-board .offense-stat.bottom { bottom: 25px; left: 25px; }      /* Yellow lightning square bottom-left */
+.player-stats-board .top-stat.bottom { bottom: 25px; left: 95px; }          /* Orange T square bottom-center */  
+.player-stats-board .bottom-stat.bottom { bottom: 25px; left: 165px; }      /* Blue B square bottom-right */
+.player-stats-board .defense-stat.bottom { bottom: 25px; left: 235px; }     /* Red O square bottom */
+.player-stats-board .conditioning-stat.bottom { bottom: 25px; left: 305px; } /* Green D square bottom-far-right */
 
 /* ========== WRESTLING MAT (Center) ========== */
 
@@ -199,8 +196,6 @@
     background: url('img/mat768.jpg') no-repeat center center;
     background-size: contain;
     position: relative;
-    transform: rotate(-90deg);
-    transform-origin: center center;
     flex-shrink: 0;
     z-index: 1;
     margin-right: 20px;
@@ -210,7 +205,7 @@
     position: absolute;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%) rotate(90deg);
+    transform: translate(-50%, -50%);
     width: 400px;
     z-index: 1000;
 }
@@ -235,13 +230,13 @@
     background: rgba(255, 215, 0, 0.2);
 }
 
-/* Player 1 card areas (Red/Left) - moved 40px right */
-#mat-p1-move { top: 120px; left: 65px; }
-#mat-p1-wrestler { top: 200px; left: 100px; }
+/* Player 1 card areas (Red/Bottom) - positioned on bottom red boxes */
+#mat-p1-move { bottom: 40px; left: 50px; }
+#mat-p1-wrestler { bottom: 40px; left: 200px; }
 
-/* Player 2 card areas (Green/Right) - moved 40px right */
-#mat-p2-move { top: 120px; right: -15px; }
-#mat-p2-wrestler { top: 200px; right: 20px; }
+/* Player 2 card areas (Green/Top) - positioned on top green boxes */
+#mat-p2-move { top: 40px; left: 200px; }
+#mat-p2-wrestler { top: 40px; left: 350px; }
 
 /* Scramble area (Yellow/Top) - hidden for now */
 #mat-scramble { display: none; }
@@ -267,7 +262,6 @@
     z-index: 10;
     position: relative;
     overflow: hidden;
-    transform: rotate(90deg);
 }
 
 .mat-card-header {
