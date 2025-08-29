@@ -159,6 +159,71 @@
     flex-shrink: 0;
 }
 
+/* ========== STAT TRACKER CIRCLES ========== */
+
+.stat-circle {
+    position: absolute;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.9);
+    border: 2px solid #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 14px;
+    color: #333;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+/* Top row - Opponent stats in white boxes next to colored squares */
+#opponent-conditioning { top: 15px; left: 70px; }     /* Next to Lightning square */
+#opponent-top { top: 15px; left: 140px; }             /* Next to T square */  
+#opponent-bottom { top: 15px; left: 210px; }          /* Next to B square */
+#opponent-offense { top: 15px; left: 280px; }         /* Next to O square */
+#opponent-defense { top: 15px; left: 350px; }         /* Next to D square */
+
+/* Bottom row - Player stats in white boxes next to colored squares */
+#player-conditioning { bottom: 15px; left: 70px; }    /* Next to Lightning square */
+#player-top { bottom: 15px; left: 140px; }            /* Next to T square */
+#player-bottom { bottom: 15px; left: 210px; }         /* Next to B square */
+#player-offense { bottom: 15px; left: 280px; }        /* Next to O square */
+#player-defense { bottom: 15px; left: 350px; }        /* Next to D square */
+
+/* ========== EXAMPLE STAT CIRCLES FOR DEMONSTRATION ========== */
+
+/* Show example circles with sample values */
+#stats-board::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+/* Create example stat circles using CSS */
+#stats-board::before {
+    content: '8';
+    position: absolute;
+    top: 15px;
+    left: 70px;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.9);
+    border: 2px solid #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 14px;
+    color: #333;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
 /* ========== GAME DIALOGS AND INFO BOXES ========== */
 
 /* Ensure all game info/dialog boxes appear above cards */
