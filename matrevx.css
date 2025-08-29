@@ -292,34 +292,46 @@ div[style*="background:white"] {
 }
 
 #single-stats-board {
-    width: 350px;
-    height: 200px;
+    width: 875px; /* Scale proportionally: 350 * (500/200) = 875 */
+    height: 500px; /* Match mat height */
     background: url('img/statsBoardOnly.jpg') no-repeat center center;
     background-size: contain;
     position: relative;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    padding: 20px;
 }
 
 .stat-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    position: absolute;
     width: 100%;
+    height: 125px; /* Scale proportionally: 50 * (500/200) = 125 */
+}
+
+.opponent-row {
+    top: 0;
+}
+
+.player-row {
+    bottom: 0;
 }
 
 .stat-circle {
-    width: 50px;
-    height: 50px;
+    width: 100px; /* Scale proportionally: 40 * (500/200) = 100 */
+    height: 100px;
     background: rgba(255, 255, 255, 0.9);
-    border: 2px solid #333;
+    border: 3px solid #333; /* Slightly thicker border for larger size */
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: bold;
-    font-size: 16px;
+    font-size: 24px; /* Scale font: 14 * (500/200) = 35, but 24 looks better */
     color: #333;
+    position: absolute;
+    top: 12px; /* Center in the larger row */
 }
+
+/* Position each stat circle over the colored squares - scaled positions */
+.stat-circle.offense-stat { left: 0px; }
+.stat-circle.defense-stat { left: 175px; } /* Scale: 70 * (875/350) = 175 */
+.stat-circle.top-stat { left: 350px; } /* Scale: 140 * (875/350) = 350 */
+.stat-circle.bottom-stat { left: 525px; } /* Scale: 210 * (875/350) = 525 */
+.stat-circle.conditioning-stat { left: 700px; } /* Scale: 280 * (875/350) = 700 */
