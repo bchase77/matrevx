@@ -54,83 +54,27 @@
     text-align: center;
 }
 
-/* Opponent wrestler card (top green WRESTLER box) */
-#mat-opponent-wrestler { top: 50px; left: 180px; }
+/* Opponent wrestler card (top right green box with vertical WRESTLER text) */
+#mat-opponent-wrestler { top: 80px; right: 40px; }
 
-/* Opponent move card (top green MOVE box) */
-#mat-opponent-move { top: 50px; left: 20px; }
+/* Opponent move card (top left green MOVE box) */
+#mat-opponent-move { top: 80px; left: 40px; }
 
-/* Player wrestler card (bottom red WRESTLER box) */  
-#mat-player-wrestler { bottom: 50px; right: 20px; }
+/* Player wrestler card (bottom right red box with vertical WRESTLER text) */  
+#mat-player-wrestler { bottom: 80px; right: 40px; }
 
-/* Player move card (bottom red MOVE box) */
-#mat-player-move { bottom: 50px; right: 180px; }
+/* Player move card (bottom left red MOVE box) */
+#mat-player-move { bottom: 80px; left: 40px; }
 
 /* Scramble card (left yellow box) */
 #mat-scramble { left: 20px; top: 160px; width: 120px; height: 180px; }
 
-/* ========== EXAMPLE CARDS FOR TESTING ========== */
+/* ========== CARD PLACEMENT AREAS (READY FOR ACTUAL CARDS) ========== */
 
-/* Create example cards in each position */
-#mat-opponent-wrestler::after {
-    content: '';
-    width: 100%;
-    height: 100%;
-    position: absolute;
-    background: url('img/1.jpg') center center;
-    background-size: cover;
-    border: 3px solid #ff6600;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.6);
-}
-
-#mat-opponent-move::after {
-    content: '';
-    width: 100%;
-    height: 100%;
-    position: absolute;
-    background: url('img/2.jpg') center center;
-    background-size: cover;
-    border: 3px solid #2e7d32;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.6);
-}
-
-#mat-player-wrestler::after {
-    content: '';
-    width: 100%;
-    height: 100%;
-    position: absolute;
-    background: url('img/3.jpg') center center;
-    background-size: cover;
-    border: 3px solid #ff6600;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.6);
-}
-
-#mat-player-move::after {
-    content: '';
-    width: 100%;
-    height: 100%;
-    position: absolute;
-    background: url('img/4.jpg') center center;
-    background-size: cover;
-    border: 3px solid #2e7d32;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.6);
-}
-
-#mat-scramble::after {
-    content: '';
-    width: 100%;
-    height: 100%;
-    position: absolute;
-    background: url('img/5.jpg') center center;
-    background-size: cover;
-    border: 3px solid #f57f17;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.6);
-}
+/* Card placement areas will be populated by JavaScript when cards are actually played */
+/* Wrestler cards should show chosen wrestlers (Darnell Hogler, Po Cret, etc.) */
+/* Move cards should show when players play move cards during gameplay */
+/* Scramble cards should show when scramble situations occur */
 
 /* ========== MAT CARDS ========== */
 
