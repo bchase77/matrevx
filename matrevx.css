@@ -97,7 +97,7 @@
     position: relative;
 }
 
-/* Stats board column - container with same height as mat */
+/* Stats board column - container positioned to align with mat */
 #stats-boards-column {
     display: flex;
     flex-direction: column;
@@ -108,15 +108,16 @@
     width: 200px;
 }
 
-/* Position boards to align with mat edges */
+/* Position opponent board at top, overlapping upward */
 .stats-board-container:nth-child(1) {
     position: absolute;
-    top: -250px;
+    top: -200px;
 }
 
+/* Position player board at bottom, overlapping downward */
 .stats-board-container:nth-child(2) {
     position: absolute;
-    bottom: -250px;
+    bottom: -200px;
 }
 
 .stats-board-label {
