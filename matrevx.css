@@ -57,14 +57,14 @@
 /* Player 2 wrestler card (opponent - top right green box with vertical WRESTLER text) */
 #mat-p2-wrestler { top: 40px; right: 20px; }
 
-/* Player 2 move card (opponent - top left green MOVE box) */
-#mat-p2-move { top: 40px; left: 20px; }
+/* Player 2 move card (opponent - top center green MOVE rectangle) */
+#mat-p2-move { top: 40px; left: 160px; }
 
 /* Player 1 wrestler card (you - bottom right red box with vertical WRESTLER text) */  
 #mat-p1-wrestler { bottom: 40px; right: 20px; }
 
-/* Player 1 move card (you - bottom left red MOVE box) */
-#mat-p1-move { bottom: 40px; left: 20px; }
+/* Player 1 move card (you - bottom center red MOVE rectangle) */
+#mat-p1-move { bottom: 40px; left: 160px; }
 
 /* Scramble card (left yellow box) */
 #mat-scramble { left: 20px; top: 160px; width: 120px; height: 180px; }
