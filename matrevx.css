@@ -292,8 +292,8 @@ div[style*="background:white"] {
 }
 
 #single-stats-board {
-    width: 875px; /* Scale proportionally: 350 * (500/200) = 875 */
-    height: 500px; /* Match mat height */
+    width: 500px; /* Match mat width */
+    height: 286px; /* Scale proportionally: 200 * (500/350) = 286 */
     background: url('img/statsBoardOnly.jpg') no-repeat center center;
     background-size: contain;
     position: relative;
@@ -302,7 +302,7 @@ div[style*="background:white"] {
 .stat-row {
     position: absolute;
     width: 100%;
-    height: 125px; /* Scale proportionally: 50 * (500/200) = 125 */
+    height: 71px; /* Scale proportionally: 50 * (500/350) = 71 */
 }
 
 .opponent-row {
@@ -314,24 +314,24 @@ div[style*="background:white"] {
 }
 
 .stat-circle {
-    width: 100px; /* Scale proportionally: 40 * (500/200) = 100 */
-    height: 100px;
+    width: 57px; /* Scale proportionally: 40 * (500/350) = 57 */
+    height: 57px;
     background: rgba(255, 255, 255, 0.9);
-    border: 3px solid #333; /* Slightly thicker border for larger size */
+    border: 2px solid #333;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: bold;
-    font-size: 24px; /* Scale font: 14 * (500/200) = 35, but 24 looks better */
+    font-size: 18px; /* Scale font: 14 * (500/350) = 20, but 18 looks better */
     color: #333;
     position: absolute;
-    top: 12px; /* Center in the larger row */
+    top: 7px; /* Center in the row */
 }
 
-/* Position each stat circle over the colored squares - scaled positions */
+/* Position each stat circle over the colored squares - scaled for 500px width */
 .stat-circle.offense-stat { left: 0px; }
-.stat-circle.defense-stat { left: 175px; } /* Scale: 70 * (875/350) = 175 */
-.stat-circle.top-stat { left: 350px; } /* Scale: 140 * (875/350) = 350 */
-.stat-circle.bottom-stat { left: 525px; } /* Scale: 210 * (875/350) = 525 */
-.stat-circle.conditioning-stat { left: 700px; } /* Scale: 280 * (875/350) = 700 */
+.stat-circle.defense-stat { left: 100px; } /* Scale: 70 * (500/350) = 100 */
+.stat-circle.top-stat { left: 200px; } /* Scale: 140 * (500/350) = 200 */
+.stat-circle.bottom-stat { left: 300px; } /* Scale: 210 * (500/350) = 300 */
+.stat-circle.conditioning-stat { left: 400px; } /* Scale: 280 * (500/350) = 400 */
