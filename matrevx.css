@@ -93,3 +93,16 @@
     height: 100%;
     object-fit: cover;
 }
+
+/* ========== HIDE OLD ELEMENTS TEMPORARILY ========== */
+
+/* Hide old stats board elements that JS still creates */
+#stats-boards-column,
+.stats-board-container,
+.stats-board-label,
+#left-stats-board,
+#right-stats-board,
+.player-stats-board,
+.stat-tracker {
+    display: none !important;
+}
