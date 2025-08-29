@@ -285,7 +285,7 @@ div[style*="background:white"] {
 /* ========== SINGLE STATS BOARD ========== */
 
 #stats-board-container {
-    margin-left: 20px;
+    margin-left: 5px; /* Reduced from 20px to bring closer to mat */
     display: flex;
     justify-content: center;
     align-items: center;
