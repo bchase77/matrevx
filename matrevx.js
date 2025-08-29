@@ -1183,36 +1183,30 @@ setup: function( gamedatas )
             gameAreaHTML += '<div id="game-info"></div>';
             gameAreaHTML += '</div>';
             
-            // Stats Boards Column (Right)
-            gameAreaHTML += '<div id="stats-boards-column">';
+            // Single Stats Board (Right)
+            gameAreaHTML += '<div id="stats-board-container">';
+            gameAreaHTML += '<div id="single-stats-board" class="stats-board">';
             
-            // Opponent Stats Board (Top)
-            gameAreaHTML += '<div class="stats-board-container">';
-            gameAreaHTML += '<div class="stats-board-label">Opponent</div>';
-            gameAreaHTML += '<div id="left-stats-board" class="player-stats-board">';
-            gameAreaHTML += '<div class="stat-tracker offense-stat" id="left-offense-stat">0</div>';
-            gameAreaHTML += '<div class="stat-tracker defense-stat" id="left-defense-stat">0</div>';
-            gameAreaHTML += '<div class="stat-tracker top-stat" id="left-top-stat">0</div>';
-            gameAreaHTML += '<div class="stat-tracker bottom-stat" id="left-bottom-stat">0</div>';
-            gameAreaHTML += '<div class="stat-tracker conditioning-stat" id="left-conditioning-stat">0</div>';
-            gameAreaHTML += '<div class="stat-tracker stalling-stat" id="left-stalling-stat">0</div>';
-            gameAreaHTML += '</div>';
+            // Top row - Opponent stats
+            gameAreaHTML += '<div class="stat-row opponent-row">';
+            gameAreaHTML += '<div class="stat-circle offense-stat" id="opponent-offense-stat">0</div>';
+            gameAreaHTML += '<div class="stat-circle defense-stat" id="opponent-defense-stat">0</div>';
+            gameAreaHTML += '<div class="stat-circle top-stat" id="opponent-top-stat">0</div>';
+            gameAreaHTML += '<div class="stat-circle bottom-stat" id="opponent-bottom-stat">0</div>';
+            gameAreaHTML += '<div class="stat-circle conditioning-stat" id="opponent-conditioning-stat">0</div>';
             gameAreaHTML += '</div>';
             
-            // Player Stats Board (Bottom)
-            gameAreaHTML += '<div class="stats-board-container">';
-            gameAreaHTML += '<div class="stats-board-label">You</div>';
-            gameAreaHTML += '<div id="right-stats-board" class="player-stats-board">';
-            gameAreaHTML += '<div class="stat-tracker offense-stat" id="right-offense-stat">0</div>';
-            gameAreaHTML += '<div class="stat-tracker defense-stat" id="right-defense-stat">0</div>';
-            gameAreaHTML += '<div class="stat-tracker top-stat" id="right-top-stat">0</div>';
-            gameAreaHTML += '<div class="stat-tracker bottom-stat" id="right-bottom-stat">0</div>';
-            gameAreaHTML += '<div class="stat-tracker conditioning-stat" id="right-conditioning-stat">0</div>';
-            gameAreaHTML += '<div class="stat-tracker stalling-stat" id="right-stalling-stat">0</div>';
-            gameAreaHTML += '</div>';
+            // Bottom row - Player stats  
+            gameAreaHTML += '<div class="stat-row player-row">';
+            gameAreaHTML += '<div class="stat-circle offense-stat" id="player-offense-stat">0</div>';
+            gameAreaHTML += '<div class="stat-circle defense-stat" id="player-defense-stat">0</div>';
+            gameAreaHTML += '<div class="stat-circle top-stat" id="player-top-stat">0</div>';
+            gameAreaHTML += '<div class="stat-circle bottom-stat" id="player-bottom-stat">0</div>';
+            gameAreaHTML += '<div class="stat-circle conditioning-stat" id="player-conditioning-stat">0</div>';
             gameAreaHTML += '</div>';
             
-            gameAreaHTML += '</div>'; // End stats-boards-column
+            gameAreaHTML += '</div>'; // End single-stats-board
+            gameAreaHTML += '</div>'; // End stats-board-container
             
             gameAreaHTML += '</div>'; // End game-main-area
             
@@ -1284,21 +1278,17 @@ setup: function( gamedatas )
                 
                 console.log('Setting current player stats:', {offense, defense, top, bottom, conditioning});
                 
-                const leftOffense = document.getElementById('left-offense-stat');
-                const leftDefense = document.getElementById('left-defense-stat');
-                const leftTop = document.getElementById('left-top-stat');
-                const leftBottom = document.getElementById('left-bottom-stat');
-                const leftConditioning = document.getElementById('left-conditioning-stat');
-                const leftStalling = document.getElementById('left-stalling-stat');
+                const playerOffense = document.getElementById('player-offense-stat');
+                const playerDefense = document.getElementById('player-defense-stat');
+                const playerTop = document.getElementById('player-top-stat');
+                const playerBottom = document.getElementById('player-bottom-stat');
+                const playerConditioning = document.getElementById('player-conditioning-stat');
                 
-                const stalling = currentPlayer.stalling || currentPlayer.stall_count || 0;
-                
-                if (leftOffense) leftOffense.textContent = offense;
-                if (leftDefense) leftDefense.textContent = defense;
-                if (leftTop) leftTop.textContent = top;
-                if (leftBottom) leftBottom.textContent = bottom;
-                if (leftConditioning) leftConditioning.textContent = conditioning;
-                if (leftStalling) leftStalling.textContent = stalling;
+                if (playerOffense) playerOffense.textContent = offense;
+                if (playerDefense) playerDefense.textContent = defense;
+                if (playerTop) playerTop.textContent = top;
+                if (playerBottom) playerBottom.textContent = bottom;
+                if (playerConditioning) playerConditioning.textContent = conditioning;
             }
             
             if (opponentPlayer) {
@@ -1311,21 +1301,17 @@ setup: function( gamedatas )
                 
                 console.log('Setting opponent stats:', {offense, defense, top, bottom, conditioning});
                 
-                const rightOffense = document.getElementById('right-offense-stat');
-                const rightDefense = document.getElementById('right-defense-stat');
-                const rightTop = document.getElementById('right-top-stat');
-                const rightBottom = document.getElementById('right-bottom-stat');
-                const rightConditioning = document.getElementById('right-conditioning-stat');
-                const rightStalling = document.getElementById('right-stalling-stat');
+                const opponentOffense = document.getElementById('opponent-offense-stat');
+                const opponentDefense = document.getElementById('opponent-defense-stat');
+                const opponentTop = document.getElementById('opponent-top-stat');
+                const opponentBottom = document.getElementById('opponent-bottom-stat');
+                const opponentConditioning = document.getElementById('opponent-conditioning-stat');
                 
-                const stalling = opponentPlayer.stalling || opponentPlayer.stall_count || 0;
-                
-                if (rightOffense) rightOffense.textContent = offense;
-                if (rightDefense) rightDefense.textContent = defense;
-                if (rightTop) rightTop.textContent = top;
-                if (rightBottom) rightBottom.textContent = bottom;
-                if (rightConditioning) rightConditioning.textContent = conditioning;
-                if (rightStalling) rightStalling.textContent = stalling;
+                if (opponentOffense) opponentOffense.textContent = offense;
+                if (opponentDefense) opponentDefense.textContent = defense;
+                if (opponentTop) opponentTop.textContent = top;
+                if (opponentBottom) opponentBottom.textContent = bottom;
+                if (opponentConditioning) opponentConditioning.textContent = conditioning;
             }
         },
 
