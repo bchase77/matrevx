@@ -37,6 +37,141 @@
     flex-shrink: 0;
 }
 
+/* ========== CARD PLACEMENT AREAS ========== */
+
+.card-placement-area {
+    position: absolute;
+    width: 140px;
+    height: 190px;
+    border: 2px dashed rgba(255,255,255,0.3);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,0.1);
+    font-size: 12px;
+    color: rgba(255,255,255,0.7);
+    text-align: center;
+}
+
+/* Opponent wrestler card (top green WRESTLER box) */
+#mat-opponent-wrestler { top: 50px; left: 180px; }
+
+/* Opponent move card (top green MOVE box) */
+#mat-opponent-move { top: 50px; left: 20px; }
+
+/* Player wrestler card (bottom red WRESTLER box) */  
+#mat-player-wrestler { bottom: 50px; right: 20px; }
+
+/* Player move card (bottom red MOVE box) */
+#mat-player-move { bottom: 50px; right: 180px; }
+
+/* Scramble card (left yellow box) */
+#mat-scramble { left: 20px; top: 160px; width: 120px; height: 180px; }
+
+/* ========== EXAMPLE CARDS FOR TESTING ========== */
+
+/* Create example cards in each position */
+#mat-opponent-wrestler::after {
+    content: '';
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    background: url('img/1.jpg') center center;
+    background-size: cover;
+    border: 3px solid #ff6600;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.6);
+}
+
+#mat-opponent-move::after {
+    content: '';
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    background: url('img/2.jpg') center center;
+    background-size: cover;
+    border: 3px solid #2e7d32;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.6);
+}
+
+#mat-player-wrestler::after {
+    content: '';
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    background: url('img/3.jpg') center center;
+    background-size: cover;
+    border: 3px solid #ff6600;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.6);
+}
+
+#mat-player-move::after {
+    content: '';
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    background: url('img/4.jpg') center center;
+    background-size: cover;
+    border: 3px solid #2e7d32;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.6);
+}
+
+#mat-scramble::after {
+    content: '';
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    background: url('img/5.jpg') center center;
+    background-size: cover;
+    border: 3px solid #f57f17;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.6);
+}
+
+/* ========== MAT CARDS ========== */
+
+.mat-card {
+    width: 100%;
+    height: 100%;
+    background: white;
+    border: 3px solid #333;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.6);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: #333;
+}
+
+.mat-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Different card types */
+.mat-card.wrestler-card {
+    background: linear-gradient(135deg, #fff3e0, #ffcc02);
+    border-color: #ff6600;
+}
+
+.mat-card.move-card {
+    background: linear-gradient(135deg, #e8f5e8, #4caf50);
+    border-color: #2e7d32;
+}
+
+.mat-card.scramble-card {
+    background: linear-gradient(135deg, #fff9c4, #ffeb3b);
+    border-color: #f57f17;
+}
+
 /* ========== STATS BOARD ========== */
 
 #stats-board {
