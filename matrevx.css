@@ -289,7 +289,7 @@ div[style*="background:white"] {
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh; /* Full viewport height to center vertically */
+    height: 500px; /* Match mat height to align centers */
 }
 
 #single-stats-board {
