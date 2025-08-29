@@ -54,17 +54,17 @@
     text-align: center;
 }
 
-/* Opponent wrestler card (top right green box with vertical WRESTLER text) */
-#mat-opponent-wrestler { top: 80px; right: 40px; }
+/* Player 2 wrestler card (opponent - top right green box with vertical WRESTLER text) */
+#mat-p2-wrestler { top: 40px; right: 20px; }
 
-/* Opponent move card (top left green MOVE box) */
-#mat-opponent-move { top: 80px; left: 40px; }
+/* Player 2 move card (opponent - top left green MOVE box) */
+#mat-p2-move { top: 40px; left: 20px; }
 
-/* Player wrestler card (bottom right red box with vertical WRESTLER text) */  
-#mat-player-wrestler { bottom: 80px; right: 40px; }
+/* Player 1 wrestler card (you - bottom right red box with vertical WRESTLER text) */  
+#mat-p1-wrestler { bottom: 40px; right: 20px; }
 
-/* Player move card (bottom left red MOVE box) */
-#mat-player-move { bottom: 80px; left: 40px; }
+/* Player 1 move card (you - bottom left red MOVE box) */
+#mat-p1-move { bottom: 40px; left: 20px; }
 
 /* Scramble card (left yellow box) */
 #mat-scramble { left: 20px; top: 160px; width: 120px; height: 180px; }
