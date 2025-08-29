@@ -89,37 +89,17 @@
 
 /* ========== PLAYER STATS BOARDS ========== */
 
-.stats-board-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    flex-shrink: 0;
-    position: relative;
+/* Single stats board container */
+#stats-board {
     width: 350px;
     height: 200px;
-}
-
-/* Stats board column - sized for rotated boards */
-#stats-boards-column {
-    display: flex;
-    flex-direction: column;
+    background-image: url('img/statsBoardOnly.jpg');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center center;
+    position: relative;
     flex-shrink: 0;
     z-index: 10;
-    position: relative;
-    height: 500px;
-    width: 350px;
-}
-
-/* Position opponent board at top */
-.stats-board-container:nth-child(1) {
-    position: absolute;
-    top: 0;
-}
-
-/* Position player board at bottom */
-.stats-board-container:nth-child(2) {
-    position: absolute;
-    bottom: 0;
 }
 
 .stats-board-label {
@@ -138,25 +118,7 @@
     white-space: nowrap;
 }
 
-.player-stats-board {
-    width: 350px;
-    height: 200px;
-    background-size: contain;
-    background-repeat: no-repeat;
-    background-position: center center;
-    position: relative;
-    flex-shrink: 0;
-}
-
-#left-stats-board {
-    background-image: url('img/statsBoardOnly.jpg');
-}
-
-#right-stats-board {
-    background-image: url('img/statsBoardOnly.jpg');
-}
-
-.player-stats-board .stat-tracker {
+#stats-board .stat-tracker {
     position: absolute;
     width: 50px;
     height: 50px;
@@ -171,22 +133,21 @@
     background: rgba(0,0,0,0.3);
     border-radius: 50%;
     border: 2px solid white;
-    transform: none;
 }
 
-/* Stats board (unified) - positioned on colored squares in statsBoardOnly.jpg */
-.player-stats-board .offense-stat { top: 25px; left: 25px; }      /* Yellow lightning square top-left */
-.player-stats-board .top-stat { top: 25px; left: 95px; }          /* Orange T square top-center */  
-.player-stats-board .bottom-stat { top: 25px; left: 165px; }      /* Blue B square top-right */
-.player-stats-board .defense-stat { top: 25px; left: 235px; }     /* Red O square */
-.player-stats-board .conditioning-stat { top: 25px; left: 305px; } /* Green D square top-far-right */
+/* Top row - opponent stats positioned on colored squares */
+#stats-board .opponent-offense-stat { top: 25px; left: 25px; }      /* Yellow lightning square top-left */
+#stats-board .opponent-top-stat { top: 25px; left: 95px; }          /* Orange T square top-center */  
+#stats-board .opponent-bottom-stat { top: 25px; left: 165px; }      /* Blue B square top-right */
+#stats-board .opponent-defense-stat { top: 25px; left: 235px; }     /* Red O square */
+#stats-board .opponent-conditioning-stat { top: 25px; left: 305px; } /* Green D square top-far-right */
 
-/* Bottom row positioning */
-.player-stats-board .offense-stat.bottom { bottom: 25px; left: 25px; }      /* Yellow lightning square bottom-left */
-.player-stats-board .top-stat.bottom { bottom: 25px; left: 95px; }          /* Orange T square bottom-center */  
-.player-stats-board .bottom-stat.bottom { bottom: 25px; left: 165px; }      /* Blue B square bottom-right */
-.player-stats-board .defense-stat.bottom { bottom: 25px; left: 235px; }     /* Red O square bottom */
-.player-stats-board .conditioning-stat.bottom { bottom: 25px; left: 305px; } /* Green D square bottom-far-right */
+/* Bottom row - player stats positioned on colored squares */
+#stats-board .player-offense-stat { bottom: 25px; left: 25px; }      /* Yellow lightning square bottom-left */
+#stats-board .player-top-stat { bottom: 25px; left: 95px; }          /* Orange T square bottom-center */  
+#stats-board .player-bottom-stat { bottom: 25px; left: 165px; }      /* Blue B square bottom-right */
+#stats-board .player-defense-stat { bottom: 25px; left: 235px; }     /* Red O square bottom */
+#stats-board .player-conditioning-stat { bottom: 25px; left: 305px; } /* Green D square bottom-far-right */
 
 /* ========== WRESTLING MAT (Center) ========== */
 
