@@ -909,17 +909,62 @@ setup: function( gamedatas )
                     overflow: hidden;
                 `;
                 
-                // Add JavaScript hover effects since CSS might be overridden
+                // Add JavaScript hover effects with large preview card
                 cardElement.addEventListener('mouseenter', function() {
-                    this.style.transform = 'translateY(-15px) scale(1.4)';
-                    this.style.boxShadow = '0 12px 24px rgba(0,0,0,0.4)';
-                    this.style.zIndex = '10';
+                    // Small animation for original card
+                    this.style.transform = 'translateY(-10px)';
+                    this.style.boxShadow = '0 8px 16px rgba(0,0,0,0.3)';
+                    this.style.zIndex = '5';
+                    
+                    // Create large preview card above original
+                    const previewCard = document.createElement('div');
+                    previewCard.id = 'card-preview-' + cardId;
+                    previewCard.innerHTML = `
+                        <img src="${imagePath}" style="
+                            width: 240px; 
+                            height: 336px; 
+                            border-radius: 12px;
+                            object-fit: contain;
+                            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+                            border: 4px solid #0066cc;
+                        " />
+                    `;
+                    previewCard.style.cssText = `
+                        position: absolute;
+                        bottom: 100%;
+                        left: 50%;
+                        transform: translateX(-50%);
+                        z-index: 1000;
+                        pointer-events: none;
+                        animation: fadeIn 0.2s ease-out;
+                    `;
+                    
+                    // Add fade in animation if not already added
+                    if (!document.getElementById('card-preview-styles')) {
+                        const style = document.createElement('style');
+                        style.id = 'card-preview-styles';
+                        style.textContent = `
+                            @keyframes fadeIn {
+                                from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+                                to { opacity: 1; transform: translateX(-50%) translateY(0); }
+                            }
+                        `;
+                        document.head.appendChild(style);
+                    }
+                    
+                    this.appendChild(previewCard);
                 });
                 
                 cardElement.addEventListener('mouseleave', function() {
                     this.style.transform = '';
                     this.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
                     this.style.zIndex = '';
+                    
+                    // Remove preview card
+                    const previewCard = this.querySelector('#card-preview-' + cardId);
+                    if (previewCard) {
+                        previewCard.remove();
+                    }
                 });
                 
                 console.log(`Card ${cardId}: interactive=${interactive}, cardAffordability=`, cardAffordability);
