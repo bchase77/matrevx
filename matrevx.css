@@ -292,7 +292,7 @@ div[style*="background:white"] {
 }
 
 .player-row {
-    bottom: 74px;
+    top: 150px; /* Position below opponent row: 62px + 71px + some gap */
 }
 
 .stat-circle {
