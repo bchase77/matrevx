@@ -1295,10 +1295,6 @@ setup: function( gamedatas )
             
             // Single Stats Board (Right)
             gameAreaHTML += '<div id="stats-board-container">';
-            
-            // Opponent label
-            gameAreaHTML += '<div style="text-align: center; font-weight: bold; font-size: 16px; color: #333; margin-bottom: 5px;">OPPONENT</div>';
-            
             gameAreaHTML += '<div id="single-stats-board" class="stats-board">';
             
             // Top row - Opponent stats
@@ -1320,10 +1316,6 @@ setup: function( gamedatas )
             gameAreaHTML += '</div>';
             
             gameAreaHTML += '</div>'; // End single-stats-board
-            
-            // You label
-            gameAreaHTML += '<div style="text-align: center; font-weight: bold; font-size: 16px; color: #333; margin-top: 5px;">YOU</div>';
-            
             gameAreaHTML += '</div>'; // End stats-board-container
             
             gameAreaHTML += '</div>'; // End game-main-area
