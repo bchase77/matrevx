@@ -1378,12 +1378,24 @@ setup: function( gamedatas )
             console.log('Opponent player data:', opponentPlayer);
             
             if (currentPlayer) {
-                // Update left stats board (You) - check multiple possible field names
-                const offense = currentPlayer.offense || currentPlayer.player_offense || 8;
-                const defense = currentPlayer.defense || currentPlayer.player_defense || 8;
-                const top = currentPlayer.top || currentPlayer.player_top || 7;
-                const bottom = currentPlayer.bottom || currentPlayer.player_bottom || 9;
-                const conditioning = currentPlayer.conditioning || currentPlayer.player_conditioning || 42;
+                // Update left stats board (You) - get stats from wrestler data
+                let offense = 8, defense = 8, top = 7, bottom = 9, conditioning = 42;
+                
+                if (currentPlayer.wrestler_id && this.gamedatas.wrestlers[currentPlayer.wrestler_id]) {
+                    const wrestler = this.gamedatas.wrestlers[currentPlayer.wrestler_id];
+                    offense = wrestler.offense;
+                    defense = wrestler.defense;
+                    top = wrestler.top;
+                    bottom = wrestler.bottom;
+                    conditioning = wrestler.conditioning_p1; // Use period 1 conditioning
+                } else {
+                    // Fallback to player fields if wrestler data not available
+                    offense = currentPlayer.offense || currentPlayer.player_offense || 8;
+                    defense = currentPlayer.defense || currentPlayer.player_defense || 8;
+                    top = currentPlayer.top || currentPlayer.player_top || 7;
+                    bottom = currentPlayer.bottom || currentPlayer.player_bottom || 9;
+                    conditioning = currentPlayer.conditioning || currentPlayer.player_conditioning || 42;
+                }
                 
                 console.log('Setting current player stats:', {offense, defense, top, bottom, conditioning});
                 
@@ -1401,12 +1413,24 @@ setup: function( gamedatas )
             }
             
             if (opponentPlayer) {
-                // Update right stats board (Opponent)
-                const offense = opponentPlayer.offense || opponentPlayer.player_offense || 7;
-                const defense = opponentPlayer.defense || opponentPlayer.player_defense || 7;
-                const top = opponentPlayer.top || opponentPlayer.player_top || 8;
-                const bottom = opponentPlayer.bottom || opponentPlayer.player_bottom || 8;
-                const conditioning = opponentPlayer.conditioning || opponentPlayer.player_conditioning || 40;
+                // Update right stats board (Opponent) - get stats from wrestler data
+                let offense = 7, defense = 7, top = 8, bottom = 8, conditioning = 40;
+                
+                if (opponentPlayer.wrestler_id && this.gamedatas.wrestlers[opponentPlayer.wrestler_id]) {
+                    const wrestler = this.gamedatas.wrestlers[opponentPlayer.wrestler_id];
+                    offense = wrestler.offense;
+                    defense = wrestler.defense;
+                    top = wrestler.top;
+                    bottom = wrestler.bottom;
+                    conditioning = wrestler.conditioning_p1; // Use period 1 conditioning
+                } else {
+                    // Fallback to player fields if wrestler data not available
+                    offense = opponentPlayer.offense || opponentPlayer.player_offense || 7;
+                    defense = opponentPlayer.defense || opponentPlayer.player_defense || 7;
+                    top = opponentPlayer.top || opponentPlayer.player_top || 8;
+                    bottom = opponentPlayer.bottom || opponentPlayer.player_bottom || 8;
+                    conditioning = opponentPlayer.conditioning || opponentPlayer.player_conditioning || 40;
+                }
                 
                 console.log('Setting opponent stats:', {offense, defense, top, bottom, conditioning});
                 
