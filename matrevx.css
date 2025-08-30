@@ -229,11 +229,17 @@ div[style*="background:white"] {
     transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
+    margin-left: -30px; /* Overlap cards by 30px to save space */
+}
+
+.card:first-child {
+    margin-left: 0; /* First card has no overlap */
 }
 
 .card:hover {
     transform: translateY(-10px) scale(1.05);
     box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+    z-index: 10; /* Bring hovered card above others */
 }
 
 .card img {

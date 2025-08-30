@@ -1319,9 +1319,9 @@ setup: function( gamedatas )
             
             
             // NEW: Player Card Selection Area (Bottom)
-            gameAreaHTML += '<div id="card-selection-area" style="display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(248, 249, 250, 0.95); border-radius: 12px; padding: 20px; box-shadow: 0 8px 24px rgba(0,0,0,0.2); max-width: 95vw; z-index: 1000;">';
+            gameAreaHTML += '<div id="card-selection-area" style="display: none; position: fixed; bottom: 20px; left: 0; right: 0; background: rgba(248, 249, 250, 0.95); border-radius: 12px 12px 0 0; padding: 20px; box-shadow: 0 8px 24px rgba(0,0,0,0.2); z-index: 1000;">';
             gameAreaHTML += '<div id="card-selection-header" style="text-align: center; margin-bottom: 15px; font-size: 18px; font-weight: bold; color: #333;">Select Your Move Card</div>';
-            gameAreaHTML += '<div id="card-selection-grid" style="display: flex; flex-direction: row; gap: 8px; justify-content: center; align-items: center; flex-wrap: wrap;"></div>';
+            gameAreaHTML += '<div id="card-selection-grid" style="display: flex; flex-direction: row; justify-content: center; align-items: center; flex-wrap: wrap;"></div>';
             gameAreaHTML += '</div>';
             
             // Dice Overlay (Hidden by default)
