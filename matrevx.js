@@ -410,50 +410,69 @@ setup: function( gamedatas )
                 wrestlerDiv.className = 'wrestler-card';
                 wrestlerDiv.id = `wrestler-${wrestlerId}`;
                 
+                // Use actual wrestler card image
+                const imagePath = `${g_gamethemeurl}img/${wrestlerId}.jpg`;
                 wrestlerDiv.innerHTML = `
-                    <div class="wrestler-card-container">
-                        <div class="wrestler-info" style="padding: 20px;">
-                            <div class="wrestler-name" style="font-size: 18px; font-weight: bold; margin-bottom: 10px; color: #333;">${wrestler.name}</div>
-                            <div class="wrestler-stats" style="font-size: 13px; line-height: 1.4;">
-                                <div><strong>Conditioning:</strong> ${wrestler.conditioning_p1}/${wrestler.conditioning_p2}/${wrestler.conditioning_p3}</div>
-                                <div><strong>Offense:</strong> ${wrestler.offense} | <strong>Defense:</strong> ${wrestler.defense}</div>
-                                <div><strong>Top:</strong> ${wrestler.top} | <strong>Bottom:</strong> ${wrestler.bottom}</div>
-                                <div><strong>Special Tokens:</strong> ${wrestler.special_tokens}</div>
-                            </div>
-                            <div class="wrestler-trademark" style="font-style: italic; margin-top: 10px; padding: 8px; background: #f5f5f5; border-radius: 4px; font-size: 12px;"><strong>Trademark:</strong> ${wrestler.trademark}</div>
-                        </div>
+                    <div class="wrestler-card-image" style="
+                        width: 200px; 
+                        height: 280px; 
+                        background-image: url('${imagePath}'); 
+                        background-size: cover; 
+                        background-position: center; 
+                        background-repeat: no-repeat;
+                        border-radius: 8px;
+                        position: relative;
+                    ">
+                        <div class="wrestler-name-overlay" style="
+                            position: absolute; 
+                            bottom: 0; 
+                            left: 0; 
+                            right: 0; 
+                            background: rgba(0,0,0,0.7); 
+                            color: white; 
+                            padding: 8px; 
+                            font-weight: bold; 
+                            text-align: center;
+                            border-radius: 0 0 8px 8px;
+                        ">${wrestler.name}</div>
                     </div>
                 `;
                 
                 wrestlerDiv.style.cssText = `
                     border: 3px solid #ccc;
-                    margin: 10px;
-                    padding: 5px;
+                    margin: 15px;
                     cursor: ${canSelect ? 'pointer' : 'not-allowed'};
                     border-radius: 12px;
                     background: #fff;
-                    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
                     transition: all 0.3s ease;
                     display: inline-block;
                     vertical-align: top;
                     opacity: ${canSelect ? '1' : '0.6'};
+                    overflow: hidden;
                 `;
                 
                 // Only add interaction if player can select
                 if (canSelect) {
-                    // Add hover effects
-                    wrestlerDiv.addEventListener('mouseenter', function() {
-                        if (!this.classList.contains('selected')) {
-                            this.style.transform = 'scale(1.05)';
-                            this.style.boxShadow = '0 6px 12px rgba(0,0,0,0.2)';
+                    // Add hover effects with card preview
+                    wrestlerDiv.addEventListener('mouseenter', (event) => {
+                        if (!wrestlerDiv.classList.contains('selected')) {
+                            wrestlerDiv.style.transform = 'scale(1.05)';
+                            wrestlerDiv.style.boxShadow = '0 8px 16px rgba(0,0,0,0.3)';
                         }
+                        
+                        // Show larger card preview
+                        this.showWrestlerPreview(wrestler, imagePath, event);
                     });
                     
-                    wrestlerDiv.addEventListener('mouseleave', function() {
-                        if (!this.classList.contains('selected')) {
-                            this.style.transform = 'scale(1)';
-                            this.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
+                    wrestlerDiv.addEventListener('mouseleave', (event) => {
+                        if (!wrestlerDiv.classList.contains('selected')) {
+                            wrestlerDiv.style.transform = 'scale(1)';
+                            wrestlerDiv.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
                         }
+                        
+                        // Hide card preview
+                        this.hideWrestlerPreview();
                     });
                     
                     // Add click handler
@@ -1043,8 +1062,87 @@ setup: function( gamedatas )
         ///////////////////////////////////////////////////
         //// Player's action
         
+        showWrestlerPreview: function(wrestler, imagePath, event) {
+            // Remove any existing preview
+            this.hideWrestlerPreview();
+            
+            // Create preview container
+            const preview = document.createElement('div');
+            preview.id = 'wrestler-preview';
+            preview.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                width: 300px;
+                height: 420px;
+                background: white;
+                border: 4px solid #333;
+                border-radius: 15px;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+                z-index: 10000;
+                overflow: hidden;
+                pointer-events: none;
+                animation: fadeIn 0.2s ease-in-out;
+            `;
+            
+            preview.innerHTML = `
+                <div style="
+                    width: 100%; 
+                    height: 300px; 
+                    background-image: url('${imagePath}'); 
+                    background-size: cover; 
+                    background-position: center;
+                    position: relative;
+                ">
+                    <div style="
+                        position: absolute; 
+                        bottom: 0; 
+                        left: 0; 
+                        right: 0; 
+                        background: rgba(0,0,0,0.8); 
+                        color: white; 
+                        padding: 10px; 
+                        font-weight: bold; 
+                        text-align: center;
+                        font-size: 18px;
+                    ">${wrestler.name}</div>
+                </div>
+                <div style="padding: 15px; font-size: 12px; line-height: 1.3;">
+                    <div style="margin-bottom: 5px;"><strong>Conditioning:</strong> ${wrestler.conditioning_p1}/${wrestler.conditioning_p2}/${wrestler.conditioning_p3}</div>
+                    <div style="margin-bottom: 5px;"><strong>O:</strong> ${wrestler.offense} | <strong>D:</strong> ${wrestler.defense} | <strong>T:</strong> ${wrestler.top} | <strong>B:</strong> ${wrestler.bottom}</div>
+                    <div style="font-style: italic; color: #666; font-size: 11px;">${wrestler.trademark}</div>
+                </div>
+            `;
+            
+            // Add CSS animation if not already added
+            if (!document.getElementById('preview-fade-animation')) {
+                const style = document.createElement('style');
+                style.id = 'preview-fade-animation';
+                style.textContent = `
+                    @keyframes fadeIn {
+                        from { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+                        to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+            
+            document.body.appendChild(preview);
+        },
+        
+        hideWrestlerPreview: function() {
+            const preview = document.getElementById('wrestler-preview');
+            if (preview) {
+                preview.remove();
+            }
+        },
+
         onWrestlerClick: function(wrestlerId) {
             console.log('Wrestler clicked:', wrestlerId);
+            
+            // Hide any preview on click
+            this.hideWrestlerPreview();
             
             // Check if player can still select
             if (!this.isCurrentPlayerActive()) {
