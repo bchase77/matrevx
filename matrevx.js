@@ -906,16 +906,12 @@ setup: function( gamedatas )
                     box-shadow: 0 4px 8px rgba(0,0,0,0.2);
                     transition: all 0.3s ease;
                     display: inline-block;
-                    overflow: hidden;
+                    overflow: visible;
+                    position: relative;
                 `;
                 
-                // Add JavaScript hover effects with large preview card
-                cardElement.addEventListener('mouseenter', function() {
-                    // Small animation for original card
-                    this.style.transform = 'translateY(-10px)';
-                    this.style.boxShadow = '0 8px 16px rgba(0,0,0,0.3)';
-                    this.style.zIndex = '5';
-                    
+                // Add preview hover effects for all cards
+                const addHoverPreview = function() {
                     // Create large preview card above original
                     const previewCard = document.createElement('div');
                     previewCard.id = 'card-preview-' + cardId;
@@ -952,23 +948,41 @@ setup: function( gamedatas )
                         document.head.appendChild(style);
                     }
                     
-                    this.appendChild(previewCard);
+                    cardElement.appendChild(previewCard);
+                };
+                
+                const removeHoverPreview = function() {
+                    // Remove preview card
+                    const previewCard = cardElement.querySelector('#card-preview-' + cardId);
+                    if (previewCard) {
+                        previewCard.remove();
+                    }
+                };
+                
+                console.log(`Card ${cardId}: interactive=${interactive}, cardAffordability=`, cardAffordability);
+                
+                // Add hover preview for ALL cards (both interactive and non-interactive)
+                cardElement.addEventListener('mouseenter', function() {
+                    // Small animation for original card
+                    this.style.transform = 'translateY(-10px)';
+                    this.style.boxShadow = '0 8px 16px rgba(0,0,0,0.3)';
+                    this.style.zIndex = '5';
+                    this.style.borderColor = '#0066cc';
+                    
+                    // Show preview card
+                    addHoverPreview();
                 });
                 
                 cardElement.addEventListener('mouseleave', function() {
                     this.style.transform = '';
                     this.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
                     this.style.zIndex = '';
+                    this.style.borderColor = '#333';
                     
                     // Remove preview card
-                    const previewCard = this.querySelector('#card-preview-' + cardId);
-                    if (previewCard) {
-                        previewCard.remove();
-                    }
+                    removeHoverPreview();
                 });
-                
-                console.log(`Card ${cardId}: interactive=${interactive}, cardAffordability=`, cardAffordability);
-                
+
                 if (interactive) {
                     console.log(`Card ${cardId} is INTERACTIVE mode`);
                     // Check if this card is affordable
@@ -979,19 +993,6 @@ setup: function( gamedatas )
                         // Make affordable cards interactive
                         cardElement.style.cursor = 'pointer';
                         cardElement.style.opacity = '1';
-                        
-                        // Add hover effects for affordable cards
-                        cardElement.addEventListener('mouseenter', function() {
-                            this.style.transform = 'translateY(-5px)';
-                            this.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
-                            this.style.borderColor = '#0066cc';
-                        });
-                        
-                        cardElement.addEventListener('mouseleave', function() {
-                            this.style.transform = 'translateY(0)';
-                            this.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
-                            this.style.borderColor = '#333';
-                        });
                         
                         // Add click handler for affordable cards
                         const self = this;
@@ -1012,13 +1013,11 @@ setup: function( gamedatas )
                         cardElement.style.position = 'relative';
                         cardElement.appendChild(unaffordableLabel);
                         
-                        // Show tooltip on hover for unaffordable cards
-                        cardElement.addEventListener('mouseenter', function() {
-                            const card = cardTypes[cardId];
-                            if (card) {
-                                cardElement.title = `Need ${card.conditioning_cost || 0} conditioning and ${card.special_tokens || 0} tokens`;
-                            }
-                        });
+                        // Set tooltip for unaffordable cards
+                        const card = cardTypes[cardId];
+                        if (card) {
+                            cardElement.title = `Need ${card.conditioning_cost || 0} conditioning and ${card.special_tokens || 0} tokens`;
+                        }
                     }
                 } else {
                     console.log(`Card ${cardId} is PREVIEW mode (interactive=${interactive})`);
