@@ -1383,18 +1383,24 @@ setup: function( gamedatas )
                 
                 if (currentPlayer.wrestler_id && this.gamedatas.wrestlers[currentPlayer.wrestler_id]) {
                     const wrestler = this.gamedatas.wrestlers[currentPlayer.wrestler_id];
+                    console.log('Found wrestler data for current player:', wrestler);
                     offense = wrestler.offense;
                     defense = wrestler.defense;
                     top = wrestler.top;
                     bottom = wrestler.bottom;
                     conditioning = wrestler.conditioning_p1; // Use period 1 conditioning
+                    console.log('Using wrestler conditioning_p1:', conditioning);
                 } else {
+                    console.log('No wrestler data found for current player - using fallbacks');
+                    console.log('currentPlayer.wrestler_id:', currentPlayer.wrestler_id);
+                    console.log('Available wrestlers:', Object.keys(this.gamedatas.wrestlers || {}));
                     // Fallback to player fields if wrestler data not available
                     offense = currentPlayer.offense || currentPlayer.player_offense || 8;
                     defense = currentPlayer.defense || currentPlayer.player_defense || 8;
                     top = currentPlayer.top || currentPlayer.player_top || 7;
                     bottom = currentPlayer.bottom || currentPlayer.player_bottom || 9;
                     conditioning = currentPlayer.conditioning || currentPlayer.player_conditioning || 42;
+                    console.log('Using fallback conditioning:', conditioning);
                 }
                 
                 console.log('Setting current player stats:', {offense, defense, top, bottom, conditioning});
