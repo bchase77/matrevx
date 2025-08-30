@@ -888,16 +888,13 @@ setup: function( gamedatas )
                 const imageId = card.image_id || cardId;
                 const imagePath = `${g_gamethemeurl}img/${imageId}.jpg`;
                 cardElement.innerHTML = `
-                    <div class="card-image" style="
-                        width: 140px; 
-                        height: 196px; 
-                        background-image: url('${imagePath}'); 
-                        background-size: contain; 
-                        background-position: center; 
-                        background-repeat: no-repeat;
+                    <img src="${imagePath}" style="
+                        width: auto; 
+                        height: 150px; 
+                        max-width: 200px;
                         border-radius: 8px;
-                    ">
-                    </div>
+                        object-fit: contain;
+                    " />
                 `;
                 
                 // Set styles - simplified for image cards
