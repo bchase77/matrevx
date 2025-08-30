@@ -19,7 +19,7 @@
     display: flex;
     justify-content: flex-start;
     align-items: flex-start;
-    gap: 20px;
+    gap: 5px; /* Reduced from 20px */
     margin: 20px auto;
     max-width: 1200px;
     position: relative;
@@ -285,7 +285,7 @@ div[style*="background:white"] {
 /* ========== SINGLE STATS BOARD ========== */
 
 #stats-board-container {
-    margin-left: 5px; /* Reduced from 20px to bring closer to mat */
+    margin-left: 0px; /* Removed margin to eliminate gap */
     display: flex;
     justify-content: center;
     align-items: center;
