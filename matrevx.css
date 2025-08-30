@@ -18,10 +18,10 @@
     --opponent-conditioning-left: 0px;
     
     /* Player circle positions (new variables - set to same as opponent initially) */
-    --player-offense-left: 260px;
-    --player-defense-left: 195px;
-    --player-top-left: 130px;
-    --player-bottom-left: 65px;
+    --player-offense-left: 195px;
+    --player-defense-left: 260px;
+    --player-top-left: 65px;
+    --player-bottom-left: 130px;
     --player-conditioning-left: 0px;
 }
  *
@@ -308,20 +308,20 @@ div[style*="background:white"] {
     font-size: 18px; /* Scale font: 14 * (500/350) = 20, but 18 looks better */
     color: #333;
     position: absolute;
-    top: 7px; /* Center in the row */
+    /* top positioning now handled by parent row classes */
 }
 
 /* Position each stat circle over the colored squares - using CSS variables */
 /* Opponent circles */
-#opponent-offense-stat { left: var(--opponent-offense-left); }
-#opponent-defense-stat { left: var(--opponent-defense-left); }
-#opponent-top-stat { left: var(--opponent-top-left); }
-#opponent-bottom-stat { left: var(--opponent-bottom-left); }
-#opponent-conditioning-stat { left: var(--opponent-conditioning-left); }
+#opponent-offense-stat { left: var(--opponent-offense-left); top: 7px; }
+#opponent-defense-stat { left: var(--opponent-defense-left); top: 7px; }
+#opponent-top-stat { left: var(--opponent-top-left); top: 7px; }
+#opponent-bottom-stat { left: var(--opponent-bottom-left); top: 7px; }
+#opponent-conditioning-stat { left: var(--opponent-conditioning-left); top: 7px; }
 
 /* Player circles */
-#player-offense-stat { left: var(--player-offense-left); }
-#player-defense-stat { left: var(--player-defense-left); }
-#player-top-stat { left: var(--player-top-left); }
-#player-bottom-stat { left: var(--player-bottom-left); }
-#player-conditioning-stat { left: var(--player-conditioning-left); }
+#player-offense-stat { left: var(--player-offense-left); top: 7px; }
+#player-defense-stat { left: var(--player-defense-left); top: 7px; }
+#player-top-stat { left: var(--player-top-left); top: 7px; }
+#player-bottom-stat { left: var(--player-bottom-left); top: 7px; }
+#player-conditioning-stat { left: var(--player-conditioning-left); top: 7px; }
