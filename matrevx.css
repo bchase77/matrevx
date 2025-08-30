@@ -285,11 +285,13 @@ div[style*="background:white"] {
 /* ========== SINGLE STATS BOARD ========== */
 
 #stats-board-container {
-    margin-left: 0px; /* Removed margin to eliminate gap */
+    position: absolute;
+    left: 505px; /* Position right next to mat (500px + 5px gap) */
+    top: 0;
+    height: 500px; /* Match mat height to align centers */
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 500px; /* Match mat height to align centers */
 }
 
 #single-stats-board {
