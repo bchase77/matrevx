@@ -309,11 +309,11 @@ div[style*="background:white"] {
 }
 
 .opponent-row {
-    top: 0;
+    top: 62px;
 }
 
 .player-row {
-    bottom: 0;
+    bottom: 74px;
 }
 
 .stat-circle {
@@ -332,9 +332,9 @@ div[style*="background:white"] {
     top: 7px; /* Center in the row */
 }
 
-/* Position each stat circle over the colored squares - scaled for 500px width */
+/* Position each stat circle over the colored squares - scaled for width */
 .stat-circle.offense-stat { left: 0px; }
-.stat-circle.defense-stat { left: 100px; } /* Scale: 70 * (500/350) = 100 */
-.stat-circle.top-stat { left: 200px; } /* Scale: 140 * (500/350) = 200 */
-.stat-circle.bottom-stat { left: 300px; } /* Scale: 210 * (500/350) = 300 */
-.stat-circle.conditioning-stat { left: 400px; } /* Scale: 280 * (500/350) = 400 */
+.stat-circle.defense-stat { left: 65px; }
+.stat-circle.top-stat { left: 130px; }
+.stat-circle.bottom-stat { left: 195px; }
+.stat-circle.conditioning-stat { left: 260px; }
