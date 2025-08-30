@@ -8,6 +8,22 @@
  * -----
  *
  * matrevx.css
+
+:root {
+    /* Opponent circle positions (existing values) */
+    --opponent-offense-left: 260px;
+    --opponent-defense-left: 195px;
+    --opponent-top-left: 130px;
+    --opponent-bottom-left: 65px;
+    --opponent-conditioning-left: 0px;
+    
+    /* Player circle positions (new variables - set to same as opponent initially) */
+    --player-offense-left: 260px;
+    --player-defense-left: 195px;
+    --player-top-left: 130px;
+    --player-bottom-left: 65px;
+    --player-conditioning-left: 0px;
+}
  *
  * matrevx stylesheet
  *
@@ -295,9 +311,17 @@ div[style*="background:white"] {
     top: 7px; /* Center in the row */
 }
 
-/* Position each stat circle over the colored squares - scaled for width */
-.stat-circle.offense-stat { left: 0px; }
-.stat-circle.defense-stat { left: 65px; }
-.stat-circle.top-stat { left: 130px; }
-.stat-circle.bottom-stat { left: 195px; }
-.stat-circle.conditioning-stat { left: 260px; }
+/* Position each stat circle over the colored squares - using CSS variables */
+/* Opponent circles */
+#opponent-offense-stat { left: var(--opponent-offense-left); }
+#opponent-defense-stat { left: var(--opponent-defense-left); }
+#opponent-top-stat { left: var(--opponent-top-left); }
+#opponent-bottom-stat { left: var(--opponent-bottom-left); }
+#opponent-conditioning-stat { left: var(--opponent-conditioning-left); }
+
+/* Player circles */
+#player-offense-stat { left: var(--player-offense-left); }
+#player-defense-stat { left: var(--player-defense-left); }
+#player-top-stat { left: var(--player-top-left); }
+#player-bottom-stat { left: var(--player-bottom-left); }
+#player-conditioning-stat { left: var(--player-conditioning-left); }
