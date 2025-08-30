@@ -884,34 +884,33 @@ setup: function( gamedatas )
                 cardElement.className = 'card';
                 cardElement.id = 'card-' + cardId;
 
-                // Build the inner HTML
-                let cardHTML = '<div class="card-header" style="font-weight: bold; font-size: 14px; margin-bottom: 8px;">' + (card.card_name || 'Unknown Card') + '</div>';
+                // Use actual card image instead of text
+                const imagePath = `${g_gamethemeurl}img/${cardId}.jpg`;
+                cardElement.innerHTML = `
+                    <div class="card-image" style="
+                        width: 140px; 
+                        height: 196px; 
+                        background-image: url('${imagePath}'); 
+                        background-size: cover; 
+                        background-position: center; 
+                        background-repeat: no-repeat;
+                        border-radius: 8px;
+                    ">
+                    </div>
+                `;
                 
-                // Position badge
-                if (card.position) {
-                    const positionColor = this.getPositionColor(card.position);
-                    cardHTML += '<div class="card-position" style="background: ' + positionColor + '; color: white; padding: 2px 6px; border-radius: 3px; font-size: 11px; display: inline-block; margin-bottom: 8px;">' + card.position.toUpperCase() + '</div>';
-                }
-                
-                cardHTML += '<div class="card-stats" style="font-size: 12px; line-height: 1.3;">';
-                cardHTML += '<div><strong>Conditioning:</strong> ' + (card.conditioning_cost || 0) + '</div>';
-                cardHTML += '<div><strong>Tokens:</strong> ' + (card.special_tokens || 0) + '</div>';
-                if (card.scoring) {
-                    cardHTML += '<div class="scoring-indicator" style="color: #ff6b35; font-weight: bold;">★ Scoring</div>';
-                }
-                cardHTML += '</div>';
-                
-                cardElement.innerHTML = cardHTML;
-                
-                // Set styles
-                cardElement.style.border = '2px solid #333';
-                cardElement.style.borderRadius = '8px';
-                cardElement.style.padding = '12px';
-                cardElement.style.background = 'white';
-                cardElement.style.minWidth = '160px';
-                cardElement.style.maxWidth = '180px';
-                cardElement.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
-                cardElement.style.transition = 'all 0.2s ease';
+                // Set styles - simplified for image cards
+                cardElement.style.cssText = `
+                    border: 3px solid #ccc;
+                    margin: 5px;
+                    cursor: pointer;
+                    border-radius: 12px;
+                    background: #fff;
+                    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+                    transition: all 0.3s ease;
+                    display: inline-block;
+                    overflow: hidden;
+                `;
                 
                 console.log(`Card ${cardId}: interactive=${interactive}, cardAffordability=`, cardAffordability);
                 
