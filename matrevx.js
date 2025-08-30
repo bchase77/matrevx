@@ -889,8 +889,8 @@ setup: function( gamedatas )
                 const imagePath = `${g_gamethemeurl}img/${imageId}.jpg`;
                 cardElement.innerHTML = `
                     <div class="card-image" style="
-                        width: 240px; 
-                        height: 336px; 
+                        width: 140px; 
+                        height: 196px; 
                         background-image: url('${imagePath}'); 
                         background-size: contain; 
                         background-position: center; 

@@ -248,42 +248,18 @@ return [
             "image_id" => 29
         ],
         
-        // BOTTOM CARDS - TODO: Add later with different card IDs to avoid conflicts
-        
-        // TOP CARDS (3 cards)
-        34 => [
-            "card_name" => 'Break Down',
-            "position" => "top",
-            "conditioning_cost" => 2,
-            "special_tokens" => 1,
-            "action" => "roll_speed",
-            "scoring" => false,
-            "effect" => "If you roll +1, -1 to Opp cond. If you roll +2, -2 to Opp cond",
-            "image_id" => 34
-        ],
-        35 => [
-            "card_name" => 'Mat Return',
-            "position" => "top",
-            "conditioning_cost" => 3,
-            "special_tokens" => 2,
-            "action" => "roll_strength",
-            "scoring" => false,
-            "effect" => "If opp plays STAND UP, POWER STAND UP, or SIT OUT this round, roll strength again and take best result",
-            "image_id" => 35
-        ],
-        38 => [
-            "card_name" => 'Arm Bar',
-            "position" => "top",
-            "conditioning_cost" => 6,
-            "special_tokens" => 0,
-            "action" => "roll_speed_and_strength",
-            "scoring" => true,
-            "effect" => "Lead in to DOUBLE ARM BAR. Scramble win: Score 2 NEARFALL; Go to Pin Round 2. Lose: Start next round",
-            "image_id" => 38
-        ],
-        
         // ANY POSITION CARDS (2 cards) 
-        47 => [
+        15 => [
+            "card_name" => 'Stalling',
+            "position" => "any",
+            "conditioning_cost" => -5,
+            "special_tokens" => -1,
+            "action" => "stalling",
+            "scoring" => false,
+            "effect" => "Gain 5 Conditioning. If played 5 times by same player, opponent scores 1 pt. Can be played at any time",
+            "image_id" => 15
+        ],
+        99 => [
             "card_name" => 'Adrenaline Rush',
             "position" => "any",
             "conditioning_cost" => 3,
@@ -291,48 +267,19 @@ return [
             "action" => "adrenaline",
             "scoring" => false,
             "effect" => "Apply +4 to current position. Can be played only once per period",
-            "image_id" => 47
+            "image_id" => 99
         ],
-        46 => [
-            "card_name" => 'Stalling',
-            "position" => "any",
-            "conditioning_cost" => -5,
+        
+        // SCRAMBLE CARD (1 card)
+        50 => [
+            "card_name" => 'Scramble',
+            "position" => "scramble",
+            "conditioning_cost" => 0,
             "special_tokens" => 0,
-            "action" => "stall",
-            "scoring" => false,
-            "effect" => "If played as Offense, Opp cannot play star Defense card. Opp can switch their card to any offense or non-star defense card",
-            "image_id" => 46
-        ],
-    ],
-	'scrambleCards' => [
-		1 => [
-			"id" => 1,
-			"name" => "High Stakes Roll",
-			"description" => "Roll D10 and D12 together and add up the sum. Continue rolling until the sum is 18 or higher. Capped at 5 rolls.",
-			"type" => "dice_challenge",
-			"dice_type" => "d10_d12_combo",
-			"target_number" => 18,
-			"max_attempts" => 5,
-			"success_conditions" => [
-				"immediate" => [
-					"rounds" => "3-5",
-					"outcome" => "major_success",
-					"points" => 3,
-					"description" => "Roll 18 or higher in 3-5 rounds"
-				],
-				"quick" => [
-					"rounds" => "1-2", 
-					"outcome" => "critical_success",
-					"points" => 4,
-					"description" => "Roll 18 or higher in 1-2 rounds"
-				]
-			],
-			"failure_condition" => [
-				"outcome" => "failure",
-				"points" => 0,
-				"penalty" => "lose_momentum",
-				"description" => "Don't roll 18 or higher within 5 attempts"
-			]
-		]
-	],
+            "action" => "scramble",
+            "scoring" => true,
+            "effect" => "Engage in scramble situation to determine who gains advantage",
+            "image_id" => 50
+        ]
+    ]
 ];
