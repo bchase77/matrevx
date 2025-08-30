@@ -520,10 +520,10 @@ setup: function( gamedatas )
        enterDiceRolling: function(args) {
             console.log('Entering dice rolling state', args);
             
-            // Hide hand area
-            const handArea = document.getElementById('player-hand-area');
-            if (handArea) {
-                handArea.style.display = 'none';
+            // Hide card selection area
+            const cardSelectionArea = document.getElementById('card-selection-area');
+            if (cardSelectionArea) {
+                cardSelectionArea.style.display = 'none';
             }
             
             // Show dice rolling info
@@ -699,17 +699,17 @@ setup: function( gamedatas )
                 console.log('PLAYER TURN STARTING - clearing existing cards and showing interactive ones');
                 
                 // Clear any existing cards first to remove preview labels
-                const handContainer = document.getElementById('player-hand');
-                const handArea = document.getElementById('player-hand-area');
+                const cardSelectionArea = document.getElementById('card-selection-area');
+                const cardSelectionGrid = document.getElementById('card-selection-grid');
                 
-                if (handContainer) {
-                    console.log('Clearing hand container contents');
-                    handContainer.innerHTML = '';
+                if (cardSelectionGrid) {
+                    console.log('Clearing card selection grid contents');
+                    cardSelectionGrid.innerHTML = '';
                 }
                 
-                if (handArea) {
-                    // Make sure hand area is visible
-                    handArea.style.display = 'block';
+                if (cardSelectionArea) {
+                    // Make sure card selection area is visible
+                    cardSelectionArea.style.display = 'block';
                 }
                 
                 // Small delay to ensure clearing takes effect
@@ -830,28 +830,28 @@ setup: function( gamedatas )
         
         displayPlayerCards: function(playableCardsIds, currentPosition, interactive = true, cardAffordability = {}) {
             console.log('displayPlayerCards called with:', playableCardsIds, 'position:', currentPosition, 'interactive:', interactive, 'affordability:', cardAffordability);
-            console.log('CLEARING hand container and rebuilding cards...');
+            console.log('CLEARING card selection area and rebuilding cards...');
             
-            const handContainer = document.getElementById('player-hand');
-            const handArea = document.getElementById('player-hand-area');
+            const cardSelectionArea = document.getElementById('card-selection-area');
+            const cardSelectionGrid = document.getElementById('card-selection-grid');
+            const cardSelectionHeader = document.getElementById('card-selection-header');
             
-            if (!handContainer || !handArea) {
-                console.error('Hand containers not found');
+            if (!cardSelectionArea || !cardSelectionGrid) {
+                console.error('Card selection containers not found');
                 return;
             }
             
             // Clear previous cards
-            handContainer.innerHTML = '';
+            cardSelectionGrid.innerHTML = '';
             
-            // Show hand area with position info
-            handArea.style.display = 'block';
+            // Show card selection area
+            cardSelectionArea.style.display = 'block';
             
-            // Update hand title to show position
-            const handTitle = handArea.querySelector('h3');
-            if (handTitle && currentPosition) {
-                handTitle.textContent = `Your ${currentPosition.toUpperCase()} Cards ${interactive ? '' : '(Preview)'}`;
-            } else if (handTitle) {
-                handTitle.textContent = `Your Cards ${interactive ? '' : '(Preview)'}`;
+            // Update header to show position
+            if (cardSelectionHeader && currentPosition) {
+                cardSelectionHeader.textContent = `Select Your ${currentPosition.toUpperCase()} Card ${interactive ? '' : '(Preview)'}`;
+            } else if (cardSelectionHeader) {
+                cardSelectionHeader.textContent = `Select Your Move Card ${interactive ? '' : '(Preview)'}`;
             }
             
             // Use card types from game data
@@ -889,11 +889,11 @@ setup: function( gamedatas )
                 const imagePath = `${g_gamethemeurl}img/${imageId}.jpg`;
                 cardElement.innerHTML = `
                     <img src="${imagePath}" style="
-                        width: auto; 
-                        height: 150px; 
-                        max-width: 200px;
+                        width: 120px; 
+                        height: 168px; 
                         border-radius: 8px;
                         object-fit: contain;
+                        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
                     " />
                 `;
                 
@@ -991,10 +991,10 @@ setup: function( gamedatas )
                     }
                 }
                 
-                handContainer.appendChild(cardElement);
+                cardSelectionGrid.appendChild(cardElement);
             }
             
-            console.log('Added', handContainer.children.length, 'cards to hand');
+            console.log('Added', cardSelectionGrid.children.length, 'cards to selection area');
         },
         
         showPlayerCardsOnSetup: function() {
@@ -1318,9 +1318,10 @@ setup: function( gamedatas )
             gameAreaHTML += '</div>'; // End game-main-area
             
             
-            // Player Hand Area (Bottom)
-            gameAreaHTML += '<div id="player-hand-area" style="display: none;">';
-            gameAreaHTML += '<div id="player-hand"></div>';
+            // NEW: Player Card Selection Area (Bottom)
+            gameAreaHTML += '<div id="card-selection-area" style="display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(248, 249, 250, 0.95); border-radius: 12px; padding: 20px; box-shadow: 0 8px 24px rgba(0,0,0,0.2); max-width: 90vw; z-index: 1000;">';
+            gameAreaHTML += '<div id="card-selection-header" style="text-align: center; margin-bottom: 15px; font-size: 18px; font-weight: bold; color: #333;">Select Your Move Card</div>';
+            gameAreaHTML += '<div id="card-selection-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 15px; justify-items: center;"></div>';
             gameAreaHTML += '</div>';
             
             // Dice Overlay (Hidden by default)
@@ -2242,7 +2243,7 @@ setup: function( gamedatas )
             
             // Hide hand if it was our turn
             if (notif.args.player_id == this.player_id) {
-                document.getElementById('player-hand-area').style.display = 'none';
+                document.getElementById('card-selection-area').style.display = 'none';
             }
         },
 
@@ -2257,7 +2258,7 @@ setup: function( gamedatas )
             
             // Hide hand if it was our turn
             if (notif.args.player_id == this.player_id) {
-                document.getElementById('player-hand-area').style.display = 'none';
+                document.getElementById('card-selection-area').style.display = 'none';
             }
         },
 
