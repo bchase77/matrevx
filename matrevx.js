@@ -495,12 +495,26 @@ setup: function( gamedatas )
             
             // Show game info
             document.getElementById('game-info').innerHTML = `
-                <div style="padding: 20px; background: #f9f9f9; border-radius: 8px; margin: 10px;">
+                <div id="match-starting-dialog" style="padding: 20px; background: #f9f9f9; border-radius: 8px; margin: 10px; cursor: pointer; transition: opacity 0.3s ease;">
                     <h3>Match Starting!</h3>
                     <p><strong>Period 1, Round 1</strong></p>
                     <p>Player with higher conditioning chooses starting position.</p>
+                    <p style="font-size: 12px; color: #666; margin-top: 10px;">Click to dismiss</p>
                 </div>
             `;
+            
+            // Make dialog clickable to fade away
+            const dialog = document.getElementById('match-starting-dialog');
+            if (dialog) {
+                dialog.addEventListener('click', () => {
+                    dialog.style.opacity = '0';
+                    setTimeout(() => {
+                        if (dialog && dialog.parentNode) {
+                            dialog.remove();
+                        }
+                    }, 300);
+                });
+            }
         },
         
        enterDiceRolling: function(args) {
@@ -735,12 +749,39 @@ setup: function( gamedatas )
             const gameInfo = document.getElementById('game-info');
             if (gameInfo && position) {
                 const positionHTML = `
-                    <div style="padding: 15px; background: #e3f2fd; border-radius: 8px; margin: 10px;">
+                    <div id="position-info-dialog" style="padding: 15px; background: #e3f2fd; border-radius: 8px; margin: 10px; cursor: pointer; transition: opacity 0.3s ease;">
                         <h4>Your Current Position: <strong>${position.toUpperCase()}</strong></h4>
                         <p>Available cards are based on your wrestling position.</p>
+                        <p style="font-size: 12px; color: #666; margin-top: 10px;">Click to dismiss • Auto-hides in 10 seconds</p>
                     </div>
                 `;
                 gameInfo.innerHTML = positionHTML;
+                
+                // Make dialog clickable to fade away
+                const dialog = document.getElementById('position-info-dialog');
+                if (dialog) {
+                    // Click to dismiss
+                    dialog.addEventListener('click', () => {
+                        dialog.style.opacity = '0';
+                        setTimeout(() => {
+                            if (dialog && dialog.parentNode) {
+                                dialog.remove();
+                            }
+                        }, 300);
+                    });
+                    
+                    // Auto-hide after 10 seconds
+                    setTimeout(() => {
+                        if (dialog && dialog.parentNode && dialog.style.opacity !== '0') {
+                            dialog.style.opacity = '0';
+                            setTimeout(() => {
+                                if (dialog && dialog.parentNode) {
+                                    dialog.remove();
+                                }
+                            }, 300);
+                        }
+                    }, 10000);
+                }
             }
         },       
         
@@ -1254,6 +1295,10 @@ setup: function( gamedatas )
             
             // Single Stats Board (Right)
             gameAreaHTML += '<div id="stats-board-container">';
+            
+            // Opponent label
+            gameAreaHTML += '<div style="text-align: center; font-weight: bold; font-size: 16px; color: #333; margin-bottom: 5px;">OPPONENT</div>';
+            
             gameAreaHTML += '<div id="single-stats-board" class="stats-board">';
             
             // Top row - Opponent stats
@@ -1275,6 +1320,10 @@ setup: function( gamedatas )
             gameAreaHTML += '</div>';
             
             gameAreaHTML += '</div>'; // End single-stats-board
+            
+            // You label
+            gameAreaHTML += '<div style="text-align: center; font-weight: bold; font-size: 16px; color: #333; margin-top: 5px;">YOU</div>';
+            
             gameAreaHTML += '</div>'; // End stats-board-container
             
             gameAreaHTML += '</div>'; // End game-main-area
