@@ -220,8 +220,8 @@ div[style*="background:white"] {
 /* ========== CARDS ========== */
 
 .card {
-    width: 100px;
-    height: 140px;
+    width: 160px;
+    height: 224px;
     border-radius: 8px;
     border: 2px solid #333;
     background: white;
