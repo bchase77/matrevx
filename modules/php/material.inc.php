@@ -281,5 +281,15 @@ return [
             "effect" => "Engage in scramble situation to determine who gains advantage",
             "image_id" => 50
         ]
+    ],
+
+    'scrambleCards' => [
+        1 => [
+            "id" => 1,
+            "name" => "Basic Scramble",
+            "description" => "Standard wrestling scramble situation",
+            "type" => "basic",
+            "image_id" => 50
+        ]
     ]
 ];
