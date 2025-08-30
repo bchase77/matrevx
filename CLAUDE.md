@@ -43,6 +43,32 @@
 - Responsive scaling implemented for smaller screens
 - Ready for stats board implementation
 
+### Project Effort Estimates
+
+#### Total Time Investment: ~40-50 hours over 7.5 weeks (July 8 - August 30, 2025)
+
+**Phase 1: Core Game Mechanics (July 8-27)** - ~30-35 hours
+- July 8-12: Initial BGA setup, wrestler selection system, basic mechanics (~10-12 hours)
+- July 12-13: Card system implementation, dice rolling, stats tracking (~6-8 hours) 
+- July 16-27: Bug fixes, multiactive system, gameplay polish (~15-18 hours)
+
+**Phase 2: Layout & Graphics (August 24-30)** - ~10-15 hours
+- August 24-26: Initial graphics integration and wrestler cards (~4-5 hours)
+- August 26-28: Stats board positioning, layout system fixes (~4-6 hours)
+- August 29-30: Complete card display overhaul, hover preview system (~6-8 hours)
+
+**Work Pattern Analysis:**
+- Peak intensity days: July 12-13, August 26-30 (multiple commits per day)
+- Average session length: ~1-2 hours per active development day
+- Active development days: ~25-30 out of 53 total calendar days
+- Development pace: Steady part-time with intensive problem-solving bursts
+
+**Key Milestones:**
+- July 8: Project inception, first GitHub commit
+- July 27: Core gameplay mechanics complete
+- August 29: Graphics system overhaul begins  
+- August 30: v1.0-graphics-complete tagged - production-ready graphics
+
 ### Deployment Info
 - BGA Studio credentials configured in deploy.sh
 - Git workflow: commit with descriptive messages, then deploy
