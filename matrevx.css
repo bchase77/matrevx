@@ -297,7 +297,7 @@ div[style*="background:white"] {
 #single-stats-board {
     width: 500px; /* Match mat width */
     height: 286px; /* Scale proportionally: 200 * (500/350) = 286 */
-    background: url('img/statsBoardOnly.jpg') no-repeat center center;
+    background: url('img/statsBoardOnly.jpg') no-repeat left center;
     background-size: contain;
     position: relative;
 }
