@@ -884,27 +884,18 @@ setup: function( gamedatas )
                 cardElement.className = 'card';
                 cardElement.id = 'card-' + cardId;
 
-                // For now, use text-based cards for move cards since images show wrestlers
+                // Use actual card image - need to use a different naming convention for move cards
+                const imagePath = `${g_gamethemeurl}img/card_${cardId}.jpg`;
                 cardElement.innerHTML = `
-                    <div class="card-content" style="
+                    <div class="card-image" style="
                         width: 240px; 
                         height: 336px; 
+                        background-image: url('${imagePath}'); 
+                        background-size: contain; 
+                        background-position: center; 
+                        background-repeat: no-repeat;
                         border-radius: 8px;
-                        background: linear-gradient(135deg, #f8f9fa, #e9ecef);
-                        display: flex;
-                        flex-direction: column;
-                        justify-content: center;
-                        align-items: center;
-                        padding: 20px;
-                        text-align: center;
                     ">
-                        <h3 style="margin: 0 0 10px 0; color: #333; font-size: 18px;">${card.card_name || 'Unknown'}</h3>
-                        <div style="color: #666; font-size: 14px; margin-bottom: 15px;">${(card.position || '').toUpperCase()}</div>
-                        <div style="color: #333; font-size: 12px; line-height: 1.4;">
-                            <div><strong>Cost:</strong> ${card.conditioning_cost || 0}</div>
-                            <div><strong>Tokens:</strong> ${card.special_tokens || 0}</div>
-                            ${card.effect ? `<div style="margin-top: 10px; font-style: italic;">${card.effect}</div>` : ''}
-                        </div>
                     </div>
                 `;
                 
