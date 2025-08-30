@@ -421,20 +421,7 @@ setup: function( gamedatas )
                         background-position: center; 
                         background-repeat: no-repeat;
                         border-radius: 8px;
-                        position: relative;
                     ">
-                        <div class="wrestler-name-overlay" style="
-                            position: absolute; 
-                            bottom: 0; 
-                            left: 0; 
-                            right: 0; 
-                            background: rgba(0,0,0,0.7); 
-                            color: white; 
-                            padding: 8px; 
-                            font-weight: bold; 
-                            text-align: center;
-                            border-radius: 0 0 8px 8px;
-                        ">${wrestler.name}</div>
                     </div>
                 `;
                 
@@ -1089,29 +1076,13 @@ setup: function( gamedatas )
             preview.innerHTML = `
                 <div style="
                     width: 100%; 
-                    height: 300px; 
+                    height: 100%; 
                     background-image: url('${imagePath}'); 
                     background-size: cover; 
                     background-position: center;
-                    position: relative;
+                    background-repeat: no-repeat;
+                    border-radius: 11px;
                 ">
-                    <div style="
-                        position: absolute; 
-                        bottom: 0; 
-                        left: 0; 
-                        right: 0; 
-                        background: rgba(0,0,0,0.8); 
-                        color: white; 
-                        padding: 10px; 
-                        font-weight: bold; 
-                        text-align: center;
-                        font-size: 18px;
-                    ">${wrestler.name}</div>
-                </div>
-                <div style="padding: 15px; font-size: 12px; line-height: 1.3;">
-                    <div style="margin-bottom: 5px;"><strong>Conditioning:</strong> ${wrestler.conditioning_p1}/${wrestler.conditioning_p2}/${wrestler.conditioning_p3}</div>
-                    <div style="margin-bottom: 5px;"><strong>O:</strong> ${wrestler.offense} | <strong>D:</strong> ${wrestler.defense} | <strong>T:</strong> ${wrestler.top} | <strong>B:</strong> ${wrestler.bottom}</div>
-                    <div style="font-style: italic; color: #666; font-size: 11px;">${wrestler.trademark}</div>
                 </div>
             `;
             
