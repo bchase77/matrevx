@@ -144,28 +144,8 @@ return [
 	],
 
     'cardTypes' => [
-        // OFFENSE CARDS (3 cards)
-        3 => [
-            "card_name" => 'Single Leg',
-            "position" => "offense",
-            "conditioning_cost" => 3,
-            "special_tokens" => 0,
-            "action" => "roll_speed",
-            "scoring" => true,
-            "effect" => "If you roll +1 or higher, steal 1 token from opponent",
-            "image_id" => 3
-        ],
-        7 => [
-            "card_name" => 'Double Leg',
-            "position" => "offense",
-            "conditioning_cost" => 5,
-            "special_tokens" => 2,
-            "action" => "roll_speed",
-            "scoring" => true,
-            "effect" => "Draw Scramble Card",
-            "image_id" => 7
-        ],
-        1 => [
+        // OFFENSE CARDS (5 cards)
+        16 => [
             "card_name" => 'Hand Fight',
             "position" => "offense", 
             "conditioning_cost" => 2,
@@ -173,11 +153,61 @@ return [
             "action" => "roll_speed",
             "scoring" => false,
             "effect" => "If you roll +1, -1 to opponent conditioning. If you roll +2, -2 to opponent conditioning",
-            "image_id" => 1
+            "image_id" => 16
+        ],
+        17 => [
+            "card_name" => 'Fake Shot',
+            "position" => "offense",
+            "conditioning_cost" => 3,
+            "special_tokens" => 1,
+            "action" => "roll_speed",
+            "scoring" => true,
+            "effect" => "If you roll +1 or higher, steal 1 token from opponent",
+            "image_id" => 17
+        ],
+        18 => [
+            "card_name" => 'Snap Down',
+            "position" => "offense",
+            "conditioning_cost" => 2,
+            "special_tokens" => 0,
+            "action" => "roll_speed",
+            "scoring" => true,
+            "effect" => "If you roll +1 or higher, opponent goes to bottom position",
+            "image_id" => 18
+        ],
+        19 => [
+            "card_name" => 'Single Leg',
+            "position" => "offense",
+            "conditioning_cost" => 3,
+            "special_tokens" => 0,
+            "action" => "roll_speed",
+            "scoring" => true,
+            "effect" => "If you roll +1 or higher, steal 1 token from opponent",
+            "image_id" => 19
+        ],
+        20 => [
+            "card_name" => 'Ankle Pick',
+            "position" => "offense",
+            "conditioning_cost" => 4,
+            "special_tokens" => 2,
+            "action" => "roll_speed",
+            "scoring" => true,
+            "effect" => "Draw Scramble Card",
+            "image_id" => 20
         ],
         
-        // DEFENSE CARDS (3 cards)
-        13 => [
+        // DEFENSE CARDS (5 cards)
+        25 => [
+            "card_name" => 'Underhook',
+            "position" => "defense",
+            "conditioning_cost" => 2,
+            "special_tokens" => 1,
+            "action" => "roll_strength", 
+            "scoring" => false,
+            "effect" => "If you roll +1, -1 to opponent conditioning. If you roll +2, -2 to opponent conditioning",
+            "image_id" => 25
+        ],
+        26 => [
             "card_name" => 'Sprawl',
             "position" => "defense",
             "conditioning_cost" => 3,
@@ -185,9 +215,19 @@ return [
             "action" => "roll_strength", 
             "scoring" => false,
             "effect" => "If played against Ankle Pick, Single Leg or High Crotch roll strength again and take best roll",
-            "image_id" => 13
+            "image_id" => 26
         ],
-        14 => [
+        27 => [
+            "card_name" => 'Russian Tie Up',
+            "position" => "defense",
+            "conditioning_cost" => 3,
+            "special_tokens" => 1,
+            "action" => "roll_speed",
+            "scoring" => true,
+            "effect" => "If you roll +1 or higher, steal 1 token from opponent",
+            "image_id" => 27
+        ],
+        28 => [
             "card_name" => 'Go Behind',
             "position" => "defense",
             "conditioning_cost" => 3,
@@ -195,50 +235,20 @@ return [
             "action" => "roll_speed",
             "scoring" => true,
             "effect" => "If you roll +1 or higher, steal 1 token from opponent",
-            "image_id" => 14
-        ],
-        22 => [
-            "card_name" => 'Spladle',
-            "position" => "defense",
-            "conditioning_cost" => 5,
-            "special_tokens" => 4,
-            "action" => "roll_neither",
-            "scoring" => true,
-            "effect" => "Draw Scramble card. If win, score 2 point takedown and go to Pin Round 1. If tie, score 2 point takedown, 4 point nearfall, and go to Pin Round 3. If lose, Opponent scores 2 point takedown",
-            "image_id" => 22
-        ],
-        
-        // BOTTOM CARDS (3 cards)
-        25 => [
-            "card_name" => 'Stand Up',
-            "position" => "bottom",
-            "conditioning_cost" => 2,
-            "special_tokens" => 0,
-            "action" => "roll_speed",
-            "scoring" => true,
-            "effect" => "If you roll +1 or higher, steal 1 token from opponent. Scramble win: Score ESCAPE. Scramble loss: Start next round",
-            "image_id" => 25
-        ],
-        27 => [
-            "card_name" => 'Sit Out',
-            "position" => "bottom",
-            "conditioning_cost" => 6,
-            "special_tokens" => 2,
-            "action" => "roll_speed_and_strength",
-            "scoring" => true,
-            "effect" => "Scramble win: Score Reversal. Scramble lose: Start next round",
-            "image_id" => 27
+            "image_id" => 28
         ],
         29 => [
-            "card_name" => 'Granby Roll',
-            "position" => "bottom",
-            "conditioning_cost" => 3,
-            "special_tokens" => -2,
-            "action" => "roll_neither",
+            "card_name" => 'Re-Shot',
+            "position" => "defense",
+            "conditioning_cost" => 4,
+            "special_tokens" => 3,
+            "action" => "roll_speed",
             "scoring" => true,
-            "effect" => "Draw Scramble Card. Scramble win: Score ESCAPE; Lower opponent conditioning by 1. Lose: Cannot score this round",
+            "effect" => "Draw Scramble Card if opponent attempted takedown",
             "image_id" => 29
         ],
+        
+        // BOTTOM CARDS - TODO: Add later with different card IDs to avoid conflicts
         
         // TOP CARDS (3 cards)
         34 => [

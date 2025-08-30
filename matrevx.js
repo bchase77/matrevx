@@ -884,8 +884,9 @@ setup: function( gamedatas )
                 cardElement.className = 'card';
                 cardElement.id = 'card-' + cardId;
 
-                // Use actual card image - need to use a different naming convention for move cards
-                const imagePath = `${g_gamethemeurl}img/card_${cardId}.jpg`;
+                // Use actual card image with correct image_id
+                const imageId = card.image_id || cardId;
+                const imagePath = `${g_gamethemeurl}img/${imageId}.jpg`;
                 cardElement.innerHTML = `
                     <div class="card-image" style="
                         width: 240px; 
