@@ -897,10 +897,9 @@ setup: function( gamedatas )
                     " />
                 `;
                 
-                // Set styles - simplified for image cards
+                // Set styles - let CSS handle most styling
                 cardElement.style.cssText = `
                     border: 3px solid #ccc;
-                    margin: 5px;
                     cursor: pointer;
                     border-radius: 12px;
                     background: #fff;
@@ -909,6 +908,19 @@ setup: function( gamedatas )
                     display: inline-block;
                     overflow: hidden;
                 `;
+                
+                // Add JavaScript hover effects since CSS might be overridden
+                cardElement.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-15px) scale(1.4)';
+                    this.style.boxShadow = '0 12px 24px rgba(0,0,0,0.4)';
+                    this.style.zIndex = '10';
+                });
+                
+                cardElement.addEventListener('mouseleave', function() {
+                    this.style.transform = '';
+                    this.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
+                    this.style.zIndex = '';
+                });
                 
                 console.log(`Card ${cardId}: interactive=${interactive}, cardAffordability=`, cardAffordability);
                 
