@@ -311,17 +311,17 @@ div[style*="background:white"] {
     /* top positioning now handled by parent row classes */
 }
 
-/* Position each stat circle over the colored squares - using CSS variables */
+/* Position each stat circle over the colored squares - direct positioning */
 /* Opponent circles */
-#opponent-offense-stat { left: var(--opponent-offense-left); top: 7px; }
-#opponent-defense-stat { left: var(--opponent-defense-left); top: 7px; }
-#opponent-top-stat { left: var(--opponent-top-left); top: 7px; }
-#opponent-bottom-stat { left: var(--opponent-bottom-left); top: 7px; }
-#opponent-conditioning-stat { left: var(--opponent-conditioning-left); top: 7px; }
+#opponent-offense-stat { left: 260px; top: 7px; }
+#opponent-defense-stat { left: 195px; top: 7px; }
+#opponent-top-stat { left: 130px; top: 7px; }
+#opponent-bottom-stat { left: 65px; top: 7px; }
+#opponent-conditioning-stat { left: 0px; top: 7px; }
 
-/* Player circles */
-#player-offense-stat { left: var(--player-offense-left); top: 7px; }
-#player-defense-stat { left: var(--player-defense-left); top: 7px; }
-#player-top-stat { left: var(--player-top-left); top: 7px; }
-#player-bottom-stat { left: var(--player-bottom-left); top: 7px; }
-#player-conditioning-stat { left: var(--player-conditioning-left); top: 7px; }
+/* Player circles - using your custom positions */
+#player-offense-stat { left: 195px; top: 7px; }
+#player-defense-stat { left: 260px; top: 7px; }
+#player-top-stat { left: 65px; top: 7px; }
+#player-bottom-stat { left: 130px; top: 7px; }
+#player-conditioning-stat { left: 0px; top: 7px; }
